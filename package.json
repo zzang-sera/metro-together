@@ -12,16 +12,30 @@
     "@expo/metro-runtime": "~5.0.4",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "expo": "~53.0.20",
+    "expo-dev-client": "~5.2.4",
     "expo-status-bar": "~2.2.3",
     "firebase": "^12.1.0",
+    "firebase-admin": "^13.4.0",
+    "node-fetch": "^3.3.2",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
-    "react-native-web": "^0.20.0",
-    "expo-dev-client": "~5.2.4"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
   },
-  "private": true
+  "private": true,
+  "description": "함께타요 : 교통약자를 위한 지하철 역 안내 앱",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zzang-sera/metro-together.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zzang-sera/metro-together/issues"
+  },
+  "homepage": "https://github.com/zzang-sera/metro-together#readme"
 }
