@@ -29,8 +29,6 @@ yarn-error.*
 # macOS
 .DS_Store
 *.pem
-# Secret files for all environments
-.env
 
 # local env files
 .env*.local
@@ -38,3 +36,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 .vercel
+
+# Secret files for all environments
+.env
