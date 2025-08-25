@@ -2,14 +2,58 @@
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-  container: {
+    container: {
     flex: 1,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: '#FFFFFF',
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
+  },
+  //시작 화면 스타일
+  startContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#121212',
+    marginBottom: 48,
+    textAlign: 'center',
+  },
+  button: {
+    width: '100%',
+    height: 56,
+    backgroundColor: '#005EB8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  // ✨ 로그인 화면 하단 메뉴 스타일 추가
+  bottomNavContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  bottomNavLink: {
+    color: '#555555',
+    fontSize: 15,
+  },
+  bottomNavSeparator: {
+    color: '#D0D0D0',
+    marginHorizontal: 10,
   },
   title: {
     fontSize: 32,
