@@ -5,11 +5,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth'; // ✨ Firebase 인증 상태 리스너
 import { auth } from './src/config/firebaseConfig'; // ✨ Firebase auth 객체
 
-// 화면 컴포넌트들을 import 합니다.
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import SignUpScreen from './src/screens/SignUpScreen';
-import MainScreen from './src/screens/MainScreen'; // ✨ 메인 화면
+import MainScreen from './src/screens/MainScreen'; // 로그인 후 메인 화면
+import FindEmailScreen from './src/screens/FindEmailScreen';
+import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen'; 
 
 const Stack = createStackNavigator();
 
@@ -19,6 +20,8 @@ const AuthStack = () => (
     <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
     <Stack.Screen name="Login" component={LoginScreen} options={{ title: '로그인' }} />
     <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: '회원가입' }} />
+    <Stack.Screen name="FindEmail" component={FindEmailScreen} options={{ title: '이메일 찾기' }} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
   </Stack.Navigator>
 );
 

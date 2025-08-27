@@ -1,5 +1,5 @@
 // src/api/auth.js
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../config/firebaseConfig';
 
 export const signUp = async (email, password) => {
@@ -28,5 +28,15 @@ export const logout = async () => {
     return { error: null };
   } catch (error) {
     return { error };
+  }
+};
+
+export const resetPassword = async (email) => {
+  try {
+    auth.languageCode = 'ko';
+    await sendPasswordResetEmail(auth, email);
+    return { success: true, error: null };
+  } catch (error) {
+    return { success: false, error };
   }
 };
