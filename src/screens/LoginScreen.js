@@ -70,11 +70,11 @@ const LoginScreen = ({ navigation }) => {
             <Text style={styles.bottomNavLink}>회원가입</Text>
           </TouchableOpacity>
           <Text style={styles.bottomNavSeparator}>|</Text>
-          <TouchableOpacity onPress={() => { /* TODO: 이메일 찾기 */ }}>
+          <TouchableOpacity onPress={() => { navigation.navigate('FindEmail') }}>
             <Text style={styles.bottomNavLink}>이메일 찾기</Text>
           </TouchableOpacity>
           <Text style={styles.bottomNavSeparator}>|</Text>
-          <TouchableOpacity onPress={() => { /* TODO: 비밀번호 찾기 */ }}>
+          <TouchableOpacity onPress={() => { navigation.navigate('ForgotPassword') }}>
             <Text style={styles.bottomNavLink}>비밀번호 찾기</Text>
           </TouchableOpacity>
         </View>

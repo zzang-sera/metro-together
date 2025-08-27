@@ -58,15 +58,16 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#17171B',
-    marginBottom: 48,
+    color: '#121212',
+    marginBottom: 24, // ✨ 간격 살짝 조절
     textAlign: 'center',
   },
   inputGroup: {
     marginBottom: 24,
   },
   label: {
-    fontSize: 16,
+    fontWeight: 'bold',
+    fontSize: 22,
     color: '#17171B',
     marginBottom: 8,
   },
@@ -91,7 +92,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     paddingHorizontal: 16,
-    fontSize: 16,
+    fontSize: 22,
     color: '#17171B', // 입력하는 글자색도 검은색으로 명확하게
   },
   eyeIcon: {
@@ -106,6 +107,18 @@ export const styles = StyleSheet.create({
     color: '#C62828',
     fontSize: 14,
     marginTop: 6,
+  },
+
+  questionText: {
+    fontSize: 22, // ✨ 이 부분을 원하는 크기로 조절하세요! (예: 18)
+    color: '#495057',
+  },
+  description: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
+    marginBottom: 48,
+    lineHeight: 24,
   },
   button: {
     width: '100%',
