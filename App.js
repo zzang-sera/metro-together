@@ -5,12 +5,12 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { onAuthStateChanged } from 'firebase/auth'; // ✨ Firebase 인증 상태 리스너
 import { auth } from './src/config/firebaseConfig'; // ✨ Firebase auth 객체
 
-import WelcomeScreen from './src/screens/WelcomeScreen';
-import LoginScreen from './src/screens/LoginScreen';
-import SignUpScreen from './src/screens/SignUpScreen';
-import MainScreen from './src/screens/MainScreen'; // 로그인 후 메인 화면
-import FindEmailScreen from './src/screens/FindEmailScreen';
-import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen'; 
+import WelcomeScreen from './src/screens/auth/WelcomeScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+import SignUpScreen from './src/screens/auth/SignUpScreen';
+import FindEmailScreen from './src/screens/auth/FindEmailScreen';
+import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen'; 
+import MainScreen from './src/screens/main/MainScreen'; // 로그인 후 메인 화면
 
 const Stack = createStackNavigator();
 

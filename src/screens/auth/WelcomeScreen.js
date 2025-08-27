@@ -1,7 +1,7 @@
 // src/screens/WelcomeScreen.js
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { styles } from '../styles/authStyles'; // 기존 스타일 재사용
+import { styles } from '../../styles/authStyles'; // 기존 스타일 재사용
 
 const WelcomeScreen = ({ navigation }) => {
   return (

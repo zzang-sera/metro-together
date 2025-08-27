@@ -1,10 +1,10 @@
 // src/screens/LoginScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useAuthForm } from '../hook/useAuthForm'; // hook 폴더로 경로 수정
-import { signIn } from '../api/auth';
-import AuthInput from '../components/AuthInput';
-import { styles } from '../styles/authStyles';
+import { useAuthForm } from '../../hook/useAuthForm'; // hook 폴더로 경로 수정
+import { signIn } from '../../api/auth';
+import AuthInput from '../../components/AuthInput';
+import { styles } from '../../styles/authStyles';
 
 const LoginScreen = ({ navigation }) => {
   const {

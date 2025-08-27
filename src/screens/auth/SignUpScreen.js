@@ -1,11 +1,11 @@
 // src/screens/SignUpScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useAuthForm, SECURITY_QUESTION } from '../hook/useAuthForm';
-import { signUp } from '../api/auth';
-import { saveUserInfo } from '../api/user';
-import AuthInput from '../components/AuthInput';
-import { styles } from '../styles/authStyles';
+import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
+import { signUp } from '../../api/auth';
+import { saveUserInfo } from '../../api/user';
+import AuthInput from '../../components/AuthInput';
+import { styles } from '../../styles/authStyles';
 
 const SignUpScreen = ( ) => {
   // useAuthForm에서 필요한 모든 상태와 함수를 가져옵니다.

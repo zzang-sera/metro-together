@@ -1,9 +1,9 @@
 // src/screens/MainScreen.js
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { auth } from '../config/firebaseConfig'; // Firebase auth 객체
-import { logout } from '../api/auth'; // 로그아웃 API 함수
-import { styles } from '../styles/authStyles'; // 기존 스타일 재사용
+import { auth } from '../../config/firebaseConfig'; // Firebase auth 객체
+import { logout } from '../../api/auth'; // 로그아웃 API 함수
+import { styles } from '../../styles/authStyles'; // 기존 스타일 재사용
 
 const MainScreen = () => {
   const handleLogout = async () => {
