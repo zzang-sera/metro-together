@@ -1,10 +1,10 @@
 // src/screens/FindEmailScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useAuthForm, SECURITY_QUESTION } from '../hook/useAuthForm';
-import { findUserByInfo } from '../api/user'; 
-import AuthInput from '../components/AuthInput';
-import { styles } from '../styles/authStyles';
+import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
+import { findUserByInfo } from '../../api/user'; 
+import AuthInput from '../../components/AuthInput';
+import { styles } from '../../styles/authStyles';
 
 const FindEmailScreen = ({ navigation }) => {
   const {
