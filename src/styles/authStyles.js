@@ -120,17 +120,24 @@ export const styles = StyleSheet.create({
     marginBottom: 48,
     lineHeight: 24,
   },
-  button: {
+button: {
     width: '100%',
     height: 56,
-    backgroundColor: '#14CAC9',
+    backgroundColor: '#005EB8',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
     marginTop: 16,
   },
+  googleButton: {
+    backgroundColor: '#4285F4',
+  },
+  // ✨ 회원 탈퇴 버튼을 위한 스타일 추가
+  deleteButton: {
+    backgroundColor: '#D32F2F', // 위험을 나타내는 빨간색
+  },
   buttonText: {
-    color: '#17171B',
+    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },
