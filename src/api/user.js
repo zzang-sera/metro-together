@@ -1,6 +1,6 @@
 // src/api/user.js
 import { db } from '../config/firebaseConfig';
-import { collection, doc, setDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 
 /**
  * 회원가입 시 사용자 추가 정보(이름, 생년월일, 질문/답변)를 저장하는 함수
@@ -47,5 +47,15 @@ export const findUserByInfo = async (name, dob, answer) => {
   } catch (error) {
     console.error("이메일 찾기 오류:", error);
     return { email: null, error };
+  }
+};
+
+export const deleteUserInfo = async (uid) => {
+  try {
+    await deleteDoc(doc(db, 'users', uid));
+    return { success: true };
+  } catch (error) {
+    console.error("Firestore 사용자 정보 삭제 오류:", error);
+    return { success: false, error };
   }
 };
