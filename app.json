@@ -12,6 +12,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      "@react-native-google-signin/google-signin"
+    ],
     "ios": {
       "supportsTablet": true
     },
@@ -21,10 +24,17 @@
         "backgroundColor": "#ffffff"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "googleServicesFile": "./google-services.json",
+      "package": "com.hamkkenuri.metrotogether"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c3c5e2a7-bb90-45ab-a05a-abfc6375d923"
+      }
     }
   }
 }
