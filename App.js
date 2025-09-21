@@ -1,20 +1,20 @@
-// App.js
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { onAuthStateChanged } from 'firebase/auth'; // ✨ Firebase 인증 상태 리스너
-import { auth } from './src/config/firebaseConfig'; // ✨ Firebase auth 객체
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './src/config/firebaseConfig';
+import { useFonts } from 'expo-font'; // ✨ 1. useFonts 훅 import
+import { View, ActivityIndicator } from 'react-native'; // ✨ 2. 로딩 중 UI를 위한 컴포넌트 import
 
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import FindEmailScreen from './src/screens/auth/FindEmailScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen'; 
-import MainScreen from './src/screens/main/MainScreen'; // 로그인 후 메인 화면
+import MainScreen from './src/screens/main/MainScreen';
 
 const Stack = createStackNavigator();
 
-// 로그인/회원가입 등 인증 관련 화면 그룹
 const AuthStack = () => (
   <Stack.Navigator initialRouteName="Welcome">
     <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -25,7 +25,6 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// 로그인 후 사용할 앱의 메인 화면 그룹
 const AppStack = () => (
   <Stack.Navigator>
     <Stack.Screen name="Main" component={MainScreen} options={{ title: '메인' }} />
@@ -33,21 +32,36 @@ const AppStack = () => (
 );
 
 export default function App() {
-  // 사용자 로그인 상태를 저장할 state
   const [user, setUser] = useState(null);
 
-  // 앱이 처음 실행될 때 Firebase의 로그인 상태를 확인
+  // ✨ 3. Variable Fonts 로딩 훅 사용
+  const [fontsLoaded] = useFonts({
+    // 대표 이름으로 Variable Font 파일을 등록합니다.
+    'NotoSansKR': require('./assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
+    'NotoSans': require('./assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
+    'NotoSans-Italic': require('./assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
+  });
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user); // 로그인/로그아웃 시 user 상태 업데이트
+      setUser(user);
     });
-    return unsubscribe; // 앱이 꺼질 때 리스너 정리
+    return unsubscribe;
   }, []);
+
+  // ✨ 4. 폰트가 로딩되지 않았으면 로딩 화면을 보여줍니다.
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
-      {/* user 상태에 따라 보여줄 화면 그룹을 결정 */}
       {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
+
