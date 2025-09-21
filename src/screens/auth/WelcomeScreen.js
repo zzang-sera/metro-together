@@ -23,7 +23,7 @@ const WelcomeScreen = ({ navigation }) => {
       {/* 1. 상단 네비게이션 바 영역 */}
       <View style={styles.header}>
         <Image 
-          source={require('../../../assets/favicon.png')} // assets 폴더에 로고 이미지 경로를 맞춰주세요.
+          source={require('../../../assets/brand-icon.png')} // assets 폴더에 로고 이미지 경로를 맞춰주세요.
           style={styles.logoImage} // 이미지 스타일 적용
           resizeMode="contain" // 이미지 비율 유지하며 컨테이너에 맞춤
         />

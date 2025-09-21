@@ -110,15 +110,13 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  // ✨ 로고 이미지 스타일 추가
   logoImage: {
-    width: 200,   // 이미지의 너비를 더 키워봅니다. (예: 200)
-    height: 60,   // 이미지의 높이를 더 키워봅니다. (예: 60)
+    width: 300,   
+    height: 100,   
   },
-  // ✨ 2. 중앙 콘텐츠 (남는 공간을 모두 차지하여 하단 버튼을 밀어냄)
   content: {
-    flex: 1, // 이 부분이 핵심입니다.
-    justifyContent: 'center', // 세로 중앙 정렬
+    flex: 1,
+    justifyContent: 'center', 
     paddingHorizontal: 24,
   },
   descriptionText: {
