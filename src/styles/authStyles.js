@@ -1,8 +1,9 @@
 // src/styles/authStyles.js
+
 import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
-    container: {
+  container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
@@ -10,57 +11,6 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
-  },
-  //시작 화면 스타일
-  startContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#121212',
-    marginBottom: 48,
-    textAlign: 'center',
-  },
-  button: {
-    width: '100%',
-    height: 56,
-    backgroundColor: '#005EB8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  // ✨ 로그인 화면 하단 메뉴 스타일 추가
-  bottomNavContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  bottomNavLink: {
-    color: '#555555',
-    fontSize: 15,
-  },
-  bottomNavSeparator: {
-    color: '#D0D0D0',
-    marginHorizontal: 10,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#121212',
-    marginBottom: 24, // ✨ 간격 살짝 조절
-    textAlign: 'center',
   },
   inputGroup: {
     marginBottom: 24,
@@ -76,41 +26,37 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: 56,
-    // ✨ 1. 배경색을 약간 더 어둡게 변경하여 흰 배경과 구분되도록 함
-    backgroundColor: '#F0F0F0', 
+    backgroundColor: '#F0F0F0',
     borderRadius: 8,
-    borderWidth: 1.5, // 테두리 두께를 약간 더 두껍게
-    // ✨ 2. 테두리 색을 더 진한 회색으로 변경하여 명확하게 보이도록 함
-    borderColor: '#BDBDBD', 
+    borderWidth: 1.5,
+    borderColor: '#BDBDBD',
   },
-   inputFocused: {
-    borderColor: '#14CAC9', // 버튼과 동일한 파란색
+  inputFocused: {
+    borderColor: '#14CAC9',
     borderWidth: 2,
-    backgroundColor: '#FFFFFF', // 배경을 흰색으로 바꿔서 더 강조
+    backgroundColor: '#FFFFFF',
   },
   inputInner: {
     flex: 1,
     height: '100%',
     paddingHorizontal: 16,
     fontSize: 22,
-    color: '#17171B', // 입력하는 글자색도 검은색으로 명확하게
+    color: '#17171B',
   },
   eyeIcon: {
     padding: 12,
   },
   inputError: {
-    // ✨ 3. 오류 시 테두리 색도 더 선명한 빨간색으로 변경
-    borderColor: '#C62828', 
-    borderWidth: 2, // 오류 시 테두리를 더 두껍게
+    borderColor: '#C62828',
+    borderWidth: 2,
   },
   errorText: {
     color: '#C62828',
     fontSize: 14,
     marginTop: 6,
   },
-
   questionText: {
-    fontSize: 22, // ✨ 이 부분을 원하는 크기로 조절하세요! (예: 18)
+    fontSize: 22,
     color: '#495057',
   },
   description: {
@@ -120,7 +66,7 @@ export const styles = StyleSheet.create({
     marginBottom: 48,
     lineHeight: 24,
   },
-button: {
+  button: {
     width: '100%',
     height: 56,
     backgroundColor: '#005EB8',
@@ -129,16 +75,82 @@ button: {
     borderRadius: 8,
     marginTop: 16,
   },
-  googleButton: {
-    backgroundColor: '#4285F4',
-  },
-  // ✨ 회원 탈퇴 버튼을 위한 스타일 추가
-  deleteButton: {
-    backgroundColor: '#D32F2F', // 위험을 나타내는 빨간색
-  },
   buttonText: {
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  deleteButton: {
+    backgroundColor: '#D32F2F',
+  },
+  bottomNavContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 24,
+  },
+  bottomNavLink: {
+    color: '#555555',
+    fontSize: 15,
+  },
+  bottomNavSeparator: {
+    color: '#D0D0D0',
+    marginHorizontal: 10,
+  },
+
+  // --- WelcomeScreen.js 스타일 (비율 기반 레이아웃으로 수정) ---
+  startContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  // ✨ 1. 상단 네비게이션 바 공간
+  header: {
+    paddingVertical: 60,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  // ✨ 로고 이미지 스타일 추가
+  logoImage: {
+    width: 200,   // 이미지의 너비를 더 키워봅니다. (예: 200)
+    height: 60,   // 이미지의 높이를 더 키워봅니다. (예: 60)
+  },
+  // ✨ 2. 중앙 콘텐츠 (남는 공간을 모두 차지하여 하단 버튼을 밀어냄)
+  content: {
+    flex: 1, // 이 부분이 핵심입니다.
+    justifyContent: 'center', // 세로 중앙 정렬
+    paddingHorizontal: 24,
+  },
+  descriptionText: {
+    fontSize: 24,
+    textAlign: 'center',
+    lineHeight: 34,
+    fontWeight: 'bold', // 폰트 두께 조절
+    color: '#333',
+  },
+  // ✨ 3. 하단 버튼 컨테이너
+  buttonContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40, // 하단 여백
+  },
+  outlineButton: {
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 16, // 패딩 조절
+    borderRadius: 16,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    marginBottom: 12, // 버튼 간격 조절
+  },
+  outlineButtonText: {
+    color: '#424242',
+    fontSize: 16, // 폰트 크기 조절
+    fontWeight: 'bold',
+  },
+  footerText: {
+    textAlign: 'center',
+    color: '#757575',
+    fontSize: 12, // 폰트 크기 조절
+    marginTop: 16,
   },
 });
