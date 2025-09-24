@@ -23,9 +23,9 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(22),
+    fontSize: responsiveFontSize(20),
     fontFamily: 'NotoSansKR', // Variable Font 대표 이름
-    fontWeight: '500',      // Medium 두께
+    fontWeight: '700',      // Medium 두께
   },
 });
 

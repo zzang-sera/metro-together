@@ -37,9 +37,9 @@ export default function App() {
   // ✨ 3. Variable Fonts 로딩 훅 사용
   const [fontsLoaded] = useFonts({
     // 대표 이름으로 Variable Font 파일을 등록합니다.
-    'NotoSansKR': require('./assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
-    'NotoSans': require('./assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
-    'NotoSans-Italic': require('./assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
+    'NotoSansKR': require('./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
+    'NotoSans': require('./src/assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
+    'NotoSans-Italic': require('./src/assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
   });
 
   useEffect(() => {

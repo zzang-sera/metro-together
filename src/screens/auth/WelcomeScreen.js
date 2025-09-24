@@ -23,7 +23,7 @@ const WelcomeScreen = ({ navigation }) => {
       {/* 1. 상단 네비게이션 바 영역 */}
       <View style={styles.header}>
         <Image 
-          source={require('../../../assets/brand-img/logo.png')} // assets 폴더에 로고 이미지 경로를 맞춰주세요.
+          source={require('../../assets/brand-icon.png')} // assets 폴더에 로고 이미지 경로를 맞춰주세요.
           style={styles.logoImage} // 이미지 스타일 적용
           resizeMode="contain" // 이미지 비율 유지하며 컨테이너에 맞춤
         />
@@ -58,11 +58,11 @@ const WelcomeScreen = ({ navigation }) => {
           style={styles.outlineButton}
           onPress={handleGoogleLogin}
         >
-          <Text style={styles.outlineButtonText}>Google 계정으로 로그인</Text>
+          <Text style={styles.outlineButtonText}>Google로 시작하기</Text>
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
-          회원 가입 시 즐겨찾기, 챗봇 기능을 사용할 수 있습니다.
+          회원 가입 시 즐겨찾기와 챗봇 기능을 사용할 수 있습니다.
         </Text>
       </View>
     </SafeAreaView>
