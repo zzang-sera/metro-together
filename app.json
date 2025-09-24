@@ -29,6 +29,10 @@
       "edgeToEdgeEnabled": true,
       "googleServicesFile": "./google-services.json",
       "package": "com.hamkkenuri.metrotogether"
+      "softwareKeyboardLayoutMode": "resize",
+      "edgeToEdgeEnabled": true,
+      "googleServicesFile": "./google-services.json",
+      "package": "com.hamkkenuri.metrotogether"
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
