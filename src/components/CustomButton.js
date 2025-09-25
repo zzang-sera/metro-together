@@ -51,7 +51,7 @@ const styles = StyleSheet.create({
   },
   textBase: {
     fontFamily: 'NotoSansKR',
-    fontWeight: '500',
+    fontWeight: '700',
   },
   // --- Type: 'feature' (가까운 역 안내 등) ---
   featureButton: {
