@@ -35,7 +35,7 @@ export const styles = StyleSheet.create({
   descriptionText: {
     fontSize: responsiveFontSize(24),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     textAlign: 'center',
     lineHeight: responsiveFontSize(34),
     color: '#17171B',
@@ -50,7 +50,7 @@ export const styles = StyleSheet.create({
     color: '#17171B',
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     marginTop: 16,
   },
 
@@ -58,7 +58,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: responsiveFontSize(28),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#17171B',
     marginBottom: 32,
     textAlign: 'center',
@@ -73,7 +73,7 @@ export const styles = StyleSheet.create({
     color: '#17171B',
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
   },
   bottomNavSeparator: {
     color: '#1A1E22',
@@ -85,7 +85,7 @@ export const styles = StyleSheet.create({
     marginBottom: 24,
   },
   label: {
-    fontWeight: '700',
+    fontWeight: '500',
     fontFamily: 'NotoSansKR',
     fontSize: responsiveFontSize(16),
     color: '#17171B',
@@ -121,7 +121,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#17171B', 
   },
   eyeIcon: {
@@ -135,7 +135,7 @@ export const styles = StyleSheet.create({
     color: '#C62828',
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     marginTop: 8,
   },
   questionBox: {
@@ -157,7 +157,7 @@ export const styles = StyleSheet.create({
   questionText: {
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: '500',
     color: '#17171B',
   },
   
@@ -165,7 +165,7 @@ export const styles = StyleSheet.create({
   description: {
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700', // Medium 두께로 너무 무겁지 않게
+    fontWeight: '500', // Medium 두께로 너무 무겁지 않게
     color: '#1A1E22', // 기본 검정색으로 가독성 확보
     textAlign: 'center',
     lineHeight: responsiveFontSize(24), // 줄 간격 추가
