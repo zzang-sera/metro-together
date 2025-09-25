@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
   // --- 공용 스타일 ---
   container: {
     flex: 1,
-    backgroundColor: '#F9F9F9', // ✨ 배경색 적용
+    backgroundColor: '#F9F9F9',
   },
   scrollContainer: {
     flexGrow: 1,
@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
   // --- WelcomeScreen 전용 스타일 ---
   startContainer: {
     flex: 1,
-    backgroundColor: '#F9F9F9', // ✨ 배경색 적용
+    backgroundColor: '#F9F9F9',
   },
   header: {
     paddingVertical: 60,
@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: responsiveFontSize(34),
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
+    color: '#17171B',
     marginBottom: 40,
   },
   buttonContainer: {
@@ -47,8 +47,8 @@ export const styles = StyleSheet.create({
   },
   footerText: {
     textAlign: 'center',
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
-    fontSize: responsiveFontSize(14),
+    color: '#17171B',
+    fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     marginTop: 16,
@@ -59,7 +59,7 @@ export const styles = StyleSheet.create({
     fontSize: responsiveFontSize(28),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
+    color: '#17171B',
     marginBottom: 32,
     textAlign: 'center',
   },
@@ -70,17 +70,17 @@ export const styles = StyleSheet.create({
     marginTop: 24,
   },
   bottomNavLink: {
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
-    fontSize: responsiveFontSize(15),
+    color: '#17171B',
+    fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
   },
   bottomNavSeparator: {
-    color: '#1A1E22', // ✨ 기본 검정색 적용
+    color: '#1A1E22',
     marginHorizontal: 10,
   },
   
-  // --- AuthInput 컴포넌트 스타일 ---
+  // --- AuthInput 컴포넌트 스타일 (디자인 개선) ---
   inputGroup: {
     marginBottom: 24,
   },
@@ -88,23 +88,32 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'NotoSansKR',
     fontSize: responsiveFontSize(16),
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
-    marginBottom: 8,
+    color: '#17171B',
+    marginBottom: 12,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
     height: 56,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#BDBDBD',
+    borderColor: '#E0E0E0',
+    elevation: 2,
+    shadowColor: '#1A1E22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   inputFocused: {
-    borderColor: '#14CAC9', // ✨ 민트색 적용
-    borderWidth: 2,
     backgroundColor: '#FFFFFF',
+    borderColor: '#14CAC9', 
+    borderWidth: 2,
+    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   inputInner: {
     flex: 1,
@@ -113,7 +122,7 @@ export const styles = StyleSheet.create({
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#17171B', // ✨ 기본 텍스트 색상 적용
+    color: '#17171B', 
   },
   eyeIcon: {
     padding: 12,
@@ -127,7 +136,40 @@ export const styles = StyleSheet.create({
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    marginTop: 6,
+    marginTop: 8,
+  },
+  questionBox: {
+    width: '100%',
+    minHeight: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#1A1E22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  questionText: {
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#17171B',
+  },
+  
+  // ✨ description 스타일을 추가했습니다.
+  description: {
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700', // Medium 두께로 너무 무겁지 않게
+    color: '#1A1E22', // 기본 검정색으로 가독성 확보
+    textAlign: 'center',
+    lineHeight: responsiveFontSize(24), // 줄 간격 추가
+    marginBottom: 32, // 아래 요소와의 간격
   },
 });
 

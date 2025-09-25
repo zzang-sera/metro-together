@@ -108,7 +108,7 @@ const SignUpScreen = ( ) => {
         
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
-        <AuthInput label="이메일 주소" value={email} onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />
+        <AuthInput label="이메일 주소" value={email} placeholder="hamkke@example.com" onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />
         <AuthInput label="비밀번호" placeholder="8자리 이상 입력" value={password} onChangeText={handlePasswordChange} error={passwordError} isPassword={true} />
         <AuthInput label="비밀번호 확인" value={confirmPassword} onChangeText={handleConfirmPasswordChange} error={confirmPasswordError} isPassword={true} />
 

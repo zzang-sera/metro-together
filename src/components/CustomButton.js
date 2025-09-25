@@ -42,6 +42,12 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     marginBottom: 12,
     borderRadius: 40,
+    // ✨ 그림자 효과를 추가했습니다.
+    elevation: 2,
+    shadowColor: '#1A1E22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   textBase: {
     fontFamily: 'NotoSansKR',
@@ -52,7 +58,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#14CAC9',
   },
   featureButtonText: {
-    color: '#17171B', // ✨ WCAG 기준에 맞춰 검정 텍스트로 변경
+    color: '#17171B',
     fontSize: responsiveFontSize(20),
   },
   // --- Type: 'outline' (이메일로 시작하기 등) ---
@@ -74,7 +80,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   primaryButtonText: {
-    color: '#17171B', // ✨ WCAG 기준에 맞춰 검정 텍스트로 변경
+    color: '#17171B',
     fontSize: responsiveFontSize(18),
   },
 });

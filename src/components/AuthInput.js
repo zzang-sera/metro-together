@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { styles } from '../styles/authStyles';
-// 아이콘 라이브러리가 설치되어 있다는 가정하에 추가합니다.
-// npm install @expo/vector-icons
 import { Ionicons } from '@expo/vector-icons'; 
 
 const AuthInput = ({ label, value, onChangeText, error, isPassword, ...props }) => {
@@ -26,7 +24,8 @@ const AuthInput = ({ label, value, onChangeText, error, isPassword, ...props }) 
           secureTextEntry={isPassword && !showPassword}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholderTextColor="#A0A0A0"
+          // ✨ 대비가 높은 placeholder 색상을 적용했습니다.
+          placeholderTextColor="#6A6A6A"
           {...props}
         />
         {isPassword && (
@@ -41,3 +40,4 @@ const AuthInput = ({ label, value, onChangeText, error, isPassword, ...props }) 
 };
 
 export default AuthInput;
+

@@ -48,6 +48,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         <AuthInput
           label="이메일 주소"
           value={email}
+          placeholder="hamkke@example.com"
           onChangeText={handleEmailChange}
           error={emailError}
           keyboardType="email-address"
