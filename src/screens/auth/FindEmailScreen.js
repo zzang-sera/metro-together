@@ -5,6 +5,7 @@ import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
 import { findUserByInfo } from '../../api/user'; 
 import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
+import CustomButton from '../../components/CustomButton';
 
 const FindEmailScreen = ({ navigation }) => {
   const {
@@ -63,9 +64,11 @@ const FindEmailScreen = ({ navigation }) => {
         </View>
         <AuthInput label="질문에 대한 답변" value={securityAnswer} onChangeText={setSecurityAnswer} error={securityAnswerError} />
 
-        <TouchableOpacity style={styles.button} onPress={handleFindEmail}>
-          <Text style={styles.buttonText}>이메일 찾기</Text>
-        </TouchableOpacity>
+        <CustomButton
+          type="primary"
+          title="이메일 찾기"
+          onPress={handleFindEmail}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

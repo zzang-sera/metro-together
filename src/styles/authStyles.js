@@ -5,7 +5,7 @@ export const styles = StyleSheet.create({
   // --- 공용 스타일 ---
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9F9F9', // ✨ 배경색 적용
   },
   scrollContainer: {
     flexGrow: 1,
@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
   // --- WelcomeScreen 전용 스타일 ---
   startContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9F9F9', // ✨ 배경색 적용
   },
   header: {
     paddingVertical: 60,
@@ -38,34 +38,16 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     lineHeight: responsiveFontSize(34),
-    color: '#333',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
     marginBottom: 40,
   },
   buttonContainer: {
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
-  outlineButton: {
-    backgroundColor: '#FFFFFF',
-    width: widthPercentage(300),
-    height: widthPercentage(60),
-    borderRadius: 40,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'center',
-    marginBottom: 12,
-  },
-  outlineButtonText: {
-    color: '#424242',
-    fontSize: responsiveFontSize(20),
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-  },
   footerText: {
     textAlign: 'center',
-    color: '#757575',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
     fontSize: responsiveFontSize(14),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
@@ -77,24 +59,9 @@ export const styles = StyleSheet.create({
     fontSize: responsiveFontSize(28),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#121212',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
     marginBottom: 32,
     textAlign: 'center',
-  },
-  button: {
-    width: '100%',
-    height: 56,
-    backgroundColor: '#005EB8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginTop: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: responsiveFontSize(18),
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
   },
   bottomNavContainer: {
     flexDirection: 'row',
@@ -103,13 +70,13 @@ export const styles = StyleSheet.create({
     marginTop: 24,
   },
   bottomNavLink: {
-    color: '#555555',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
     fontSize: responsiveFontSize(15),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
   },
   bottomNavSeparator: {
-    color: '#D0D0D0',
+    color: '#1A1E22', // ✨ 기본 검정색 적용
     marginHorizontal: 10,
   },
   
@@ -121,7 +88,7 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'NotoSansKR',
     fontSize: responsiveFontSize(16),
-    color: '#17171B',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
     marginBottom: 8,
   },
   inputContainer: {
@@ -135,7 +102,7 @@ export const styles = StyleSheet.create({
     borderColor: '#BDBDBD',
   },
   inputFocused: {
-    borderColor: '#005EB8',
+    borderColor: '#14CAC9', // ✨ 민트색 적용
     borderWidth: 2,
     backgroundColor: '#FFFFFF',
   },
@@ -146,7 +113,7 @@ export const styles = StyleSheet.create({
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#17171B',
+    color: '#17171B', // ✨ 기본 텍스트 색상 적용
   },
   eyeIcon: {
     padding: 12,
@@ -157,9 +124,9 @@ export const styles = StyleSheet.create({
   },
   errorText: {
     color: '#C62828',
-    fontSize: responsiveFontSize(16), 
+    fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700', 
+    fontWeight: '700',
     marginTop: 6,
   },
 });

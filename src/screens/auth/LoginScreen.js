@@ -1,13 +1,13 @@
-// src/screens/LoginScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
-import { useAuthForm } from '../../hook/useAuthForm'; // hook 폴더로 경로 수정
+import { useAuthForm } from '../../hook/useAuthForm';
 import { signIn } from '../../api/auth';
 import AuthInput from '../../components/AuthInput';
+import CustomButton from '../../components/CustomButton'; 
 import { styles } from '../../styles/authStyles';
 
 const LoginScreen = ({ navigation }) => {
-  const {
+  const { 
     email,
     password,
     emailError,
@@ -16,9 +16,9 @@ const LoginScreen = ({ navigation }) => {
     setPassword,
     setEmailError,
     setPasswordError,
-  } = useAuthForm();
-
-  const handleLogin = async () => {
+   } = useAuthForm();
+   
+  const handleLogin = async () => { 
     if (!email || !password) {
       if (!email) setEmailError('이메일을 입력해주세요.');
       if (!password) setPasswordError('비밀번호를 입력해주세요.');
@@ -28,15 +28,10 @@ const LoginScreen = ({ navigation }) => {
     const { user, error } = await signIn(email, password);
 
     if (error) {
-      // ✨ 1. 디버깅을 위해 실제 오류를 콘솔에 출력합니다.
       console.error("로그인 시도 중 상세 오류:", error); 
-      
-      // 2. 사용자에게는 간단한 오류 메시지를 보여줍니다.
       Alert.alert('로그인 실패', '이메일 또는 비밀번호를 다시 확인해주세요.');
     } else {
       console.log('로그인 성공!', user.email);
-      // TODO: 로그인 성공 후 메인 화면으로 이동
-      // navigation.navigate('Main');
     }
   };
 
@@ -61,9 +56,11 @@ const LoginScreen = ({ navigation }) => {
           isPassword={true}
         />
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>로그인</Text>
-        </TouchableOpacity>
+        <CustomButton
+          type="primary"
+          title="로그인"
+          onPress={handleLogin}
+        />
 
         <View style={styles.bottomNavContainer}>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -84,3 +81,4 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
+

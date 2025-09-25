@@ -5,6 +5,7 @@ import { useAuthForm } from '../../hook/useAuthForm';
 import { resetPassword } from '../../api/auth';
 import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
+import CustomButton from '../../components/CustomButton';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const {
@@ -53,9 +54,11 @@ const ForgotPasswordScreen = ({ navigation }) => {
           autoCapitalize="none"
         />
 
-        <TouchableOpacity style={styles.button} onPress={handlePasswordReset}>
-          <Text style={styles.buttonText}>재설정 이메일 보내기</Text>
-        </TouchableOpacity>
+        <CustomButton
+          type="primary"
+          title="재설정 이메일 보내기"
+          onPress={handlePasswordReset}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );

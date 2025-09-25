@@ -6,6 +6,7 @@ import { signUp } from '../../api/auth';
 import { saveUserInfo } from '../../api/user';
 import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
+import CustomButton from '../../components/CustomButton';
 
 const SignUpScreen = ( ) => {
   // useAuthForm에서 필요한 모든 상태와 함수를 가져옵니다.
@@ -117,9 +118,11 @@ const SignUpScreen = ( ) => {
         </View>
         <AuthInput label="질문에 대한 답변" value={securityAnswer} onChangeText={setSecurityAnswer} error={securityAnswerError} />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-          <Text style={styles.buttonText}>가입하기</Text>
-        </TouchableOpacity>
+        <CustomButton
+          type="primary"
+          title="회원가입"
+          onPress={handleSignUp}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
