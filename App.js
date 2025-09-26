@@ -8,6 +8,8 @@ import { auth } from './src/config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { useNavigation } from '@react-navigation/native';
+
 
 // --- 화면 컴포넌트들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
@@ -16,13 +18,14 @@ import SignUpScreen from './src/screens/auth/SignUpScreen';
 import FindEmailScreen from './src/screens/auth/FindEmailScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
 import MainScreen from './src/screens/main/MainScreen';
-import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScreen';
 import MyPageScreen from './src/screens/auth/MyPageScreen';
+import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScreen';
+import SearchStationScreen from './src/screens/searchstation/SearchStationScreen';
 
-const SearchScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>검색 화면</Text></View>;
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
 
 // --- 공통 탭 스크린 옵션 ---
 const commonTabOptions = {
@@ -34,50 +37,64 @@ const commonTabOptions = {
   tabBarInactiveTintColor: 'gray',
 };
 
+
 // --- 비로그인 사용자를 위한 탭 네비게이터 ---
-const GuestTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      ...commonTabOptions,
-      tabBarIcon: ({ focused, color, size }) => {
-        let iconName;
-        if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-        else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
-        else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
-        else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-        return <Ionicons name={iconName} size={size} color={color} />;
-      },
-    })}
-  >
-    <Tab.Screen
-      name="홈"
-      component={View}
-      listeners={({ navigation }) => ({
-        tabPress: (e) => { e.preventDefault(); navigation.navigate('Welcome'); },
-      })}
-    />
-    <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
-    <Tab.Screen name="검색" component={SearchScreen} options={{ title: '역 검색' }} />
-    <Tab.Screen
-      name="마이"
-      component={View}
-      // ✨ '마이' 탭을 눌렀을 때, 먼저 안내 메시지를 띄우도록 수정했습니다.
-      listeners={({ navigation }) => ({
-        tabPress: (e) => {
-          e.preventDefault();
-          Alert.alert(
-            '로그인 필요',
-            '마이페이지를 보려면 로그인이 필요합니다.\n로그인 화면으로 이동하시겠습니까?',
-            [
-              { text: '취소', style: 'cancel' },
-              { text: '확인', onPress: () => navigation.navigate('Welcome') },
-            ]
-          );
+const GuestTabs = () => {
+  const navigation = useNavigation();
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        ...commonTabOptions,
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+          else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
+          return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
-    />
-  </Tab.Navigator>
-);
+    >
+      <Tab.Screen
+        name="홈"
+        component={MainScreen}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            Alert.alert(
+              '로그인 필요',
+              '서비스를 이용하려면 로그인이 필요합니다.\n로그인 화면으로 이동하시겠습니까?',
+              [
+                { text: '취소', style: 'cancel' },
+                { text: '확인', onPress: () => navigation.navigate('Welcome') },
+              ]
+            );
+          },
+        }}
+      />
+      <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
+      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색' }} />
+      <Tab.Screen
+        name="마이"
+        component={MyPageScreen}
+        listeners={{
+          tabPress: (e) => {
+            e.preventDefault();
+            Alert.alert(
+              '로그인 필요',
+              '마이페이지를 보려면 로그인이 필요합니다.\n로그인 화면으로 이동하시겠습니까?',
+              [
+                { text: '취소', style: 'cancel' },
+                { text: '확인', onPress: () => navigation.navigate('Welcome') },
+              ]
+            );
+          },
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+
 
 // --- 로그인한 사용자를 위한 탭 네비게이터 ---
 const UserTabs = () => (
@@ -96,10 +113,11 @@ const UserTabs = () => (
   >
     <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
     <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
-    <Tab.Screen name="검색" component={SearchScreen} options={{ title: '역 검색' }} />
+    <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색' }} />
     <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이페이지' }} />
   </Tab.Navigator>
 );
+
 
 // --- 화면 그룹 (Stacks) ---
 const AuthStack = () => (
@@ -113,16 +131,18 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
+
 const AppStack = () => <UserTabs />;
+
 
 export default function App() {
   const [user, setUser] = useState(null);
-  // ✨ 1. 빠뜨렸던 폰트를 다시 추가하고, 경로를 올바르게 수정했습니다.
   const [fontsLoaded] = useFonts({
     'NotoSansKR': require('./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
     'NotoSans': require('./src/assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
     'NotoSans-Italic': require('./src/assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
   });
+
 
   useEffect(() => {
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -131,9 +151,11 @@ export default function App() {
     return unsubscribe;
   }, []);
 
+
   if (!fontsLoaded) {
     return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" /></View>;
   }
+
 
   return (
     <NavigationContainer>
@@ -141,4 +163,8 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+
+
+
 
