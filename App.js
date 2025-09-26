@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+
 
 // --- 인증 화면들 ---
 // 아래 경로들은 실제 파일 위치에 맞게 확인해주세요.
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './src/config/firebaseConfig';
-import { useFonts } from 'expo-font'; // ✨ 1. useFonts 훅 import
-import { View, ActivityIndicator } from 'react-native'; // ✨ 2. 로딩 중 UI를 위한 컴포넌트 import
-
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
@@ -28,8 +25,6 @@ import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScre
 const SearchScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>검색 화면</Text></View>;
 const MyScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>마이 페이지</Text></View>;
 
-import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen'; 
-import MainScreen from './src/screens/main/MainScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
