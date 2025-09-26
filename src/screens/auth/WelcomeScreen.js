@@ -5,16 +5,13 @@ import { signInWithGoogle } from '../../api/auth';
 import CustomButton from '../../components/CustomButton';
 
 const WelcomeScreen = ({ navigation }) => {
-  const handleGoogleLogin = async () => { 
+  const handleGoogleLogin = async () => {
     const { user, error } = await signInWithGoogle();
     if (error) {
       Alert.alert('로그인 오류', '구글 로그인에 실패했습니다. 다시 시도해주세요.');
     }
   };
-  const handleFeaturePress = (featureName) => { 
-    Alert.alert('알림', `${featureName} 기능은 현재 준비 중입니다.`);
-  };
-
+  
   return (
     <SafeAreaView style={styles.startContainer}>
       <View style={styles.header}>
@@ -35,12 +32,14 @@ const WelcomeScreen = ({ navigation }) => {
         <CustomButton
           type="feature"
           title="가까운 역 안내"
-          onPress={() => handleFeaturePress('가까운 역 안내')}
+          // ✨ 'GuestTabs'로 이동하며, '안내' 탭을 기본으로 보여주도록 설정합니다.
+          onPress={() => navigation.navigate('GuestTabs', { screen: '안내' })}
         />
         <CustomButton
           type="feature"
           title="원하는 역 검색"
-          onPress={() => handleFeaturePress('원하는 역 검색')}
+          // ✨ 'GuestTabs'로 이동하며, '검색' 탭을 기본으로 보여주도록 설정합니다.
+          onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
         />
         <CustomButton
           type="outline"
