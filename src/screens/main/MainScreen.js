@@ -1,76 +1,55 @@
-// src/screens/main/MainScreen.js
 import React from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+// ✨ 1. StyleSheet와 반응형 유틸리티 import는 이제 필요 없습니다.
+import { View, SafeAreaView, Text, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+// ✨ 2. 새로 만드신 mainStyles.js 파일을 import 합니다.
+import { mainStyles } from '../../styles/mainStyles';
+import CustomButton from '../../components/CustomButton';
 import { auth } from '../../config/firebaseConfig';
-import { logout, deleteAccount } from '../../api/auth';
-import { deleteUserInfo } from '../../api/user';
-import { styles } from '../../styles/authStyles';
 
 const MainScreen = () => {
-  const handleLogout = async () => {
-    await logout();
-  };
+  const navigation = useNavigation();
 
-  const handleDeleteAccount = () => {
-    Alert.alert(
-      "회원 탈퇴",
-      "정말로 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.",
-      [
-        {
-          text: "취소",
-          style: "cancel"
-        },
-        { 
-          text: "확인", 
-          onPress: async () => {
-            const uid = auth.currentUser?.uid;
-            if (uid) {
-              // --- 1. Firestore에서 추가 정보 먼저 삭제 ---
-              const userInfoResult = await deleteUserInfo(uid);
-              if (!userInfoResult.success) {
-                // Firestore 삭제 실패 시 여기서 중단하고 오류 표시
-                console.error("Firestore 정보 삭제 실패:", userInfoResult.error);
-                Alert.alert("오류", "회원 정보(이름, 생년월일 등) 삭제 중 문제가 발생했습니다.");
-                return; // 여기서 함수 종료
-              }
-
-              // --- 2. Firebase Auth에서 계정 삭제 ---
-              const accountResult = await deleteAccount();
-              if (!accountResult.success) {
-                // Auth 계정 삭제 실패 시 오류 표시
-                console.error("Auth 계정 삭제 실패:", accountResult.error);
-                Alert.alert("오류", "계정 삭제 중 문제가 발생했습니다. 다시 로그인 후 시도해주세요.");
-                return; // 여기서 함수 종료
-              }
-
-              // --- 모든 과정 성공 ---
-              Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다.");
-            }
-          },
-          style: "destructive"
-        }
-      ]
-    );
+  const handleFeaturePress = (featureName) => {
+    Alert.alert('알림', `${featureName} 기능은 현재 준비 중입니다.`);
   };
 
   return (
-    <View style={styles.startContainer}>
-      <Text style={styles.title}>
-        {auth.currentUser?.email}님,{"\n"}환영합니다!
-      </Text>
-
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>로그아웃</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity 
-        style={[styles.button, styles.deleteButton]}
-        onPress={handleDeleteAccount}
-      >
-        <Text style={styles.buttonText}>회원 탈퇴</Text>
-      </TouchableOpacity>
-    </View>
+    // ✨ 3. mainStyles를 사용하도록 적용합니다.
+    <SafeAreaView style={mainStyles.container}>
+      <View style={mainStyles.header}>
+        <Text style={mainStyles.greetingText}>
+          {auth.currentUser?.email}님,{"\n"}환영합니다!
+        </Text>
+      </View>
+      
+      <View style={mainStyles.buttonContainer}>
+        <CustomButton
+          type="feature"
+          title="가까운 역 안내"
+          onPress={() => navigation.navigate('안내')}
+        />
+        <CustomButton
+          type="feature"
+          title="원하는 역 검색"
+          onPress={() => navigation.navigate('검색')}
+        />
+        <CustomButton
+          type="outline"
+          title="즐겨찾기"
+          onPress={() => handleFeaturePress('즐겨찾기')}
+        />
+        <CustomButton
+          type="outline"
+          title="챗봇"
+          onPress={() => handleFeaturePress('챗봇')}
+        />
+      </View>
+    </SafeAreaView>
   );
 };
 
+// ✨ 4. 파일 내부에 있던 스타일 정의를 모두 삭제하여 코드를 깔끔하게 정리했습니다.
+
 export default MainScreen;
+

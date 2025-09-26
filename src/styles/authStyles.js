@@ -1,46 +1,68 @@
-// src/styles/authStyles.js
 import { StyleSheet } from 'react-native';
+import { widthPercentage, responsiveFontSize } from '../utils/responsive';
 
 export const styles = StyleSheet.create({
-    container: {
+  // --- 공용 스타일 ---
+  container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F9F9F9',
   },
   scrollContainer: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
   },
-  //시작 화면 스타일
+  // --- WelcomeScreen 전용 스타일 ---
   startContainer: {
     flex: 1,
+    backgroundColor: '#F9F9F9',
+  },
+  header: {
+    paddingVertical: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 24,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#121212',
-    marginBottom: 48,
+  logoImage: {
+    width: widthPercentage(300),
+    height: widthPercentage(100),
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  descriptionText: {
+    fontSize: responsiveFontSize(24),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
     textAlign: 'center',
+    lineHeight: responsiveFontSize(34),
+    color: '#17171B',
+    marginBottom: 40,
   },
-  button: {
-    width: '100%',
-    height: 56,
-    backgroundColor: '#005EB8',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
+  buttonContainer: {
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  footerText: {
+    textAlign: 'center',
+    color: '#17171B',
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
     marginTop: 16,
   },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+
+  // --- 로그인/회원가입 등 Form 화면 스타일 ---
+  title: {
+    fontSize: responsiveFontSize(28),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#17171B',
+    marginBottom: 32,
+    textAlign: 'center',
   },
-  // ✨ 로그인 화면 하단 메뉴 스타일 추가
   bottomNavContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
@@ -48,97 +70,106 @@ export const styles = StyleSheet.create({
     marginTop: 24,
   },
   bottomNavLink: {
-    color: '#555555',
-    fontSize: 15,
+    color: '#17171B',
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
   },
   bottomNavSeparator: {
-    color: '#D0D0D0',
+    color: '#1A1E22',
     marginHorizontal: 10,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#121212',
-    marginBottom: 24, // ✨ 간격 살짝 조절
-    textAlign: 'center',
-  },
+  
+  // --- AuthInput 컴포넌트 스타일 (디자인 개선) ---
   inputGroup: {
     marginBottom: 24,
   },
   label: {
-    fontWeight: 'bold',
-    fontSize: 22,
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR',
+    fontSize: responsiveFontSize(16),
     color: '#17171B',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     width: '100%',
     height: 56,
-    // ✨ 1. 배경색을 약간 더 어둡게 변경하여 흰 배경과 구분되도록 함
-    backgroundColor: '#F0F0F0', 
-    borderRadius: 8,
-    borderWidth: 1.5, // 테두리 두께를 약간 더 두껍게
-    // ✨ 2. 테두리 색을 더 진한 회색으로 변경하여 명확하게 보이도록 함
-    borderColor: '#BDBDBD', 
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    elevation: 2,
+    shadowColor: '#1A1E22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-   inputFocused: {
-    borderColor: '#14CAC9', // 버튼과 동일한 파란색
+  inputFocused: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#14CAC9', 
     borderWidth: 2,
-    backgroundColor: '#FFFFFF', // 배경을 흰색으로 바꿔서 더 강조
+    elevation: 5,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
   },
   inputInner: {
     flex: 1,
     height: '100%',
     paddingHorizontal: 16,
-    fontSize: 22,
-    color: '#17171B', // 입력하는 글자색도 검은색으로 명확하게
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#17171B', 
   },
   eyeIcon: {
     padding: 12,
   },
   inputError: {
-    // ✨ 3. 오류 시 테두리 색도 더 선명한 빨간색으로 변경
-    borderColor: '#C62828', 
-    borderWidth: 2, // 오류 시 테두리를 더 두껍게
+    borderColor: '#C62828',
+    borderWidth: 2,
   },
   errorText: {
     color: '#C62828',
-    fontSize: 14,
-    marginTop: 6,
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    marginTop: 8,
   },
-
-  questionText: {
-    fontSize: 22, // ✨ 이 부분을 원하는 크기로 조절하세요! (예: 18)
-    color: '#495057',
-  },
-  description: {
-    fontSize: 16,
-    color: '#666666',
-    textAlign: 'center',
-    marginBottom: 48,
-    lineHeight: 24,
-  },
-button: {
+  questionBox: {
     width: '100%',
-    height: 56,
-    backgroundColor: '#005EB8',
+    minHeight: 56,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
     justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginTop: 16,
+    elevation: 2,
+    shadowColor: '#1A1E22',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  googleButton: {
-    backgroundColor: '#4285F4',
+  questionText: {
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#17171B',
   },
-  // ✨ 회원 탈퇴 버튼을 위한 스타일 추가
-  deleteButton: {
-    backgroundColor: '#D32F2F', // 위험을 나타내는 빨간색
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
+  
+  // ✨ description 스타일을 추가했습니다.
+  description: {
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700', // Medium 두께로 너무 무겁지 않게
+    color: '#1A1E22', // 기본 검정색으로 가독성 확보
+    textAlign: 'center',
+    lineHeight: responsiveFontSize(24), // 줄 간격 추가
+    marginBottom: 32, // 아래 요소와의 간격
   },
 });
+

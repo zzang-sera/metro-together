@@ -1,53 +1,43 @@
-// src/components/AuthInput.js
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 import { styles } from '../styles/authStyles';
+import { Ionicons } from '@expo/vector-icons'; 
 
-const AuthInput = ({
-  label,
-  placeholder,
-  value,
-  onChangeText,
-  error,
-  isPassword = false,
-  ...props
-}) => {
-  const [isSecure, setIsSecure] = useState(isPassword);
-  // ✨ 1. '포커스' 상태를 기억할 변수 추가
+const AuthInput = ({ label, value, onChangeText, error, isPassword, ...props }) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View style={styles.inputGroup}>
       <Text style={styles.label}>{label}</Text>
-      {/* ✨ 2. 포커스 상태에 따라 스타일을 동적으로 적용 */}
-      <View style={[
-          styles.inputContainer,
-          error ? styles.inputError : null,
-          isFocused ? styles.inputFocused : null 
-        ]}>
+      <View 
+        style={[
+          styles.inputContainer, 
+          isFocused && styles.inputFocused,
+          error && styles.inputError
+        ]}
+      >
         <TextInput
           style={styles.inputInner}
-          placeholder={placeholder}
-          placeholderTextColor="#888888"
           value={value}
           onChangeText={onChangeText}
-          secureTextEntry={isSecure}
-          // ✨ 3. 입력창이 클릭되면 isFocused를 true로,
+          secureTextEntry={isPassword && !showPassword}
           onFocus={() => setIsFocused(true)}
-          // ✨ 4. 다른 곳을 클릭해서 포커스가 해제되면 false로 변경
           onBlur={() => setIsFocused(false)}
+          // ✨ 대비가 높은 placeholder 색상을 적용했습니다.
+          placeholderTextColor="#6A6A6A"
           {...props}
         />
         {isPassword && (
-          <TouchableOpacity onPress={() => setIsSecure(!isSecure)} style={styles.eyeIcon}>
-            <Feather name={isSecure ? "eye-off" : "eye"} size={22} color="#666" />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <Ionicons name={showPassword ? "eye-off" : "eye"} size={24} color="#888" />
           </TouchableOpacity>
         )}
       </View>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
 
 export default AuthInput;
+

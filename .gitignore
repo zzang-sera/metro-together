@@ -39,3 +39,6 @@ yarn-error.*
 
 # Secret files for all environments
 .env
+
+/android
+/ios

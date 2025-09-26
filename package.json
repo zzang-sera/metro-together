@@ -17,6 +17,7 @@
     "@react-navigation/stack": "^7.4.8",
     "expo": "53.0.22",
     "expo-dev-client": "~5.2.4",
+    "expo-font": "~13.3.2",
     "expo-location": "~18.1.6",
     "expo-status-bar": "~2.2.3",
     "firebase": "^12.1.0",

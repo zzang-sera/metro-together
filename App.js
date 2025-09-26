@@ -1,61 +1,107 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ActivityIndicator, Alert } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-// --- 인증 화면들 ---
-// 아래 경로들은 실제 파일 위치에 맞게 확인해주세요.
+// --- 화면 컴포넌트들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
 import FindEmailScreen from './src/screens/auth/FindEmailScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
-
-// --- 메인 앱 화면들 ---
 import MainScreen from './src/screens/main/MainScreen';
 import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScreen';
+import MyPageScreen from './src/screens/auth/MyPageScreen';
 
-// "검색", "마이" 탭을 위한 임시 화면
 const SearchScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>검색 화면</Text></View>;
-const MyScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>마이 페이지</Text></View>;
-
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// 1. 하단 탭 네비게이터를 별도의 컴포넌트로 생성합니다.
-const MainTabs = () => (
+// --- 공통 탭 스크린 옵션 ---
+const commonTabOptions = {
+  headerShown: true,
+  headerTitleAlign: 'center',
+  headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
+  headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
+  tabBarActiveTintColor: '#14CAC9',
+  tabBarInactiveTintColor: 'gray',
+};
+
+// --- 비로그인 사용자를 위한 탭 네비게이터 ---
+const GuestTabs = () => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
+      ...commonTabOptions,
       tabBarIcon: ({ focused, color, size }) => {
         let iconName;
-        if (route.name === '홈') {
-          iconName = focused ? 'home' : 'home-outline';
-        } else if (route.name === '안내') {
-          iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
-        } else if (route.name === '검색') {
-          iconName = focused ? 'search' : 'search-outline';
-        } else if (route.name === '마이') {
-          iconName = focused ? 'person' : 'person-outline';
-        }
+        if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
+        else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+        else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
+        else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
         return <Ionicons name={iconName} size={size} color={color} />;
       },
-      tabBarActiveTintColor: '#00B8D4', // 활성 탭 아이콘 및 텍스트 색상
-      tabBarInactiveTintColor: 'gray',   // 비활성 탭 아이콘 및 텍스트 색상
     })}
   >
-    <Tab.Screen name="홈" component={MainScreen} />
-    <Tab.Screen name="안내" component={NearbyStationsScreen} />
-    <Tab.Screen name="검색" component={SearchScreen} />
-    <Tab.Screen name="마이" component={MyScreen} />
+    <Tab.Screen
+      name="홈"
+      component={View}
+      listeners={({ navigation }) => ({
+        tabPress: (e) => { e.preventDefault(); navigation.navigate('Welcome'); },
+      })}
+    />
+    <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
+    <Tab.Screen name="검색" component={SearchScreen} options={{ title: '역 검색' }} />
+    <Tab.Screen
+      name="마이"
+      component={View}
+      // ✨ '마이' 탭을 눌렀을 때, 먼저 안내 메시지를 띄우도록 수정했습니다.
+      listeners={({ navigation }) => ({
+        tabPress: (e) => {
+          e.preventDefault();
+          Alert.alert(
+            '로그인 필요',
+            '마이페이지를 보려면 로그인이 필요합니다.\n로그인 화면으로 이동하시겠습니까?',
+            [
+              { text: '취소', style: 'cancel' },
+              { text: '확인', onPress: () => navigation.navigate('Welcome') },
+            ]
+          );
+        },
+      })}
+    />
   </Tab.Navigator>
 );
 
-// 2. 로그인 전 인증 관련 화면 그룹
+// --- 로그인한 사용자를 위한 탭 네비게이터 ---
+const UserTabs = () => (
+  <Tab.Navigator
+    screenOptions={({ route }) => ({
+      ...commonTabOptions,
+      tabBarIcon: ({ focused, color, size }) => {
+        let iconName;
+        if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
+        else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+        else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
+        else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
+        return <Ionicons name={iconName} size={size} color={color} />;
+      },
+    })}
+  >
+    <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
+    <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
+    <Tab.Screen name="검색" component={SearchScreen} options={{ title: '역 검색' }} />
+    <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이페이지' }} />
+  </Tab.Navigator>
+);
+
+// --- 화면 그룹 (Stacks) ---
 const AuthStack = () => (
   <Stack.Navigator initialRouteName="Welcome">
     <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -63,37 +109,34 @@ const AuthStack = () => (
     <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: '회원가입' }} />
     <Stack.Screen name="FindEmail" component={FindEmailScreen} options={{ title: '이메일 찾기' }} />
     <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
+    <Stack.Screen name="GuestTabs" component={GuestTabs} options={{ headerShown: false }} />
   </Stack.Navigator>
 );
 
-// 3. 로그인 후 사용할 메인 앱 그룹 (StackNavigator 구조 유지)
-const AppStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen 
-      name="MainTabScreen" 
-      component={MainTabs} 
-      options={{ headerShown: false }} // 탭 화면 자체의 헤더는 숨기고, 각 탭이 자체 헤더를 갖도록 합니다.
-    />
-    {/* 여기에 나중에 탭 바가 없는 다른 화면들(ex: 설정 페이지)을 추가할 수 있습니다. */}
-    {/* 예시: <Stack.Screen name="Settings" component={SettingsScreen} /> */}
-  </Stack.Navigator>
-);
+const AppStack = () => <UserTabs />;
 
-// 4. 앱의 최상위 컴포넌트
 export default function App() {
   const [user, setUser] = useState(null);
+  // ✨ 1. 빠뜨렸던 폰트를 다시 추가하고, 경로를 올바르게 수정했습니다.
+  const [fontsLoaded] = useFonts({
+    'NotoSansKR': require('./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
+    'NotoSans': require('./src/assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
+    'NotoSans-Italic': require('./src/assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
+  });
 
-  // 앱이 처음 실행될 때 Firebase의 로그인 상태를 실시간으로 확인
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user); // 로그인/로그아웃 시 user 상태 업데이트
-    });
-    return unsubscribe; // 컴포넌트가 사라질 때 리스너 정리
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    if (webClientId) GoogleSignin.configure({ webClientId });
+    const unsubscribe = onAuthStateChanged(auth, (user) => setUser(user));
+    return unsubscribe;
   }, []);
+
+  if (!fontsLoaded) {
+    return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><ActivityIndicator size="large" /></View>;
+  }
 
   return (
     <NavigationContainer>
-      {/* user 로그인 상태에 따라 보여줄 화면 그룹을 결정 */}
       {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
   );

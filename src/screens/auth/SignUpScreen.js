@@ -6,6 +6,7 @@ import { signUp } from '../../api/auth';
 import { saveUserInfo } from '../../api/user';
 import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
+import CustomButton from '../../components/CustomButton';
 
 const SignUpScreen = ( ) => {
   // useAuthForm에서 필요한 모든 상태와 함수를 가져옵니다.
@@ -107,7 +108,7 @@ const SignUpScreen = ( ) => {
         
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
-        <AuthInput label="이메일 주소" value={email} onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />
+        <AuthInput label="이메일 주소" value={email} placeholder="hamkke@example.com" onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />
         <AuthInput label="비밀번호" placeholder="8자리 이상 입력" value={password} onChangeText={handlePasswordChange} error={passwordError} isPassword={true} />
         <AuthInput label="비밀번호 확인" value={confirmPassword} onChangeText={handleConfirmPasswordChange} error={confirmPasswordError} isPassword={true} />
 
@@ -117,9 +118,11 @@ const SignUpScreen = ( ) => {
         </View>
         <AuthInput label="질문에 대한 답변" value={securityAnswer} onChangeText={setSecurityAnswer} error={securityAnswerError} />
 
-        <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-          <Text style={styles.buttonText}>가입하기</Text>
-        </TouchableOpacity>
+        <CustomButton
+          type="primary"
+          title="회원가입"
+          onPress={handleSignUp}
+        />
       </ScrollView>
     </KeyboardAvoidingView>
   );
