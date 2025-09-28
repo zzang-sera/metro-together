@@ -1,8 +1,7 @@
+// src/screens/main/MainScreen.js
 import React from 'react';
-// ✨ 1. StyleSheet와 반응형 유틸리티 import는 이제 필요 없습니다.
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-// ✨ 2. 새로 만드신 mainStyles.js 파일을 import 합니다.
 import { mainStyles } from '../../styles/mainStyles';
 import CustomButton from '../../components/CustomButton';
 import { auth } from '../../config/firebaseConfig';
@@ -10,29 +9,50 @@ import { auth } from '../../config/firebaseConfig';
 const MainScreen = () => {
   const navigation = useNavigation();
 
+  const goTab = (name) => {
+    // 같은 TabNavigator 안이므로 바로 이름으로 이동
+    navigation.navigate(name);
+    // 만약 이 화면이 탭 바깥에서 렌더링된다면 아래 주석처럼 사용
+    // navigation.navigate('Tabs', { screen: name });
+  };
+
   const handleFeaturePress = (featureName) => {
     Alert.alert('알림', `${featureName} 기능은 현재 준비 중입니다.`);
   };
 
+  const handleChatbotPress = () => {
+    if (auth.currentUser) {
+      goTab('챗봇');
+    } else {
+      Alert.alert(
+        '로그인 필요',
+        '챗봇은 로그인 후 이용할 수 있습니다.\n로그인 화면으로 이동할까요?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '확인', onPress: () => navigation.navigate('Welcome') },
+        ]
+      );
+    }
+  };
+
   return (
-    // ✨ 3. mainStyles를 사용하도록 적용합니다.
     <SafeAreaView style={mainStyles.container}>
       <View style={mainStyles.header}>
         <Text style={mainStyles.greetingText}>
           {auth.currentUser?.email}님,{"\n"}환영합니다!
         </Text>
       </View>
-      
+
       <View style={mainStyles.buttonContainer}>
         <CustomButton
           type="feature"
           title="가까운 역 안내"
-          onPress={() => navigation.navigate('안내')}
+          onPress={() => goTab('가까운 역')}
         />
         <CustomButton
           type="feature"
           title="원하는 역 검색"
-          onPress={() => navigation.navigate('검색')}
+          onPress={() => goTab('검색')}
         />
         <CustomButton
           type="outline"
@@ -42,14 +62,11 @@ const MainScreen = () => {
         <CustomButton
           type="outline"
           title="챗봇"
-          onPress={() => handleFeaturePress('챗봇')}
+          onPress={handleChatbotPress}
         />
       </View>
     </SafeAreaView>
   );
 };
 
-// ✨ 4. 파일 내부에 있던 스타일 정의를 모두 삭제하여 코드를 깔끔하게 정리했습니다.
-
 export default MainScreen;
-
