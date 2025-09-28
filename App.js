@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, Alert, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -33,8 +33,22 @@ const commonTabOptions = {
   headerTitleAlign: 'center',
   headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  tabBarActiveTintColor: '#14CAC9',
+  tabBarActiveTintColor: '#17171B',
   tabBarInactiveTintColor: 'gray',
+  tabBarStyle: {
+    height: 90,
+    backgroundColor: '#F9F9F9',
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: 0,
+  },
+  // 👇 [수정] 폰트 크기를 16으로 키움
+  tabBarLabelStyle: {
+    fontSize: 16,
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    marginBottom: 5,
+  },
 };
 
 
@@ -47,36 +61,35 @@ const GuestTabs = () => {
         ...commonTabOptions,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
+          const iconColor = focused ? '#14CAC9' : 'gray';
+          // 👇 [수정] 단축된 이름으로 변경
           if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+          else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
           else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
           else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <Ionicons name={iconName} size={size} color={iconColor} />;
         },
       })}
     >
       <Tab.Screen
         name="홈"
         component={MainScreen}
+        // 👇 [수정] 접근성 라벨 추가
+        options={{ title: '홈', accessibilityLabel: '홈 화면' }}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            Alert.alert(
-              '로그인 필요',
-              '서비스를 이용하려면 로그인이 필요합니다.\n로그인 화면으로 이동하시겠습니까?',
-              [
-                { text: '취소', style: 'cancel' },
-                { text: '확인', onPress: () => navigation.navigate('Welcome') },
-              ]
-            );
+            navigation.navigate('Welcome');
           },
         }}
       />
-      <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
-      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색' }} />
+      {/* 👇 [수정] name을 단축하고, title과 accessibilityLabel을 분리 */}
+      <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역', accessibilityLabel: '가까운 역 목록' }} />
+      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색', accessibilityLabel: '역 검색' }} />
       <Tab.Screen
         name="마이"
         component={MyPageScreen}
+        options={{ title: '마이', accessibilityLabel: '마이페이지' }}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -102,19 +115,47 @@ const UserTabs = () => (
     screenOptions={({ route }) => ({
       ...commonTabOptions,
       tabBarIcon: ({ focused, color, size }) => {
+        const iconColor = focused ? '#14CAC9' : 'gray';
+
+        if (route.name === '챗봇') {
+          return (
+            <Image
+              source={require('./src/assets/brand-icon.png')}
+              accessibilityLabel="챗봇과 대화하기"
+              style={{
+                width: 70,
+                height: 70,
+                tintColor: focused ? iconColor : undefined,
+                marginBottom: 15,
+              }}
+            />
+          );
+        }
+
         let iconName;
         if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-        else if (route.name === '안내') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+        else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
         else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
         else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-        return <Ionicons name={iconName} size={size} color={color} />;
+        return <Ionicons name={iconName} size={size} color={iconColor} />;
       },
     })}
   >
-    <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
-    <Tab.Screen name="안내" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
-    <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색' }} />
-    <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이페이지' }} />
+    <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈', accessibilityLabel: '홈 화면' }} />
+    <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역', accessibilityLabel: '가까운 역 목록' }} />
+    <Tab.Screen
+      name="챗봇"
+      component={MainScreen}
+      options={{ title: '챗봇', accessibilityLabel: '챗봇과 대화하기' }}
+      listeners={{
+        tabPress: (e) => {
+          e.preventDefault();
+          Alert.alert('알림', '챗봇 기능은 현재 준비 중입니다.');
+        },
+      }}
+    />
+    <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색', accessibilityLabel: '역 검색' }} />
+    <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이', accessibilityLabel: '마이페이지' }} />
   </Tab.Navigator>
 );
 
@@ -163,8 +204,3 @@ export default function App() {
     </NavigationContainer>
   );
 }
-
-
-
-
-
