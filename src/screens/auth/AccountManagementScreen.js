@@ -18,36 +18,48 @@ const AccountManagementScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.greetingText}>{user?.email || '사용자'}님 반갑습니다.</Text>
-      </View>
+      <View style={styles.mainCard}>
+        <View style={styles.greetingCard}>
+          <Text style={styles.greetingText}> {user?.email || '사용자'}님 반갑습니다.</Text>
+        </View>
 
-      <CustomButton
-        title="사용법 다시보기"
-        onPress={handleNotReady}
-        type="outline"
-      />
+        <CustomButton
+          title="사용법 다시보기"
+          onPress={handleNotReady}
+          type="outline"
+        />
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>약관 및 정책</Text>
-        <MenuRow text="서비스 이용 약관" onPress={handleNotReady} />
-        <MenuRow text="위치기반 서비스 이용약관" onPress={handleNotReady} />
-        <MenuRow text="개인정보 처리방침" onPress={handleNotReady} />
-      </View>
+        <View style={styles.infoCard}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>약관 및 정책</Text>
+          </View>
+          <MenuRow text="서비스 이용 약관" onPress={handleNotReady} accessibilityLabel="서비스 이용 약관 페이지로 이동" />
+          <MenuRow text="위치기반 서비스 이용약관" onPress={handleNotReady} accessibilityLabel="위치기반 서비스 이용약관 페이지로 이동" />
+          <MenuRow text="개인정보 처리방침" onPress={handleNotReady} isLast={true} accessibilityLabel="개인정보 처리방침 페이지로 이동" />
+        </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>계정관리</Text>
-        <MenuRow text="로그아웃" onPress={handleLogout} />
-        <MenuRow text="회원탈퇴" onPress={handleDeleteAccount} isDestructive={true} />
+        <View style={styles.infoCard}>
+          <View style={styles.cardTitleContainer}>
+            <Text style={styles.cardTitle}>계정관리</Text>
+          </View>
+          <MenuRow text="로그아웃" onPress={handleLogout} accessibilityLabel="로그아웃" />
+          <MenuRow text="회원탈퇴" onPress={handleDeleteAccount} isDestructive={true} isLast={true} accessibilityLabel="회원탈퇴" />
+        </View>
       </View>
     </ScrollView>
   );
 };
 
-const MenuRow = ({ text, onPress, isDestructive = false }) => (
-  <TouchableOpacity style={styles.menuRow} onPress={onPress}>
+const MenuRow = ({ text, onPress, isDestructive = false, isLast = false, accessibilityLabel }) => (
+  <TouchableOpacity 
+    style={[styles.menuRow, !isLast && styles.menuRowBorder]} 
+    onPress={onPress}
+    accessibilityLabel={accessibilityLabel}
+  >
     <Text style={[styles.menuRowText, isDestructive && styles.destructiveText]}>{text}</Text>
-    <Ionicons name="chevron-forward" size={20} color={isDestructive ? '#ff3b30' : '#BDBDBD'} style={{ marginLeft: 'auto' }} />
+    <View accessible={false} style={styles.arrowIconCircle}>
+      <Ionicons name="chevron-forward" size={30} color={isDestructive ? '#ff3b30' : '#17171B'} />
+    </View>
   </TouchableOpacity>
 );
 
@@ -55,37 +67,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
-    paddingTop: responsiveHeight(20),
-    paddingHorizontal: responsiveWidth(16),
   },
-  card: {
+  mainCard: {
+    backgroundColor: '#E2E6EA',
+    borderRadius: responsiveWidth(20),
+    margin: responsiveWidth(16),
+    padding: responsiveWidth(16),
+  },
+  greetingCard: {
     backgroundColor: '#FAFAFA',
-    borderRadius: responsiveWidth(40),
-    padding: responsiveWidth(20),
-    marginTop: responsiveHeight(20),
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 3,
+    borderRadius: responsiveWidth(12),
+    padding: responsiveHeight(15),
+    alignItems: 'center',
+    marginBottom: responsiveHeight(16),
   },
   greetingText: {
     fontFamily: 'NotoSansKR',
-    fontSize: responsiveWidth(16),
-    fontWeight: '700',
+    fontSize: responsiveWidth(14),
     color: '#17171B',
+    fontWeight: '700',
+  },
+  infoCard: {
+    backgroundColor: '#FAFAFA',
+    borderRadius: responsiveWidth(16),
+    marginTop: responsiveHeight(16),
+    paddingHorizontal: responsiveWidth(16),
+    paddingTop: responsiveHeight(16),
+    paddingBottom: responsiveHeight(4),
+  },
+  cardTitleContainer: {
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: '#14CAC9',
+    borderRadius: responsiveWidth(20),
+    paddingVertical: responsiveHeight(4),
+    paddingHorizontal: responsiveWidth(10),
+    marginBottom: responsiveHeight(10),
   },
   cardTitle: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    fontSize: responsiveWidth(13),
-    color: '#888',
-    marginBottom: responsiveHeight(10),
+    fontSize: responsiveWidth(12),
+    color: '#17171B',
   },
   menuRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: responsiveHeight(15),
+    justifyContent: 'space-between',
+    paddingVertical: responsiveHeight(16),
+  },
+  menuRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E6EA',
   },
   menuRowText: {
     fontFamily: 'NotoSansKR',
@@ -94,7 +127,6 @@ const styles = StyleSheet.create({
     color: '#17171B',
   },
   destructiveText: {
-    fontWeight: '700',
     color: '#ff3b30',
   },
 });
