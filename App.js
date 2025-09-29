@@ -26,7 +26,7 @@ import StationDetailScreen from './src/screens/station/StationDetailScreen';
 import MyPageScreen from './src/screens/auth/MyPageScreen';
 import AccountManagementScreen from './src/screens/auth/AccountManagementScreen';
 import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
-
+import PolicyScreen from './src/screens/policy/PolicyScreen';
 
 const Stack = createStackNavigator();
 const RootStack = createStackNavigator();
@@ -69,7 +69,8 @@ const MyPageStackNavigator = () => {
             <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '마이페이지' }} />
             <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
             <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
-        </MyPageStack.Navigator>
+            <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
+          </MyPageStack.Navigator>
     );
 };
 

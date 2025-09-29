@@ -26,7 +26,6 @@ const MyPageScreen = () => {
   );
 };
 
-// 👇 [수정] MyPageScreen에만 필요한 스타일만 남김
 const styles = StyleSheet.create({
   contentContainer: {
     justifyContent: 'center',

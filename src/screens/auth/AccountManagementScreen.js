@@ -8,13 +8,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { logout, deleteAccount } from '../../api/auth';
 import { deleteUserInfo } from '../../api/user';
 import CustomButton from '../../components/CustomButton';
+// 👇 [1. 수정] useNavigation import 제거
+/* import { useNavigation } from '@react-navigation/native'; */
+import { TERMS_OF_SERVICE, LOCATION_POLICY, PRIVACY_POLICY } from '../../constants/policies';
 
-const AccountManagementScreen = () => {
+// 👇 [2. 수정] 컴포넌트가 navigation을 직접 prop으로 받도록 변경
+const AccountManagementScreen = ({ navigation }) => {
   const user = auth.currentUser;
+  // 👇 [3. 수정] useNavigation() hook 호출 제거 (더 이상 필요 없음)
+  // const navigation = useNavigation();
   
   const handleLogout = async () => { Alert.alert( "로그아웃", "정말 로그아웃 하시겠습니까?", [ { text: "취소", style: "cancel" }, { text: "확인", onPress: async () => await logout() } ] ); };
   const handleDeleteAccount = () => { Alert.alert( "회원 탈퇴", "정말로 계정을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.", [ { text: "취소", style: "cancel" }, { text: "확인", onPress: async () => { const uid = auth.currentUser?.uid; if (uid) { const userInfoResult = await deleteUserInfo(uid); if (!userInfoResult.success) { Alert.alert("오류", "회원 정보 삭제 중 문제가 발생했습니다."); return; } const accountResult = await deleteAccount(); if (!accountResult.success) { Alert.alert("오류", "계정 삭제 중 문제가 발생했습니다. 다시 로그인 후 시도해주세요."); return; } Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다."); } }, style: "destructive" } ] ); };
-  const handleNotReady = () => { Alert.alert("알림", "현재 개발 중인 기능입니다."); };
+  
+  const goToPolicy = (title, content) => {
+    navigation.navigate('Policy', { title, content });
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -25,7 +34,7 @@ const AccountManagementScreen = () => {
 
         <CustomButton
           title="사용법 다시보기"
-          onPress={handleNotReady}
+          onPress={() => Alert.alert("알림", "현재 개발 중인 기능입니다.")}
           type="outline"
         />
 
@@ -33,9 +42,9 @@ const AccountManagementScreen = () => {
           <View style={styles.cardTitleContainer}>
             <Text style={styles.cardTitle}>약관 및 정책</Text>
           </View>
-          <MenuRow text="서비스 이용 약관" onPress={handleNotReady} accessibilityLabel="서비스 이용 약관 페이지로 이동" />
-          <MenuRow text="위치기반 서비스 이용약관" onPress={handleNotReady} accessibilityLabel="위치기반 서비스 이용약관 페이지로 이동" />
-          <MenuRow text="개인정보 처리방침" onPress={handleNotReady} isLast={true} accessibilityLabel="개인정보 처리방침 페이지로 이동" />
+          <MenuRow text="서비스 이용 약관" onPress={() => goToPolicy('서비스 이용 약관', TERMS_OF_SERVICE)} accessibilityLabel="서비스 이용 약관 페이지로 이동" />
+          <MenuRow text="위치기반 서비스 이용약관" onPress={() => goToPolicy('위치기반 서비스 이용약관', LOCATION_POLICY)} accessibilityLabel="위치기반 서비스 이용약관 페이지로 이동" />
+          <MenuRow text="개인정보 처리방침" onPress={() => goToPolicy('개인정보 처리방침', PRIVACY_POLICY)} isLast={true} accessibilityLabel="개인정보 처리방침 페이지로 이동" />
         </View>
 
         <View style={styles.infoCard}>
@@ -58,7 +67,7 @@ const MenuRow = ({ text, onPress, isDestructive = false, isLast = false, accessi
   >
     <Text style={[styles.menuRowText, isDestructive && styles.destructiveText]}>{text}</Text>
     <View accessible={false} style={styles.arrowIconCircle}>
-      <Ionicons name="chevron-forward" size={30} color={isDestructive ? '#ff3b30' : '#17171B'} />
+      <Ionicons name="chevron-forward" size={30} color={isDestructive ? '#ff3b30' : '#171B1B'} />
     </View>
   </TouchableOpacity>
 );
@@ -83,7 +92,7 @@ const styles = StyleSheet.create({
   },
   greetingText: {
     fontFamily: 'NotoSansKR',
-    fontSize: responsiveWidth(14),
+    fontSize: responsiveWidth(16),
     color: '#17171B',
     fontWeight: '700',
   },
@@ -107,8 +116,8 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    fontSize: responsiveWidth(12),
-    color: '#17171B',
+    fontSize: responsiveWidth(16),
+    color: '#171B1B',
   },
   menuRow: {
     flexDirection: 'row',
@@ -123,7 +132,7 @@ const styles = StyleSheet.create({
   menuRowText: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    fontSize: responsiveWidth(16),
+    fontSize: responsiveWidth(18),
     color: '#17171B',
   },
   destructiveText: {
