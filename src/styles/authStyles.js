@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
-import { widthPercentage, responsiveFontSize } from '../utils/responsive';
+// 👇 [수정] widthPercentage를 responsiveWidth로 변경
+import { responsiveWidth, responsiveFontSize } from '../utils/responsive';
 
 export const styles = StyleSheet.create({
   // --- 공용 스타일 ---
@@ -24,8 +25,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   logoImage: {
-    width: widthPercentage(300),
-    height: widthPercentage(100),
+    // 👇 [수정] widthPercentage를 responsiveWidth로 변경
+    width: responsiveWidth(300),
+    height: responsiveWidth(100),
   },
   content: {
     flex: 1,
@@ -161,15 +163,13 @@ export const styles = StyleSheet.create({
     color: '#17171B',
   },
   
-  // ✨ description 스타일을 추가했습니다.
   description: {
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
-    fontWeight: '700', // Medium 두께로 너무 무겁지 않게
-    color: '#1A1E22', // 기본 검정색으로 가독성 확보
+    fontWeight: '700',
+    color: '#1A1E22',
     textAlign: 'center',
-    lineHeight: responsiveFontSize(24), // 줄 간격 추가
-    marginBottom: 32, // 아래 요소와의 간격
+    lineHeight: responsiveFontSize(24),
+    marginBottom: 32,
   },
 });
-

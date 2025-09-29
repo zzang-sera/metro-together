@@ -18,16 +18,20 @@ import SignUpScreen from './src/screens/auth/SignUpScreen';
 import FindEmailScreen from './src/screens/auth/FindEmailScreen';
 import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
 import MainScreen from './src/screens/main/MainScreen';
-import MyPageScreen from './src/screens/auth/MyPageScreen';
 import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScreen';
 import SearchStationScreen from './src/screens/searchstation/SearchStationScreen';
 import ChatBotScreen from './src/screens/chatbot/ChatBotScreen';
 import StationFacilitiesScreen from './src/screens/station/StationFacilitiesScreen';
 import StationDetailScreen from './src/screens/station/StationDetailScreen';
+import MyPageScreen from './src/screens/auth/MyPageScreen';
+import AccountManagementScreen from './src/screens/auth/AccountManagementScreen';
+import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
+
 
 const Stack = createStackNavigator();
 const RootStack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+const MyPageStack = createStackNavigator();
 
 // --- 공통 탭 스크린 옵션 ---
 const commonTabOptions = {
@@ -35,8 +39,15 @@ const commonTabOptions = {
   headerTitleAlign: 'center',
   headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  tabBarActiveTintColor: '#17171B',
+  tabBarActiveTintColor: '#17171B', 
   tabBarInactiveTintColor: 'gray',
+  tabBarStyle: {
+    height: 90,
+    backgroundColor: '#F9F9F9',
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: 0,
+  },
   tabBarLabelStyle: {
     fontSize: 16,
     fontFamily: 'NotoSansKR',
@@ -45,7 +56,25 @@ const commonTabOptions = {
   },
 };
 
-// --- 비로그인 탭 ---
+// --- 마이페이지 스택 네비게이터 ---
+const MyPageStackNavigator = () => {
+    return (
+        <MyPageStack.Navigator
+            screenOptions={{
+                headerTitleAlign: 'center',
+                headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
+                headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
+            }}
+        >
+            <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '마이페이지' }} />
+            <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
+            <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
+        </MyPageStack.Navigator>
+    );
+};
+
+
+// --- 비로그인 사용자를 위한 탭 네비게이터 ---
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -64,7 +93,7 @@ const GuestTabs = () => {
       screenOptions={({ route }) => ({
         ...commonTabOptions,
         tabBarStyle,
-        tabBarHideOnKeyboard: true, // ✅ 키보드 올라오면 탭바 숨김
+        tabBarHideOnKeyboard: true,
         tabBarIcon: ({ focused, size }) => {
           let iconName;
           const iconColor = focused ? '#14CAC9' : 'gray';
@@ -111,7 +140,7 @@ const GuestTabs = () => {
   );
 };
 
-// --- 로그인 탭 (챗봇 실제 연결) ---
+// --- 로그인한 사용자를 위한 탭 네비게이터 (수정 완료) ---
 const UserTabs = () => {
   const insets = useSafeAreaInsets();
 
@@ -129,7 +158,7 @@ const UserTabs = () => {
       screenOptions={({ route }) => ({
         ...commonTabOptions,
         tabBarStyle,
-        tabBarHideOnKeyboard: true, // ✅ 여기도!
+        tabBarHideOnKeyboard: true,
         tabBarIcon: ({ focused, size }) => {
           const iconColor = focused ? '#14CAC9' : 'gray';
 
@@ -160,11 +189,29 @@ const UserTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈', accessibilityLabel: '홈 화면' }} />
-      <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역', accessibilityLabel: '가까운 역 목록' }} />
-      <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇', accessibilityLabel: '챗봇과 대화하기' }} />
-      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색', accessibilityLabel: '역 검색' }} />
-      <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이', accessibilityLabel: '마이페이지' }} />
+      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
+      <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역' }} />
+      <Tab.Screen
+        name="챗봇"
+        component={ChatBotScreen}
+        options={{ title: '챗봇' }}
+        listeners={{
+          tabPress: (e) => {
+            // 주석 처리: 실제 화면으로 이동하도록 임시 비활성화
+            // e.preventDefault(); 
+            // Alert.alert('알림', '챗봇 기능은 현재 준비 중입니다.');
+          },
+        }}
+      />
+      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색' }} />
+      <Tab.Screen 
+        name="마이" 
+        component={MyPageStackNavigator} 
+        options={{ 
+          title: '마이', 
+          headerShown: false
+        }} 
+      />
     </Tab.Navigator>
   );
 };

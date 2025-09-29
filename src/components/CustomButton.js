@@ -1,6 +1,9 @@
+// src/components/CustomButton.js
+
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { widthPercentage, responsiveFontSize } from '../utils/responsive';
+// 👇 [수정] widthPercentage를 responsiveWidth로 변경
+import { responsiveWidth, responsiveFontSize } from '../utils/responsive';
 
 const CustomButton = ({ title, onPress, type = 'feature' }) => {
   const getButtonStyles = () => {
@@ -9,7 +12,6 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
         return [styles.buttonBase, styles.outlineButton];
       case 'primary':
         return [styles.buttonBase, styles.primaryButton];
-      // ✨ 1. '삭제' 버튼 타입을 추가합니다.
       case 'destructive':
         return [styles.buttonBase, styles.destructiveButton];
       default: // 'feature'
@@ -18,12 +20,11 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
   };
 
   const getTextStyles = () => {
-     switch (type) {
+    switch (type) {
       case 'outline':
         return [styles.textBase, styles.outlineButtonText];
       case 'primary':
         return [styles.textBase, styles.primaryButtonText];
-      // ✨ 2. '삭제' 버튼의 텍스트 스타일을 추가합니다.
       case 'destructive':
         return [styles.textBase, styles.destructiveButtonText];
       default: // 'feature'
@@ -40,8 +41,9 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
 
 const styles = StyleSheet.create({
   buttonBase: {
-    width: widthPercentage(300),
-    height: widthPercentage(60),
+    // 👇 [수정] widthPercentage를 responsiveWidth로 변경
+    width: responsiveWidth(300),
+    height: responsiveWidth(60),
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
@@ -84,15 +86,13 @@ const styles = StyleSheet.create({
     color: '#17171B',
     fontSize: responsiveFontSize(18),
   },
-  // ✨ 3. '삭제' 버튼의 스타일을 정의합니다.
   destructiveButton: {
-    backgroundColor: '#D32F2F', // 빨간색 배경
+    backgroundColor: '#D32F2F',
   },
   destructiveButtonText: {
-    color: '#FFFFFF', // 흰색 텍스트
+    color: '#FFFFFF',
     fontSize: responsiveFontSize(20),
   },
 });
 
 export default CustomButton;
-
