@@ -50,14 +50,6 @@ const SearchStationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 헤더 (탭 헤더를 쓰는 경우 생략해도 됨) */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>원하는 역 검색</Text>
-      </View>
-
       {/* 검색창 */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#8e8e93" style={styles.searchIcon} />

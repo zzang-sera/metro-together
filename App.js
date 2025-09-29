@@ -1,14 +1,15 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/config/firebaseConfig';
-import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { useNavigation } from '@react-navigation/native';
 
 // --- 화면 컴포넌트들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
@@ -25,7 +26,7 @@ import StationFacilitiesScreen from './src/screens/station/StationFacilitiesScre
 import StationDetailScreen from './src/screens/station/StationDetailScreen';
 
 const Stack = createStackNavigator();
-const RootStack = createStackNavigator(); // 전역 푸시용
+const RootStack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
 // --- 공통 탭 스크린 옵션 ---
@@ -36,13 +37,6 @@ const commonTabOptions = {
   headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
   tabBarActiveTintColor: '#17171B',
   tabBarInactiveTintColor: 'gray',
-  tabBarStyle: {
-    height: 90,
-    backgroundColor: '#F9F9F9',
-    elevation: 0,
-    shadowOpacity: 0,
-    borderTopWidth: 0,
-  },
   tabBarLabelStyle: {
     fontSize: 16,
     fontFamily: 'NotoSansKR',
@@ -53,11 +47,24 @@ const commonTabOptions = {
 
 // --- 비로그인 탭 ---
 const GuestTabs = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+
+  const tabBarStyle = {
+    backgroundColor: '#F9F9F9',
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: 0,
+    paddingBottom: Math.max(8, insets.bottom),
+    height: 70 + Math.max(8, insets.bottom),
+  };
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         ...commonTabOptions,
+        tabBarStyle,
+        tabBarHideOnKeyboard: true, // ✅ 키보드 올라오면 탭바 숨김
         tabBarIcon: ({ focused, size }) => {
           let iconName;
           const iconColor = focused ? '#14CAC9' : 'gray';
@@ -104,50 +111,63 @@ const GuestTabs = () => {
   );
 };
 
-// --- 로그인 탭 (챗봇 탭을 실제 화면으로 연결) ---
-const UserTabs = () => (
-  <Tab.Navigator
-    screenOptions={({ route }) => ({
-      ...commonTabOptions,
-      tabBarIcon: ({ focused, size }) => {
-        const iconColor = focused ? '#14CAC9' : 'gray';
+// --- 로그인 탭 (챗봇 실제 연결) ---
+const UserTabs = () => {
+  const insets = useSafeAreaInsets();
 
-        if (route.name === '챗봇') {
-          return (
-            <Image
-              source={require('./src/assets/brand-icon.png')}
-              accessibilityLabel="챗봇과 대화하기"
-              style={{
-                width: 70,
-                height: 70,
-                tintColor: focused ? iconColor : undefined,
-                marginBottom: 15,
-              }}
-            />
-          );
-        }
+  const tabBarStyle = {
+    backgroundColor: '#F9F9F9',
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: 0,
+    paddingBottom: Math.max(8, insets.bottom),
+    height: 70 + Math.max(8, insets.bottom),
+  };
 
-        let iconName;
-        if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-        else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
-        else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
-        else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-        return <Ionicons name={iconName} size={size} color={iconColor} />;
-      },
-    })}
-  >
-    <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈', accessibilityLabel: '홈 화면' }} />
-    <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역', accessibilityLabel: '가까운 역 목록' }} />
-    {/* ✅ 챗봇 탭을 실제 ChatBotScreen으로 연결 */}
-    <Tab.Screen
-      name="챗봇"
-      component={ChatBotScreen}
-      options={{ title: '챗봇', accessibilityLabel: '챗봇과 대화하기' }}
-    />
-    <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색', accessibilityLabel: '역 검색' }} />
-    <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이', accessibilityLabel: '마이페이지' }} />
-  </Tab.Navigator>
-);
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        ...commonTabOptions,
+        tabBarStyle,
+        tabBarHideOnKeyboard: true, // ✅ 여기도!
+        tabBarIcon: ({ focused, size }) => {
+          const iconColor = focused ? '#14CAC9' : 'gray';
+
+          if (route.name === '챗봇') {
+            return (
+              <Image
+                source={require('./src/assets/brand-icon.png')}
+                accessibilityLabel="챗봇과 대화하기"
+                resizeMode="contain"
+                style={{
+                  width: 70,
+                  height: 70,
+                  tintColor: focused ? iconColor : undefined,
+                  marginBottom: 15,
+                }}
+              />
+            );
+          }
+
+          let iconName;
+          if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
+          else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+          else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
+          else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
+          else iconName = 'ellipse-outline';
+
+          return <Ionicons name={iconName} size={size} color={iconColor} />;
+        },
+      })}
+    >
+      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈', accessibilityLabel: '홈 화면' }} />
+      <Tab.Screen name="가까운 역" component={NearbyStationsScreen} options={{ title: '가까운 역', accessibilityLabel: '가까운 역 목록' }} />
+      <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇', accessibilityLabel: '챗봇과 대화하기' }} />
+      <Tab.Screen name="검색" component={SearchStationScreen} options={{ title: '역 검색', accessibilityLabel: '역 검색' }} />
+      <Tab.Screen name="마이" component={MyPageScreen} options={{ title: '마이', accessibilityLabel: '마이페이지' }} />
+    </Tab.Navigator>
+  );
+};
 
 // --- 인증 스택 ---
 const AuthStack = () => (
@@ -163,14 +183,11 @@ const AuthStack = () => (
 
 const AppStack = () => <UserTabs />;
 
-// --- 전역 스택: 탭 + (시설/역상세) 푸시 가능 ---
+// --- 전역 스택(탭 + 시설/상세 푸시) ---
 const AppRoot = () => (
   <RootStack.Navigator>
-    {/* 탭 전체 */}
     <RootStack.Screen name="Tabs" component={AppStack} options={{ headerShown: false }} />
-    {/* 전역 푸시: 시설 화면(= 한눈/자세히 토글 단일 화면) */}
     <RootStack.Screen name="시설" component={StationFacilitiesScreen} />
-    {/* 필요 시 유지: 상세 라우트 (호환용) */}
     <RootStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세' }} />
   </RootStack.Navigator>
 );
@@ -200,7 +217,6 @@ export default function App() {
 
   return (
     <NavigationContainer>
-      {/* 로그인 전엔 AuthStack, 로그인 후엔 AppRoot(탭+시설/상세) */}
       {user ? <AppRoot /> : <AuthStack />}
     </NavigationContainer>
   );
