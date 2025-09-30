@@ -8,7 +8,7 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
 // ✅ 공통 API 헬퍼 (seoulApi.js에서 데이터셋/파라미터를 실제 스키마에 맞춰놔야 함)
-import { fetchStationFacilities } from '../../api/seoulApi';
+import { fetchStationFacilities } from '../../api/seoulApi.js';
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
