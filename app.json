@@ -15,7 +15,8 @@
     },
     "plugins": [
       "@react-native-google-signin/google-signin",
-      "expo-font"
+      "expo-font",
+      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
     ],
     "ios": {
       "supportsTablet": true
@@ -34,6 +35,7 @@
       "favicon": "./src/assets/favicon.png"
     },
     "extra": {
+      "SEOUL_KEY": "585554694f6e6f6f3438516f444446",
       "eas": {
         "projectId": "c3c5e2a7-bb90-45ab-a05a-abfc6375d923"
       }
