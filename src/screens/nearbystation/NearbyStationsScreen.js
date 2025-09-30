@@ -1,3 +1,4 @@
+// src/screens/nearbystation/NearbyStationsScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -5,9 +6,9 @@ import {
   StyleSheet,
   FlatList,
   ActivityIndicator,
-  TouchableOpacity,            // ✅ 추가
+  TouchableOpacity,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native'; // ✅ 추가
+import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
@@ -37,7 +38,7 @@ function getLineColor(lineNum) {
 }
 
 const NearbyStationsScreen = () => {
-  const navigation = useNavigation(); // ✅ 추가
+  const navigation = useNavigation();
   const [nearbyStations, setNearbyStations] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
 
@@ -100,14 +101,20 @@ const NearbyStationsScreen = () => {
           <TouchableOpacity
             activeOpacity={0.85}
             style={styles.stationItem}
-            onPress={() => {
-              // ✅ 부모 스택(RootStack)에 등록된 '시설'로 이동
-              const rootNav = navigation.getParent?.() || navigation;
-              rootNav.navigate('시설', {
+            // ⬇️ 같은 탭 스택으로 push (탭바 유지)
+            onPress={() =>
+              navigation.navigate('시설', {
                 stationName: item.name,
                 line: item.line,
-              });
-            }}
+              })
+            }
+            onLongPress={() =>
+              navigation.navigate('역상세', {
+                stationName: item.name,
+                line: item.line,
+              })
+            }
+            delayLongPress={250}
           >
             <View
               style={[

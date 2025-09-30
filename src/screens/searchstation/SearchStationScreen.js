@@ -7,10 +7,10 @@ import {
   TextInput,
   FlatList,
   SafeAreaView,
-  TouchableOpacity, // ✅ 추가
+  TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native'; // ✅ 추가
+import { useNavigation } from '@react-navigation/native';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
@@ -25,7 +25,7 @@ function getLineColor(lineNum) {
 }
 
 const SearchStationScreen = () => {
-  const navigation = useNavigation(); // ✅ 추가
+  const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
 
   const searchResults = useMemo(() => {
@@ -79,11 +79,14 @@ const SearchStationScreen = () => {
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.resultItem}
-              onPress={() => {
-                // ✅ 부모 스택(RootStack)에 등록된 '시설'로 이동
-                const rootNav = navigation.getParent?.() || navigation;
-                rootNav.navigate('시설', { stationName: item.name, line: firstLine });
-              }}
+              // ⬇️ 같은 탭의 스택(SearchStackNavigator)으로 push → 탭바 유지
+              onPress={() =>
+                navigation.navigate('시설', { stationName: item.name, line: firstLine })
+              }
+              onLongPress={() =>
+                navigation.navigate('역상세', { stationName: item.name, line: firstLine })
+              }
+              delayLongPress={250}
             >
               <Ionicons
                 name="location-outline"
