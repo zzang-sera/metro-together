@@ -1,22 +1,39 @@
-import { FAC } from '../screens/station/FacilitiesSection';
+// src/api/facilities.js
+// 시설 유형 키 → 실제 조회 함수 라우팅
 import { summarizeElevators } from './elevator';
 
-const label = {
-  [FAC.ESCALATOR]: '에스컬레이터',
-  [FAC.ELEVATOR]: '엘리베이터',
-  [FAC.ACCESSIBLE_TOILET]: '장애인 화장실',
-  [FAC.WHEELCHAIR_LIFT]: '휠체어 리프트',
-  [FAC.WIDE_GATE]: '광폭 개찰구',
-  [FAC.NURSING]: '수유실',
-  [FAC.LOCKER]: '물품보관함',
-  [FAC.AUDIO_GUIDE]: '음성유도기',
+// FacilitiesSection.js 안에 FAC가 이미 export 되어 있다면 그걸 import 해서 써도 됨.
+// 여기선 문자열 상수만 사용 (키 값만 일치하면 됨)
+export const FAC_KEYS = {
+  ELEVATOR: 'elevator',
+  ESCALATOR: 'escalator',
+  ACCESSIBLE_TOILET: 'accessible_toilet',
+  WHEELCHAIR_LIFT: 'wheelchair_lift',
+  WIDE_GATE: 'wide_gate',
+  NURSING: 'nursing_room',
+  LOCKER: 'locker',
+  AUDIO_GUIDE: 'audio_beacon',
+  PRIORITY_SEAT: 'priority_seat',
 };
 
-export async function getFacilityLocation(stationName, key) {
+/**
+ * 시설별 위치 요약 텍스트 반환
+ */
+export async function getFacilitySummary(stationName, key) {
   switch (key) {
-    case FAC.ELEVATOR:
-      return await summarizeElevators(stationName);
+    case FAC_KEYS.ELEVATOR:
+      return summarizeElevators(stationName, 6);
+    // TODO: 나머지 키들은 해당 API 파악 후 연결
+    case FAC_KEYS.ESCALATOR:
+    case FAC_KEYS.ACCESSIBLE_TOILET:
+    case FAC_KEYS.WHEELCHAIR_LIFT:
+    case FAC_KEYS.WIDE_GATE:
+    case FAC_KEYS.NURSING:
+    case FAC_KEYS.LOCKER:
+    case FAC_KEYS.AUDIO_GUIDE:
+    case FAC_KEYS.PRIORITY_SEAT:
+      return '곧 제공 예정입니다. (API 연동 대기)';
     default:
-      return `${stationName}역의 ${label[key] || '해당 시설'} 위치 데이터는 준비 중입니다.`;
+      return '알 수 없는 시설 유형입니다.';
   }
 }

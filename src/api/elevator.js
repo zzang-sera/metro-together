@@ -1,6 +1,10 @@
 // src/api/elevator.js
+// 서울 열린데이터광장: tbTraficElvtr (엘리베이터 위치)
+// 환경변수: EXPO_PUBLIC_SEOUL_KEY (노출 가능 prefix, Expo 규칙)
+
 const SEOUL_KEY = process.env.EXPO_PUBLIC_SEOUL_KEY;
 
+// 공통 fetch
 async function seoulFetchJson(url) {
   const res = await fetch(encodeURI(url));
   if (!res.ok) {
@@ -10,33 +14,58 @@ async function seoulFetchJson(url) {
   return res.json();
 }
 
+const SERVICE = 'tbTraficElvtr';
+
+// "서울역" → "서울" (…역 제거)
 function normalizeStationName(name = '') {
-  return name.replace(/역$/, '').trim();
+  return String(name).replace(/역$/, '').trim();
 }
 
-const SERVICE_EL = 'tbTraficElvtr';
+// 숫자 안전 변환
+function num(v) {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
 
+// API 응답 한 행 표준화
+function normalizeRow(it = {}) {
+  return {
+    station: it.STATION_NM ?? it.역명 ?? '',
+    line: it.LINE ?? it.호선 ?? '',
+    lat: num(it.LAT ?? it.위도),
+    lng: num(it.LNG ?? it.경도),
+    exitNo: it.EXIT_NO ?? it.출구번호 ?? '',
+    detail: it.DETAIL ?? it.상세위치 ?? '',
+  };
+}
+
+/**
+ * 구간 호출(1~1000)
+ */
 export async function fetchElevatorLocations(start = 1, end = 1000) {
   if (!SEOUL_KEY) throw new Error('EXPO_PUBLIC_SEOUL_KEY 가 설정되지 않았습니다.');
-  const url = `http://openapi.seoul.go.kr:8088/5867534c736e6f6f31313072797a4941/json/tbTraficElvtr/1/1000/
-firebase functions:secrets:set SEOUL_OPENAPI_KEY`;
+  const url = `http://openapi.seoul.go.kr:8088/${SEOUL_KEY}/json/${SERVICE}/${start}/${end}/`;
   const json = await seoulFetchJson(url);
-  const root = json?.[SERVICE_EL];
+
+  const root = json?.[SERVICE];
   if (!root) {
     const msg = json?.RESULT?.MESSAGE || 'Unknown response';
     throw new Error(`Invalid response: ${msg}`);
   }
-  const rows = root.row ?? [];
-  return rows.map(normalizeElevatorRow);
+
+  return (root.row ?? []).map(normalizeRow);
 }
 
+/**
+ * 전체(1~list_total_count) 자동 수집
+ */
 export async function fetchElevatorAll() {
   if (!SEOUL_KEY) throw new Error('EXPO_PUBLIC_SEOUL_KEY 가 설정되지 않았습니다.');
-  const firstUrl = `http://openapi.seoul.go.kr:8088/5867534c736e6f6f31313072797a4941/json/tbTraficElvtr/1/1000/
-firebase functions:secrets:set SEOUL_OPENAPI_KEY`;
+  const firstUrl = `http://openapi.seoul.go.kr:8088/${SEOUL_KEY}/json/${SERVICE}/1/1/`;
   const firstJson = await seoulFetchJson(firstUrl);
-  const total = firstJson?.[SERVICE_EL]?.list_total_count ?? 0;
+  const total = firstJson?.[SERVICE]?.list_total_count ?? 0;
   if (!total) return [];
+
   const chunk = 1000;
   const tasks = [];
   for (let start = 1; start <= total; start += chunk) {
@@ -47,33 +76,33 @@ firebase functions:secrets:set SEOUL_OPENAPI_KEY`;
   return pages.flat();
 }
 
+/**
+ * 역명으로 필터
+ * - 완전일치 우선, 없으면 부분일치
+ */
 export async function fetchElevatorByStation(stationName) {
   const name = normalizeStationName(stationName);
+  // 보통 1000건 이내. 초과하면 fetchElevatorAll()로 교체 가능
   const all = await fetchElevatorLocations(1, 1000);
-  const exact = all.filter((x) => x.station === name);
+  const exact = all.filter((x) => normalizeStationName(x.station) === name);
   if (exact.length) return exact;
-  return all.filter((x) => x.station?.includes(name));
+  return all.filter((x) => normalizeStationName(x.station).includes(name));
 }
 
-function normalizeElevatorRow(it = {}) {
-  return {
-    station: it.STATION_NM ?? it.역명 ?? '',
-    line: it.LINE ?? it.호선 ?? '',
-    lat: num(it.LAT ?? it.위도),
-    lng: num(it.LNG ?? it.경도),
-    exitNo: it.EXIT_NO ?? it.출구번호 ?? '',
-    detail: it.DETAIL ?? it.상세위치 ?? '',
-  };
-}
-function num(v) { const n = Number(v); return Number.isFinite(n) ? n : undefined; }
-
+/**
+ * 간단 요약 문자열
+ * "1번 출구 · 개찰구 중앙(서측) · 2호선" 형태
+ */
 export async function summarizeElevators(stationName, max = 4) {
-  const list = await fetchElevatorByStation(stationName);
-  if (!list.length) return `${stationName}역 엘리베이터 데이터를 찾지 못했습니다.`;
-  const normalize = (s) => s.replace(/역$/, '').trim();
+  const name = normalizeStationName(stationName);
+  const list = await fetchElevatorByStation(name);
+  if (!list.length) return `${name}역 엘리베이터 데이터를 찾지 못했습니다.`;
+
   const lines = list.slice(0, max).map((x) => {
     const exit = x.exitNo ? `${x.exitNo}번 출구` : '출구번호 미상';
-    return `${exit} · ${x.detail || '상세위치 미상'}${x.line ? ` · ${x.line}` : ''}`;
+    const loc = x.detail || '상세위치 미상';
+    const line = x.line ? ` · ${x.line}` : '';
+    return `${exit} · ${loc}${line}`;
   });
-  return `${normalize(stationName)}역 엘리베이터 위치\n${lines.join('\n')}`;
+  return `${name}역 엘리베이터 위치\n${lines.join('\n')}`;
 }

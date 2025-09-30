@@ -1,167 +1,163 @@
 // src/screens/chatbot/ChatBotScreen.js
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Platform,
   FlatList,
-  KeyboardAvoidingView, // RN 기본 컴포넌트 사용
-} from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHeaderHeight } from '@react-navigation/elements';
+  ActivityIndicator,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import Constants from "expo-constants";
+import { getElevStatus } from "../../api/seoulElev"; // 경로 주의: screens/chatbot -> api
 
-const initialMessages = [
-  { id: 'm1', from: 'bot', text: '함께타요 챗봇에 연결합니다.' },
-  { id: 'm2', from: 'bot', text: '안녕하세요! 무엇을 도와드릴까요?' },
-];
+const SEOUL_KEY = Constants.expoConfig?.extra?.SEOUL_KEY;
 
 export default function ChatBotScreen() {
-  const insets = useSafeAreaInsets();
-  const headerHeight = useHeaderHeight();
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState([
+    { id: "boot", role: "bot", text: "안녕하세요! /elev [역코드 또는 역명] 으로 엘리베이터 상태를 조회해보세요.\n예) /elev 0150  또는  /elev 종각" },
+  ]);
+  const [loading, setLoading] = useState(false);
   const listRef = useRef(null);
 
-  const [messages, setMessages] = useState(initialMessages);
-  const [input, setInput] = useState('');
-
-  const send = useCallback(() => {
-    const text = input.trim();
-    if (!text) return;
-
-    const userMsg = { id: `u-${Date.now()}`, from: 'user', text };
-    setMessages(prev => [...prev, userMsg]);
-    setInput('');
-
+  const append = useCallback((role, text) => {
+    setMessages(prev => [...prev, { id: String(Date.now() + Math.random()), role, text }]);
     setTimeout(() => {
-      const botMsg = {
-        id: `b-${Date.now()}`,
-        from: 'bot',
-        text: `“${text}” 관련 정보를 준비 중이에요.`,
-      };
-      setMessages(prev => [...prev, botMsg]);
-    }, 300);
-  }, [input]);
+      listRef.current?.scrollToEnd?.({ animated: true });
+    }, 50);
+  }, []);
 
-  // 새 메시지 생기면 항상 맨 아래로
-  useEffect(() => {
-    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
-  }, [messages]);
+  const appendUser = useCallback((text) => append("user", text), [append]);
+  const appendBot = useCallback((text) => append("bot", text), [append]);
 
-  // iOS만 키보드 회피(헤더 높이만큼 오프셋)
-  const Wrapper = ({ children }) =>
-    Platform.OS === 'ios' ? (
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior="padding"
-        keyboardVerticalOffset={headerHeight}
-      >
-        {children}
-      </KeyboardAvoidingView>
-    ) : (
-      <>{children}</>
-    );
+  const handleElevCommand = useCallback(async (arg) => {
+    if (!SEOUL_KEY) {
+      appendBot("⚠️ SEOUL_KEY가 설정되지 않았습니다. app.config.js/app.json 의 extra에 SEOUL_KEY를 넣어주세요.");
+      return;
+    }
+    if (!arg) {
+      appendBot("사용법: /elev [역코드 또는 역명]\n예) /elev 0150  또는  /elev 종각");
+      return;
+    }
 
-  return (
-    <SafeAreaView style={s.container} edges={['bottom']}>
-      <Wrapper>
-        {/* 채팅 목록: 일반 방향(위→아래), 입력바 높이만큼 큰 패딩 불필요 */}
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <Bubble from={item.from} text={item.text} />}
-          contentContainerStyle={[s.listContent, { paddingBottom: 12 }]}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() =>
-            requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }))
-          }
-          style={{ flex: 1 }}
-        />
+    setLoading(true);
+    appendBot("🔎 엘리베이터 상태 조회 중…");
 
-        {/* 입력바: 일반 레이아웃(absolute 아님) → 키보드/탭바와 공백 없음 */}
-        <View style={[s.footer, { paddingBottom: Math.max(8, insets.bottom) }]}>
-          <View style={s.inputBar}>
-            <TextInput
-              value={input}
-              onChangeText={setInput}
-              placeholder="메시지를 입력하세요"
-              style={s.input}
-              returnKeyType="send"
-              onSubmitEditing={send}
-            />
-            <TouchableOpacity style={s.sendBtn} onPress={send} activeOpacity={0.9}>
-              <Text style={s.sendText}>보내기</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Wrapper>
-    </SafeAreaView>
-  );
-}
+    try {
+      const { ok, rows, meta, error } = await getElevStatus(SEOUL_KEY, arg, { start: 1, end: 50 });
 
-function Bubble({ from, text }) {
-  const isUser = from === 'user';
-  return (
-    <View style={[s.row, { justifyContent: isUser ? 'flex-end' : 'flex-start' }]}>
-      {!isUser && <View style={s.avatar} />}
-      <View style={[s.bubble, isUser ? s.bubbleUser : s.bubbleBot]}>
-        <Text style={[s.bubbleText, isUser ? s.textUser : s.textBot]}>{text}</Text>
-      </View>
+      if (!ok) {
+        if (error === "NO_DATA_OR_SERVER") {
+          appendBot("⚠️ 데이터가 없습니다. 역명/역코드를 확인하거나 잠시 후 다시 시도해주세요. (0150↔150, 역명 철자 확인)");
+        } else {
+          appendBot(`⚠️ 오류가 발생했습니다: ${String(error)}`);
+        }
+        return;
+      }
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        appendBot("결과가 0건입니다. 다른 입력으로 시도해보세요. (예: 0150 ↔ 150, 역명 철자 확인)");
+        return;
+      }
+
+      // 최대 3건 미리보기
+      const preview = rows.slice(0, 3).map((r, i) => {
+        const stName = r.STATION_NM || r.STATION_NAME || r.stNm || r.staNm || r.SBWY_STN_NM || "역명정보없음";
+        const code   = r.STATION_CD || r.STATION_CODE || r.stCd || r.staCd || r.SBWY_STN_CD || "";
+        const elevId = r.ELVT_ID || r.ELEVATOR_ID || r.elevId || r.FACILITY_ID || "";
+        const status = r.STATUS || r.USE_YN || r.OPER_ST || r.state || r.RUN_YN || r.OPER_YN || "상태미상";
+        const place  = r.LOCATION || r.LOC || r.POS || r.place || r.INOUT_DIV || "";
+
+        return `#${i + 1} ${stName}${code ? `(${code})` : ""}  •  ${place ? `${place}  •  ` : ""}${elevId ? `ID:${elevId}  •  ` : ""}상태: ${status}`;
+      });
+
+      const more = rows.length > 3 ? `\n…외 ${rows.length - 3}건` : "";
+      appendBot(`조회 파라미터: ${meta?.usedParam ?? "(알수없음)"}\n${preview.join("\n")}${more}`);
+    } catch (e) {
+      appendBot(`⚠️ 네트워크/서버 오류: ${e?.message ?? e}`);
+    } finally {
+      setLoading(false);
+    }
+  }, [appendBot]);
+
+  const handleCommand = useCallback(async (text) => {
+    const msg = text.trim();
+    if (msg.startsWith("/elev")) {
+      const arg = msg.replace(/^\/elev\s*/i, "");
+      await handleElevCommand(arg);
+      return true;
+    }
+    return false; // 다른 명령은 여기서 false
+  }, [handleElevCommand]);
+
+  const onSend = useCallback(async () => {
+    const t = input.trim();
+    if (!t) return;
+
+    appendUser(t);
+    setInput("");
+
+    // 명령 처리
+    const handled = await handleCommand(t);
+    if (handled) return;
+
+    // 일반 대화(기존 로직이 있다면 여기에 연결)
+    appendBot("명령을 인식하지 못했어요. 사용 가능: /elev [역코드 또는 역명]");
+  }, [input, appendUser, appendBot, handleCommand]);
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.bubble, item.role === "bot" ? styles.bot : styles.user]}>
+      <Text style={styles.text}>{item.text}</Text>
     </View>
   );
+
+  return (
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <FlatList
+        ref={listRef}
+        data={messages}
+        keyExtractor={(it) => it.id}
+        renderItem={renderItem}
+        contentContainerStyle={{ padding: 12 }}
+        onContentSizeChange={() => listRef.current?.scrollToEnd?.({ animated: true })}
+      />
+
+      {loading && (
+        <View style={styles.loading}>
+          <ActivityIndicator size="small" />
+        </View>
+      )}
+
+      <View style={styles.inputBar}>
+        <TextInput
+          style={styles.input}
+          placeholder="/elev 0150  또는  /elev 종각"
+          value={input}
+          onChangeText={setInput}
+          onSubmitEditing={onSend}
+          returnKeyType="send"
+        />
+        <TouchableOpacity style={styles.sendBtn} onPress={onSend}>
+          <Text style={styles.sendTxt}>전송</Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardAvoidingView>
+  );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-
-  listContent: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-  },
-
-  row: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 10 },
-  avatar: { width: 28, height: 28, borderRadius: 14, backgroundColor: '#DFF6F6', marginRight: 8 },
-
-  bubble: { maxWidth: '78%', borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10 },
-  bubbleBot: { backgroundColor: '#E9F1F6' },
-  bubbleUser: { backgroundColor: '#14CAC9' },
-
-  bubbleText: { fontSize: 16, lineHeight: 22 },
-  textBot: { color: '#1A1A1A' },
-  textUser: { color: '#fff', fontWeight: '600' },
-
-  // ✅ 절대배치 제거: 일반 레이아웃으로 바닥에 고정
-  footer: {
-    backgroundColor: '#fff',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#eaeaea',
-    paddingHorizontal: 12,
-  },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 8,
-    paddingBottom: 8,
-    backgroundColor: '#fff',
-  },
-  input: {
-    flex: 1,
-    height: 44,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    backgroundColor: '#F2F4F6',
-    fontSize: 16,
-  },
-  sendBtn: {
-    marginLeft: 10,
-    height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: '#14CAC9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#101114" },
+  bubble: { padding: 10, borderRadius: 10, marginVertical: 6, maxWidth: "90%" },
+  bot: { alignSelf: "flex-start", backgroundColor: "#22252b" },
+  user: { alignSelf: "flex-end", backgroundColor: "#2f6fed" },
+  text: { color: "#fff", lineHeight: 20 },
+  inputBar: { flexDirection: "row", padding: 10, borderTopWidth: 1, borderTopColor: "#22252b", backgroundColor: "#14161a" },
+  input: { flex: 1, backgroundColor: "#1b1e23", color: "#fff", paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
+  sendBtn: { marginLeft: 8, paddingHorizontal: 14, justifyContent: "center", alignItems: "center", backgroundColor: "#2f6fed", borderRadius: 8 },
+  sendTxt: { color: "#fff", fontWeight: "600" },
+  loading: { position: "absolute", top: 8, alignSelf: "center", padding: 6, backgroundColor: "#00000066", borderRadius: 8 },
 });
