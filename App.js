@@ -202,7 +202,6 @@ const UserTabs = () => {
                 style={{
                   width: 70,
                   height: 70,
-                  tintColor: focused ? iconColor : undefined,
                   marginBottom: 15,
                 }}
               />
@@ -221,7 +220,6 @@ const UserTabs = () => {
       })}
     >
       <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
-      {/* 로그인 탭도 스택으로 교체 */}
       <Tab.Screen name="가까운 역" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
