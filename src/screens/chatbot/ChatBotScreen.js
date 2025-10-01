@@ -1,15 +1,25 @@
+<<<<<<< HEAD
 import React, { useState, useCallback, useRef, useEffect } from "react";
+=======
+// src/screens/chatbot/ChatBotScreen.js
+import React, { useState } from "react";
+>>>>>>> 9f3d704 (csv, JSON 파일 추가)
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   FlatList,
+<<<<<<< HEAD
+=======
+  StyleSheet,
+>>>>>>> 9f3d704 (csv, JSON 파일 추가)
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Image,
 } from "react-native";
+<<<<<<< HEAD
 import { Ionicons } from '@expo/vector-icons';
 import Constants from "expo-constants";
 import { getElevStatus } from "../../api/seoulElev";
@@ -70,11 +80,18 @@ const MessageBubble = ({ item }) => {
     </View>
   );
 };
+=======
+import { useNavigation } from "@react-navigation/native";
+import { getElevByCode, getElevByName, prettify } from "../../api/elevClient";
+>>>>>>> 9f3d704 (csv, JSON 파일 추가)
 
 export default function ChatBotScreen() {
+  const navigation = useNavigation();
+
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+<<<<<<< HEAD
   const [quickReplies, setQuickReplies] = useState([]);
   const listRef = useRef(null);
 
@@ -136,11 +153,131 @@ export default function ChatBotScreen() {
       });
       const more = rows.length > 3 ? `\n…외 ${rows.length - 3}건` : "";
       appendBot(`조회결과:\n${preview.join("\n")}${more}`);
+=======
+
+  // 최근 검색 결과(여러 건일 때 /pick으로 선택)
+  const [lastRows, setLastRows] = useState([]);
+
+  const pushUser = (text) =>
+    setMessages((prev) => [...prev, { role: "user", text }]);
+  const pushBot = (text) =>
+    setMessages((prev) => [...prev, { role: "bot", text }]);
+
+  // StationFacilities로 이동 (표준키로 전달)
+  function goSFS(row) {
+    const nameRaw = row.stationName ?? row.name ?? row.title ?? "";
+    const lineRaw = row.line ?? row.lineName ?? row.route ?? row.ln ?? "";
+    const codeRaw = row.stationCode ?? row.code ?? row.id ?? null;
+
+    const name = typeof nameRaw === "string" ? nameRaw.trim() : "";
+    const line = typeof lineRaw === "string" ? lineRaw.trim() : "";
+    const code = typeof codeRaw === "string" ? codeRaw.trim() : codeRaw;
+
+    console.log(
+      `DEBUG SFS: 2025-09-30-v1 params: code=${code ?? "null"} name=${name || '""'} line=${line || '""'}`
+    );
+
+    navigation.navigate("StationFacilities", {
+      code: code ?? null,
+      name,
+      line,
+    });
+  }
+
+  async function handleSend() {
+    const trimmed = input.trim();
+    if (!trimmed) return;
+
+    pushUser(input);
+    setInput("");
+    setLoading(true);
+
+    try {
+      // ----- /pick n : 최근 목록에서 선택 이동 -----
+      if (/^\/pick\s+\d+$/i.test(trimmed)) {
+        const n = parseInt(trimmed.split(/\s+/)[1], 10);
+        if (!lastRows.length) {
+          pushBot("⚠️ 선택할 목록이 없습니다. 먼저 `/elev 역명`으로 검색해 주세요.");
+        } else if (n < 1 || n > lastRows.length) {
+          pushBot(`⚠️ 1부터 ${lastRows.length} 사이의 번호를 선택하세요. 예) /pick 1`);
+        } else {
+          const chosen = lastRows[n - 1];
+          pushBot(
+            `✅ 이동: ${chosen.stationName ?? chosen.name ?? "-"} (${chosen.stationCode ?? chosen.code ?? "-"})`
+          );
+          goSFS(chosen);
+        }
+        return;
+      }
+
+      // ----- /elev ... : 역명/코드 조회 -----
+      if (trimmed.startsWith("/elev")) {
+        const parts = trimmed.split(" ");
+        const codeOrName = parts[1]?.trim();
+
+        if (!codeOrName) {
+          pushBot('⚠️ 역 코드나 역명을 입력하세요. 예) `/elev 0158` 또는 `/elev 종각`');
+          return;
+        }
+
+        const isCode = /^\d+$/.test(codeOrName);
+        const result = isCode
+          ? await getElevByCode(codeOrName)
+          : await getElevByName(codeOrName);
+
+        if (!result.ok) {
+          pushBot(`❌ 오류: ${result.error || "데이터를 불러오지 못했습니다."}`);
+          setLastRows([]);
+          return;
+        }
+        const rows = result.rows || [];
+        if (!rows.length) {
+          pushBot("⚠️ 데이터가 없습니다. 역명/역코드를 확인해주세요.");
+          setLastRows([]);
+          return;
+        }
+
+        // 1건이면 바로 디테일 표시 + 화면 이동
+        if (rows.length === 1) {
+          const r = rows[0];
+          pushBot(prettify([r]));
+          goSFS(r);
+          setLastRows([r]);
+          return;
+        }
+
+        // 여러 건이면 목록 제공 + /pick 유도
+        setLastRows(rows);
+        const list = rows
+          .map((r, idx) => {
+            const name = r.name ?? r.stationName ?? "-";
+            const code = r.code ?? r.stationCode ?? "-";
+            const line = r.line ?? r.lineName ?? "-";
+            const kind =
+              r.kind === "EV" ? "엘리베이터" : r.kind === "ES" ? "에스컬레이터" : r.kind || "-";
+            const status = r.status ?? "-";
+            return `${idx + 1}. ${name} (${code}) [${line}] • ${kind} • ${status}`;
+          })
+          .join("\n");
+        pushBot(`🔎 검색 결과 ${rows.length}건\n\n${list}\n\n원하는 항목으로 이동하려면 \`/pick 번호\` 를 입력하세요. 예) \`/pick 1\``);
+        return;
+      }
+
+      // ----- 일반 입력: 가이드 -----
+      pushBot(
+        `👋 "${trimmed}" 라고 하셨네요.\n` +
+          '지하철 보조 명령은 이렇게 사용해요:\n' +
+          '• `/elev 역명` 예) `/elev 종각`\n' +
+          '• `/elev 코드` 예) `/elev 0158`\n' +
+          '여러 건이 나오면 `/pick 번호` 로 선택하면 됩니다.'
+      );
+>>>>>>> 9f3d704 (csv, JSON 파일 추가)
     } catch (e) {
-      appendBot(`⚠️ 네트워크/서버 오류: ${e?.message ?? e}`);
+      pushBot("⚠️ 네트워크 오류: " + (e?.message ?? String(e)));
     } finally {
       setLoading(false);
     }
+<<<<<<< HEAD
   }, [appendBot]);
 
   const handleCommand = useCallback(async (text) => {
@@ -234,3 +371,80 @@ export default function ChatBotScreen() {
     </KeyboardAvoidingView>
   );
 }
+=======
+  }
+
+  return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <View style={s.container}>
+        <FlatList
+          data={messages}
+          keyExtractor={(_, idx) => String(idx)}
+          contentContainerStyle={{ padding: 16 }}
+          renderItem={({ item }) => (
+            <View
+              style={[
+                s.msgBubble,
+                item.role === "user" ? s.userBubble : s.botBubble,
+              ]}
+            >
+              <Text style={s.msgText}>{item.text}</Text>
+            </View>
+          )}
+        />
+        {loading && <ActivityIndicator style={{ marginBottom: 8 }} />}
+        <View style={s.inputRow}>
+          <TextInput
+            style={s.input}
+            placeholder="메시지를 입력하세요..."
+            value={input}
+            onChangeText={setInput}
+            onSubmitEditing={handleSend}
+            returnKeyType="send"
+          />
+          <TouchableOpacity style={s.sendBtn} onPress={handleSend}>
+            <Text style={{ color: "#fff", fontWeight: "700" }}>전송</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const s = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  msgBubble: {
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 10,
+    maxWidth: "80%",
+  },
+  userBubble: { backgroundColor: "#DCF8C6", alignSelf: "flex-end" },
+  botBubble: { backgroundColor: "#F1F0F0", alignSelf: "flex-start" },
+  msgText: { fontSize: 15, color: "#222" },
+  inputRow: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderColor: "#ddd",
+    padding: 8,
+  },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    marginRight: 8,
+  },
+  sendBtn: {
+    backgroundColor: "#14CAC9",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+});
+>>>>>>> 9f3d704 (csv, JSON 파일 추가)
