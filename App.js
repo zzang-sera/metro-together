@@ -1,7 +1,6 @@
-// App.js
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Alert, Image } from 'react-native';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { View, ActivityIndicator, Alert, Image, ScrollView, StyleSheet } from 'react-native';
+import { NavigationContainer, useNavigation, useRoute } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -58,49 +57,45 @@ const commonTabOptions = {
   },
 };
 
+// --- 재사용할 민트색 헤더 옵션 ---
+const mintHeaderOptions = {
+  headerTitleAlign: 'center',
+  headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
+  headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
+  headerTintColor: '#17171B', // 뒤로가기 버튼 등 아이콘 색상
+};
+
 // --- 마이페이지 스택 ---
 const MyPageStackNavigator = () => (
   <MyPageStack.Navigator
-    screenOptions={{
-      headerTitleAlign: 'center',
-      headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
-      headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-    }}
+    screenOptions={mintHeaderOptions}
   >
-    <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '마이페이지' }} />
+    <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '내 정보' }} />
     <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
     <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
     <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
   </MyPageStack.Navigator>
 );
 
-// --- 가까운 역 스택(탭 안) → 탭바 유지 ---
+// --- 가까운 역 스택 ---
 const NearbyStackNavigator = () => (
   <NearbyStack.Navigator
-    screenOptions={{
-      headerTitleAlign: 'center',
-      headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
-      headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-    }}
+    screenOptions={mintHeaderOptions}
   >
-    <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '가까운 역' }} />
-    <NearbyStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설' }} />
-    <NearbyStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세' }} />
+    <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
+    <NearbyStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
+    <NearbyStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
   </NearbyStack.Navigator>
 );
 
-// --- 검색 스택(탭 안) → 탭바 유지 ---
+// --- 검색 스택 ---
 const SearchStackNavigator = () => (
   <SearchStack.Navigator
-    screenOptions={{
-      headerTitleAlign: 'center',
-      headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
-      headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-    }}
+    screenOptions={mintHeaderOptions}
   >
     <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: '역 검색' }} />
-    <SearchStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설' }} />
-    <SearchStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세' }} />
+    <SearchStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
+    <SearchStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
   </SearchStack.Navigator>
 );
 
@@ -146,7 +141,6 @@ const GuestTabs = () => {
           },
         }}
       />
-      {/* 비로그인도 스택으로! → 시설/상세 가도 탭 유지 */}
       <Tab.Screen name="가까운 역" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen
@@ -240,7 +234,6 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// --- 앱 루트: 탭만 넣음 (시설/상세는 각 탭 스택에 있음!) ---
 const AppStack = () => <UserTabs />;
 
 export default function App() {
