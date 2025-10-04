@@ -114,7 +114,7 @@ const NearbyStationsScreen = () => {
             </Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={24} color="#595959" />
+        <Ionicons name="chevron-forward" size={30} color="#595959" />
       </TouchableOpacity>
     );
   };
@@ -125,7 +125,6 @@ const NearbyStationsScreen = () => {
         data={nearbyStations}
         keyExtractor={(item) => `${item.station_cd}-${item.line}`}
         contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
-        ListHeaderComponent={<Text style={styles.title}>가까운 역 목록</Text>}
         renderItem={renderStationItem}
       />
     </View>
