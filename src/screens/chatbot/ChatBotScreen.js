@@ -1,4 +1,9 @@
-// src/screens/chatbot/ChatBotScreen.js
+// File: src/screens/chatbot/ChatBotScreen.js
+// Flow:
+//   - "엘리베이터 상태 조회" → 역명 입력 모드(elevAwait) 진입
+//   - 역명만 입력해도 조회 가능 (/elev 불필요)
+//   - "알 수 없는 명령입니다" 이후 기본 퀵리플라이 팝업 복원
+
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
@@ -12,6 +17,7 @@ import {
   Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { chatbotStyles as styles } from "../../styles/chatbotStyles";
 import { responsiveWidth } from "../../utils/responsive";
 
@@ -20,6 +26,10 @@ import elevLocalJson from "../../assets/metro-data/metro/elevator/서울교통�
 
 // (선택) 봇 아바타
 const BOT_AVATAR = require("../../assets/brand-icon.png");
+
+// 네비는 기본 비활성화(원하면 true)
+const TARGET_SCREEN = "StationDetailScreen";
+const AUTO_NAVIGATE = false;
 
 /* ---------------------- 유틸: 정규화/파서 ---------------------- */
 
@@ -32,7 +42,20 @@ const koKind = (k = "") =>
 const koStatus = (v = "") =>
   v === "Y" ? "사용가능" : v === "N" ? "중지" : v || "상태미상";
 
-// 로컬 JSON이 어떤 래핑을 갖더라도 배열만 뽑아내기
+const normalizeLine = (line = "") => {
+  const m = String(line).match(/(\d+)/);
+  return m ? `${parseInt(m[1], 10)}호선` : String(line || "");
+};
+
+// "서울역(1)" → { baseName, line }
+const parseFromStationNm = (stn_nm = "") => {
+  const m = String(stn_nm).match(/^(.*?)(?:\((\d+)\))?$/);
+  const baseName = sanitizeName(m?.[1] ?? stn_nm);
+  const line = m?.[2] ? `${parseInt(m[2], 10)}호선` : "";
+  return { baseName, line };
+};
+
+// 래핑 제거
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -48,31 +71,47 @@ function pickArray(any) {
   return [];
 }
 
-// 다양한 키를 표준 스키마로 정규화
+// 표준 스키마로 정규화
 function normRow(raw) {
   const code = String(
-    raw.station_cd ?? raw.STN_CD ?? raw.code ?? raw.stationCode ?? ""
+    raw.stn_cd ?? raw.STN_CD ?? raw.station_cd ?? raw.code ?? raw.stationCode ?? ""
   ).trim();
-  const name = sanitizeName(
-    raw.station_nm ?? raw.STN_NM ?? raw.name ?? raw.stationName ?? ""
-  );
+  const stnNm = raw.stn_nm ?? raw.STN_NM ?? raw.station_nm ?? raw.name ?? raw.stationName ?? "";
+  const { baseName: parsedName, line: parsedLine } = parseFromStationNm(stnNm);
+  const name = parsedName;
+
   const facilityName = raw.elvtr_nm ?? raw.ELVTR_NM ?? raw.facilityName ?? "";
   const section = raw.opr_sec ?? raw.OPR_SEC ?? raw.section ?? "";
-  const location =
-    raw.instl_pstn ?? raw.INSTL_PSTN ?? raw.location ?? raw.gate ?? "";
+  const location = raw.instl_pstn ?? raw.INSTL_PSTN ?? raw.location ?? raw.gate ?? "";
   const status = koStatus(raw.use_yn ?? raw.USE_YN ?? raw.status ?? "");
   const kind = raw.elvtr_se ?? raw.ELVTR_SE ?? raw.kind ?? "";
-  const line = String(raw.line ?? raw.LINE_NUM ?? raw.lineName ?? "").trim();
+  const line = normalizeLine(raw.line ?? raw.LINE_NUM ?? raw.lineName ?? parsedLine);
   return { code, name, facilityName, section, location, status, kind, line };
 }
 
-// 로컬 폴백 검색
+/* ---------------------- 사전 인덱싱 (성능↑) ---------------------- */
+const ELEV_ROWS = pickArray(elevLocalJson).map(normRow);
+const ELEV_BY_CODE = new Map();
+const ELEV_BY_NAME = new Map();
+for (const r of ELEV_ROWS) {
+  if (r.code) {
+    const a = ELEV_BY_CODE.get(r.code) || [];
+    a.push(r);
+    ELEV_BY_CODE.set(r.code, a);
+  }
+  if (r.name) {
+    const n = sanitizeName(r.name);
+    const a = ELEV_BY_NAME.get(n) || [];
+    a.push(r);
+    ELEV_BY_NAME.set(n, a);
+  }
+}
+
 function searchLocalElev(arg) {
-  const arr = pickArray(elevLocalJson).map(normRow);
-  const isCode = /^\d+$/.test(arg);
-  if (isCode) return arr.filter((r) => r.code === arg);
-  const n = sanitizeName(arg);
-  return arr.filter((r) => sanitizeName(r.name) === n);
+  const q = String(arg || "").trim();
+  if (!q) return [];
+  if (/^\d+$/.test(q)) return ELEV_BY_CODE.get(q) || [];
+  return ELEV_BY_NAME.get(sanitizeName(q)) || [];
 }
 
 /* ---------------------- UI 파츠 ---------------------- */
@@ -129,18 +168,26 @@ const MessageBubble = ({ item }) => {
 /* ---------------------- 메인 ---------------------- */
 
 export default function ChatBotScreen() {
+  const navigation = useNavigation();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [quickReplies, setQuickReplies] = useState([]);
+  const [mode, setMode] = useState(null); // 'elevAwait' | null
   const listRef = useRef(null);
+
+  // ✅ 기본 퀵리플라이(팝업 재노출 시 여기로 복구)
+  const DEFAULT_QUICK_REPLIES = [
+    "가장 가까운 화장실 위치 알려줘",
+    "엘리베이터 상태 조회",
+  ];
 
   // 최초 인사
   useEffect(() => {
     appendSystem("합께타요 챗봇에 연결합니다");
     setTimeout(() => {
       appendBot("안녕하세요! 무엇을 도와드릴까요?");
-      setQuickReplies(["가장 가까운 화장실 위치 알려줘", "엘리베이터 상태 조회"]);
+      setQuickReplies(DEFAULT_QUICK_REPLIES);
     }, 600);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -162,12 +209,14 @@ export default function ChatBotScreen() {
   const appendBot = useCallback((text, isMap = false) => append("bot", { text, isMap }), [append]);
   const appendSystem = useCallback((text) => append("system", { text }), [append]);
 
-  /* ---------- /elev 명령핸들러 (로컬 JSON 전용) ---------- */
-  const handleElevCommand = useCallback(
-    async (arg) => {
-      const q = (arg || "").trim();
+  /* ---------- 검색 공통 ---------- */
+  const runElevSearch = useCallback(
+    async (query) => {
+      const q = (query || "").trim();
       if (!q) {
-        appendBot("사용법: /elev [역코드 또는 역명]\n예) /elev 0150  또는  /elev 종각");
+        appendBot("역명이나 역코드를 입력해주세요. 예) 종각 / 0150");
+        // 빈 입력 상황에서도 팝업 복구하는 게 UX에 좋음
+        setQuickReplies(DEFAULT_QUICK_REPLIES);
         return;
       }
 
@@ -175,14 +224,17 @@ export default function ChatBotScreen() {
       appendBot("🔎 엘리베이터 상태 조회 중…");
 
       const rows = searchLocalElev(q);
+      console.log("[ChatBot] elev local query =", q, " → rows:", rows.length);
 
       if (!rows.length) {
         appendBot("⚠️ 결과가 0건입니다. 다른 입력으로 시도해보세요.");
         setLoading(false);
+        // 결과 없을 때도 팝업 복구
+        setQuickReplies(DEFAULT_QUICK_REPLIES);
         return;
       }
 
-      // 보기 좋게 요약 출력 (상위 5건)
+      // 요약 출력 (상위 5건)
       const head = rows.slice(0, 5);
       const lines = head.map((r, i) => {
         const nm = r.name || "역명정보없음";
@@ -196,12 +248,41 @@ export default function ChatBotScreen() {
       const more = rows.length > head.length ? `\n…외 ${rows.length - head.length}건` : "";
       appendBot(`조회결과\n${lines.join("\n\n")}${more}`);
 
+      if (AUTO_NAVIGATE) {
+        const first = rows[0];
+        try {
+          navigation.navigate(TARGET_SCREEN, {
+            stationCode: first.code,
+            stationName: first.name,
+            line: first.line,
+          });
+        } catch (e) {
+          console.warn("[ChatBot] navigation error:", e);
+        }
+      }
+
       setLoading(false);
+      // 조회 후에도 기본 팝업 다시 띄워주면 반복 탐색에 편함 (원치 않으면 이 줄 제거)
+      setQuickReplies(DEFAULT_QUICK_REPLIES);
     },
-    [appendBot]
+    [appendBot, navigation]
   );
 
-  /* ---------------------- 명령 라우팅 ---------------------- */
+  /* ---------- /elev 명령 (선택 지원) ---------- */
+  const handleElevCommand = useCallback(
+    async (arg) => {
+      if (!arg?.trim()) {
+        appendBot("사용법: /elev [역코드 또는 역명]\n예) /elev 0150  또는  /elev 종각");
+        // 가이드 후 팝업 복구
+        setQuickReplies(DEFAULT_QUICK_REPLIES);
+        return;
+      }
+      await runElevSearch(arg.trim());
+    },
+    [runElevSearch, appendBot]
+  );
+
+  /* ---------- 명령 라우팅 ---------- */
   const handleCommand = useCallback(
     async (text) => {
       const msg = text.trim();
@@ -215,7 +296,7 @@ export default function ChatBotScreen() {
     [handleElevCommand]
   );
 
-  /* ---------------------- 전송 ---------------------- */
+  /* ---------- 전송 ---------- */
   const onSend = useCallback(
     async (text) => {
       const t = text || input.trim();
@@ -223,44 +304,53 @@ export default function ChatBotScreen() {
 
       appendUser(t);
       setInput("");
+
+      // 1) 역명 입력 대기 모드면 → 그냥 검색
+      if (mode === "elevAwait") {
+        setMode(null);
+        await runElevSearch(t);
+        return;
+      }
+
       setLoading(true);
 
-      // 퀵리플라이 시나리오
+      // 2) 퀵리플라이 시나리오
       if (t.includes("엘리베이터 상태 조회")) {
-        setTimeout(() => {
-          appendBot(
-            "/elev [역코드 또는 역명] 으로 엘리베이터 상태를 조회해보세요.\n예) /elev 0150  또는  /elev 종각"
-          );
-          setLoading(false);
-        }, 600);
+        appendBot("조회할 역명을 입력해주세요. 예) 종각 / 서울대입구 / 0150");
+        setMode("elevAwait");
+        setLoading(false);
         return;
       }
       if (t.includes("화장실")) {
         setTimeout(() => {
           appendBot("네, 노원역에서 가장 가까운 화장실 위치를 알려드릴게요.");
+        }, 300);
+        setTimeout(() => {
+          appendBot("", true); // 맵 placeholder
+          appendBot("현재 위치 기준 북쪽 500m, 서쪽 214m에 가장 가까운 화장실이 있습니다.");
           setTimeout(() => {
-            appendBot("", true); // 맵 placeholder
-            appendBot("현재 위치 기준 북쪽 500m, 서쪽 214m에 가장 가까운 화장실이 있습니다.");
-            setTimeout(() => {
-              appendBot("다른 도움이 필요하신가요?");
-              setQuickReplies(["엘리베이터 상태 조회", "다른 역 화장실 찾기"]);
-              setLoading(false);
-            }, 800);
-          }, 800);
-        }, 600);
+            appendBot("다른 도움이 필요하신가요?");
+            setQuickReplies(DEFAULT_QUICK_REPLIES);
+            setLoading(false);
+          }, 500);
+        }, 700);
         return;
       }
 
-      // 명령 처리
+      // 3) 명령 처리
       const handled = await handleCommand(t);
       if (!handled) {
         setTimeout(() => {
-          appendBot("알 수 없는 명령입니다. 사용 가능: /elev [역코드 또는 역명]");
+          appendBot(
+            "알 수 없는 명령입니다.\n- 빠른 사용: \"엘리베이터 상태 조회\" → 역명 입력\n- 또는: /elev [역코드|역명]"
+          );
           setLoading(false);
-        }, 500);
+          // ✅ 여기! 알 수 없는 명령 이후 팝업 복구
+          setQuickReplies(DEFAULT_QUICK_REPLIES); // ⬅️ 추가
+        }, 300);
       }
     },
-    [input, appendUser, appendBot, handleCommand]
+    [input, appendUser, appendBot, handleCommand, mode, runElevSearch]
   );
 
   /* ---------------------- 렌더 ---------------------- */
@@ -278,16 +368,41 @@ export default function ChatBotScreen() {
       />
 
       <View>
+        {/* 퀵리플라이 */}
         <View style={styles.quickReplyContainer}>
           {quickReplies.map((reply) => (
             <QuickReply key={reply} text={reply} onPress={onSend} />
           ))}
         </View>
 
+        {/* 모드 안내 배지 */}
+        {mode === "elevAwait" && (
+          <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
+            <View
+              style={{
+                alignSelf: "flex-start",
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 9999,
+                backgroundColor: "#EEFDFD",
+                borderWidth: 1,
+                borderColor: "#CFF5F5",
+              }}
+            >
+              <Text style={{ color: "#0A6B6A", fontWeight: "600" }}>
+                승강기 조회 모드: 역명을 입력하세요
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* 입력 바 */}
         <View style={styles.inputBar}>
           <TextInput
             style={styles.input}
-            placeholder="메시지를 입력하세요."
+            placeholder={
+              mode === "elevAwait" ? "예: 종각 / 서울대입구 / 0150" : "메시지를 입력하세요."
+            }
             placeholderTextColor="#17171B"
             value={input}
             onChangeText={setInput}
