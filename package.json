@@ -17,7 +17,6 @@
     "@react-navigation/stack": "^7.4.8",
     "dotenv": "^17.2.3",
     "expo": "^53.0.22",
-    "expo-build-properties": "~0.14.8",
     "expo-dev-client": "~5.2.4",
     "expo-font": "~13.3.2",
     "expo-location": "~18.1.6",
@@ -28,13 +27,11 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-safe-area-context": "5.4.0",
-    "react-native-screens": "~4.11.1"
+    "react-native-screens": "~4.11.1",
+    "expo-build-properties": "~0.14.8"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0",
-    "@types/react": "~19.0.10",
-    "supabase": "^2.47.2",
-    "typescript": "~5.8.3"
+    "@babel/core": "^7.20.0"
   },
   "private": true
 }
