@@ -1,4 +1,3 @@
-// src/screens/station/StationFacilitiesScreen.js
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
@@ -25,6 +24,12 @@ function sanitizeName(name = "") {
   return name.replace(/\(\s*\d+\s*\)$/g, "").trim();
 }
 
+function normalizeLine(line = "") {
+  const s = String(line).trim();
+  const m = s.match(/(\d+)/);
+  return m ? `${parseInt(m[1], 10)}호선` : s;
+}
+
 function koKind(kind = "") {
   if (kind === "EV") return "엘리베이터";
   if (kind === "ES") return "에스컬레이터";
@@ -49,7 +54,7 @@ for (const row of STATION_ROWS) {
     .toString()
     .trim();
   const name = sanitizeName(row.name ?? "");
-  const line = (row.line ?? "").toString().trim();
+  const line = normalizeLine(row.line ?? "");
   if (!name) continue;
   const rec = { code: code || null, name, line };
   if (code) byCode.set(code, rec);
@@ -63,7 +68,7 @@ function findByCode(code) {
 }
 function findByNameAndLine(name, line) {
   const n = sanitizeName(name);
-  const l = (line || "").trim();
+  const l = normalizeLine(line || "");
   if (!n) return null;
   if (l) {
     const rec = byNameLine.get(`${n}|${l}`);
@@ -80,21 +85,18 @@ function normalizeParams(raw = {}) {
   const codeRaw = raw.code ?? raw.stationCode ?? raw.id ?? null;
 
   const name = sanitizeName(nameRaw);
-  const line = typeof lineRaw === "string" ? lineRaw.trim() : "";
+  const line = normalizeLine(lineRaw);
   const code = typeof codeRaw === "string" ? codeRaw.trim() : codeRaw;
 
   return { name, line, code };
 }
 
-/* ===================== 엘리베이터 JSON 정규화 ===================== */
+/* ===================== 엘리베이터 JSON 정규화 & 인덱싱 ===================== */
 
-/** elevJson 안에서 실제 데이터 배열을 찾아 반환 (루트/row/DATA 등 다양한 케이스 허용) */
 function pickElevArray(anyJson) {
   if (Array.isArray(anyJson)) return anyJson;
   if (Array.isArray(anyJson?.DATA)) return anyJson.DATA;
   if (Array.isArray(anyJson?.row)) return anyJson.row;
-
-  // 흔한 래핑 키들 순회
   for (const k of Object.keys(anyJson || {})) {
     const v = anyJson[k];
     if (Array.isArray(v)) return v;
@@ -106,27 +108,22 @@ function pickElevArray(anyJson) {
   return [];
 }
 
-/** 원시 레코드를 내부 표준 스키마로 변환 */
 function normalizeElevRow(raw) {
-  const code =
-    (raw.station_cd ??
-      raw.STN_CD ??
-      raw.code ??
-      raw.stationCode ??
-      "") + "";
+  const code = String(
+    raw.stn_cd ?? raw.STN_CD ?? raw.station_cd ?? raw.code ?? raw.stationCode ?? ""
+  ).trim();
   const name = sanitizeName(
-    raw.station_nm ?? raw.STN_NM ?? raw.name ?? raw.stationName ?? ""
+    raw.stn_nm ?? raw.STN_NM ?? raw.station_nm ?? raw.name ?? raw.stationName ?? ""
   );
-  const facilityName =
-    raw.elvtr_nm ?? raw.ELVTR_NM ?? raw.facilityName ?? "";
+  const facilityName = raw.elvtr_nm ?? raw.ELVTR_NM ?? raw.facilityName ?? "";
   const section = raw.opr_sec ?? raw.OPR_SEC ?? raw.section ?? "";
   const location =
     raw.instl_pstn ?? raw.INSTL_PSTN ?? raw.location ?? raw.gate ?? "";
   const statusRaw = raw.use_yn ?? raw.USE_YN ?? raw.status ?? "";
   const kind = raw.elvtr_se ?? raw.ELVTR_SE ?? raw.kind ?? "";
-  let line = (raw.line ?? raw.LINE_NUM ?? raw.lineName ?? "").toString().trim();
+  let line = normalizeLine(raw.line ?? raw.LINE_NUM ?? raw.lineName ?? "");
 
-  // 상태 한글화
+  // 상태 표준화
   const status =
     statusRaw === "Y"
       ? "사용가능"
@@ -134,7 +131,7 @@ function normalizeElevRow(raw) {
       ? "중지"
       : statusRaw || "-";
 
-  // 라인 비어있으면 역 인덱스에서 보강
+  // 라인 비어있으면 역 메타로 보강
   if (!line && code) {
     const meta = findByCode(code);
     if (meta?.line) line = meta.line;
@@ -150,6 +147,16 @@ function normalizeElevRow(raw) {
     kind,
     line,
   };
+}
+
+// ✅ 모듈 로드 시 1회만 정규화 & 인덱싱(성능 개선)
+const ELEV_ROWS = pickElevArray(elevJson).map(normalizeElevRow);
+const ELEV_BY_CODE = new Map();
+for (const r of ELEV_ROWS) {
+  if (!r.code) continue;
+  const arr = ELEV_BY_CODE.get(r.code) || [];
+  arr.push(r);
+  ELEV_BY_CODE.set(r.code, arr);
 }
 
 /* ===================== 화면 컴포넌트 ===================== */
@@ -198,39 +205,37 @@ export default function StationFacilitiesScreen() {
           if (!current.name && meta?.name) current.name = meta.name;
         }
 
-        // 1) 로컬 JSON에서 전체 rows 추출 → 정규화
-        const rawArray = pickElevArray(elevJson);
-        const normalized = rawArray.map(normalizeElevRow);
-
-        // 2) 우선순위 필터: code → name
+        // 1) 사전 정규화된 테이블에서 필터
         let filtered = [];
         if (current.code) {
-          filtered = normalized.filter((r) => r.code === current.code);
+          filtered = ELEV_BY_CODE.get(current.code) || [];
         }
         if (filtered.length === 0 && current.name) {
           const n = sanitizeName(current.name);
-          filtered = normalized.filter((r) => sanitizeName(r.name) === n);
+          filtered = ELEV_ROWS.filter((r) => sanitizeName(r.name) === n);
         }
 
-        // 3) 보강 & 상태 확정
+        // 2) 보강 & 상태 확정
         if ((!current.name || !current.line) && filtered.length) {
           const r0 = filtered[0];
           current.name = sanitizeName(current.name || r0.name || "");
           if (!current.line) current.line = r0.line || current.line || "";
         }
         if (!current.name || !current.line) {
-          const meta = current.code ? findByCode(current.code) : findByNameAndLine(current.name, current.line);
+          const meta = current.code
+            ? findByCode(current.code)
+            : findByNameAndLine(current.name, current.line);
           if (meta) {
             if (!current.name) current.name = meta.name;
             if (!current.line) current.line = meta.line;
           }
         }
 
-        // 4) 결과 세팅
+        // 3) 결과 세팅
         setResolved(current);
         setRows(filtered);
 
-        // 5) 안내 메시지
+        // 4) 안내 메시지
         if (filtered.length === 0) {
           const msg = current.code || current.name
             ? `해당 역 설비 데이터가 없습니다. (${current.line || ""} ${current.name || ""} / 코드 ${current.code || "-"})`
