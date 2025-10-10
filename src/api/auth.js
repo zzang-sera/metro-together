@@ -1,3 +1,4 @@
+//src/api/auth.js
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -7,8 +8,9 @@ import {
   GoogleAuthProvider, 
   signInWithCredential 
 } from 'firebase/auth';
+import { db, auth } from '../config/firebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import { auth } from '../config/firebaseConfig';
 
 /**
  * 이메일과 비밀번호로 새로운 사용자를 생성합니다. (회원가입)
@@ -49,6 +51,7 @@ export const signInWithGoogle = async () => {
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     
+    // 멋쟁이님 코드에서 정상 작동하던 `userInfo.data.idToken`을 그대로 사용합니다.
     const idToken = userInfo.data.idToken;
     if (!idToken) {
       throw new Error("Google로부터 유효한 idToken을 받지 못했습니다.");
@@ -57,6 +60,22 @@ export const signInWithGoogle = async () => {
     const googleCredential = GoogleAuthProvider.credential(idToken);
     const userCredential = await signInWithCredential(auth, googleCredential);
     
+    const user = userCredential.user;
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      const newUser = {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName,
+        authProvider: 'google',
+        securityQuestion: null,
+        securityAnswer: null,
+      };
+      await setDoc(userDocRef, newUser);
+      console.log("새로운 구글 사용자 정보를 Firestore에 저장했습니다.");
+    }    
     return { user: userCredential.user, error: null };
   } catch (error) {
     console.error('Google 로그인 최종 오류:', error);
