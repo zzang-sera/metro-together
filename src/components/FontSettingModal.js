@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { useFontSize } from '../contexts/FontSizeContext';
-import { responsiveFontSize, responsiveHeight } from '../utils/responsive'; // responsiveHeight 추가
+import { responsiveFontSize, responsiveHeight } from '../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 
 const FontSettingModal = ({ visible, onClose }) => {
@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
-  // --- 👇 멋쟁이님께서 수정한 스타일 반영 ---
   previewText: {
     textAlign: 'center',
     fontFamily: 'NotoSansKR',
@@ -114,7 +113,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 24,
   },
-  // --- 👇 2x2 그리드 레이아웃으로 다시 수정 ---
   optionsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -124,7 +122,8 @@ const styles = StyleSheet.create({
     width: '48%', 
     paddingVertical: responsiveHeight(16), 
     marginBottom: responsiveHeight(10), 
-    borderRadius: 8,
+    // --- 👇 [수정] borderRadius를 40으로 변경하여 둥글게 만듭니다 ---
+    borderRadius: 40,
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
     backgroundColor: '#FAFAFA',
@@ -137,8 +136,8 @@ const styles = StyleSheet.create({
   },
   optionButtonText: {
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    fontSize: responsiveFontSize(18),
+    fontWeight: 'bold',
+    fontSize: responsiveFontSize(16),
     color: '#17171B',
   },
   optionButtonTextSelected: {
