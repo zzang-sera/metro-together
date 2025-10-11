@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#D32F2F',
   },
   destructiveButtonText: {
-    color: '#FFFFFF',
+    color: '#17171B',
   },
 });
 
