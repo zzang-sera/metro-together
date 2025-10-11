@@ -1,3 +1,5 @@
+// src/screens/nearbystation/NearbyStationsScreen.js 
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,6 +15,9 @@ import { Ionicons } from '@expo/vector-icons';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
+
+// 1. 필요한 훅을 불러옵니다.
+import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
@@ -35,26 +40,25 @@ function getLineColor(lineNum) {
   return lineInfo ? lineInfo.color : '#666666';
 }
 
-// 👇 [접근성 수정] 배경색에 따라 적절한 텍스트 색상(검/흰)을 반환하는 함수
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
   const r = parseInt(hexColor.substr(1, 2), 16);
   const g = parseInt(hexColor.substr(3, 2), 16);
   const b = parseInt(hexColor.substr(5, 2), 16);
-  // 밝기 계산 (Luminance formula)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#17171B' : '#FFFFFF'; // 밝으면 검은 글씨, 어두우면 흰 글씨
+  return luminance > 0.5 ? '#17171B' : '#FFFFFF';
 }
 
 
 const NearbyStationsScreen = () => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
   const navigation = useNavigation();
   const [nearbyStations, setNearbyStations] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // ... useEffect 로직은 변경 없음 ...
     (async () => {
       setIsLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -80,16 +84,30 @@ const NearbyStationsScreen = () => {
   }, []);
 
   if (isLoading) {
-    // ... 로딩 UI 변경 없음 ...
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+        {/* 3. 로딩 텍스트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          주변 역을 찾고 있습니다...
+        </Text>
+      </View>
+    );
   }
 
   if (errorMsg) {
-    // ... 에러 UI 변경 없음 ...
+    return (
+      <View style={styles.centered}>
+        {/* 3. 에러 텍스트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          {errorMsg}
+        </Text>
+      </View>
+    );
   }
 
   const renderStationItem = ({ item }) => {
     const lineColor = getLineColor(item.line);
-    // 👇 [접근성 수정] 배경색에 맞는 텍스트 색상 계산
     const textColor = getTextColorForBackground(lineColor);
     const accessibilityLabel = `${item.line} ${item.name}, ${item.distance.toFixed(1)}km 거리`;
 
@@ -101,15 +119,17 @@ const NearbyStationsScreen = () => {
         onPress={() => navigation.navigate('시설', { stationName: item.name, line: item.line })}
       >
         <View style={styles.leftContent}>
-          {/* 👇 [디자인 수정] 알약 모양 배지로 변경 */}
           <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            <Text style={[styles.lineBadgeText, { color: textColor }]}>
+            {/* 3. 호선 뱃지 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.lineBadgeText, { color: textColor, fontSize: responsiveFontSize(14) + fontOffset }]}>
               {item.line}
             </Text>
           </View>
           <View>
-            <Text style={styles.stationName}>{item.name}</Text>
-            <Text style={styles.distanceText}>
+            {/* 3. 역 이름 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>{item.name}</Text>
+            {/* 3. 거리 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}>
               {item.distance.toFixed(1)} km
             </Text>
           </View>
@@ -179,10 +199,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  // 👇 [디자인 수정] 알약 모양, 자동 너비 조절
   lineBadge: {
-    borderRadius: responsiveWidth(40), // 충분히 둥글게
-    paddingHorizontal: responsiveWidth(12), // 좌우 여백으로 너비 조절
+    borderRadius: responsiveWidth(40),
+    paddingHorizontal: responsiveWidth(12),
     paddingVertical: responsiveHeight(5),
     justifyContent: 'center',
     alignItems: 'center',
@@ -190,7 +209,7 @@ const styles = StyleSheet.create({
   },
   lineBadgeText: {
     fontSize: responsiveFontSize(14),
-    fontWeight: '700', // 굵기를 700으로 낮춰 가독성 확보
+    fontWeight: '700',
   },
   stationName: {
     fontSize: responsiveFontSize(18),

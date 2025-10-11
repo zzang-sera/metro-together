@@ -1,3 +1,5 @@
+// src/screens/auth/LoginScreen.js
+
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuthForm } from '../../hook/useAuthForm';
@@ -6,7 +8,14 @@ import AuthInput from '../../components/AuthInput';
 import CustomButton from '../../components/CustomButton'; 
 import { styles } from '../../styles/authStyles';
 
+// 1. 필요한 훅과 유틸리티를 불러옵니다.
+import { useFontSize } from '../../contexts/FontSizeContext';
+import { responsiveFontSize } from '../../utils/responsive';
+
 const LoginScreen = ({ navigation }) => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
+  
   const { 
     email,
     password,
@@ -16,8 +25,8 @@ const LoginScreen = ({ navigation }) => {
     setPassword,
     setEmailError,
     setPasswordError,
-   } = useAuthForm();
-   
+  } = useAuthForm();
+    
   const handleLogin = async () => { 
     if (!email || !password) {
       if (!email) setEmailError('이메일을 입력해주세요.');
@@ -38,8 +47,13 @@ const LoginScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>로그인</Text>
         
+        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
+          로그인
+        </Text>
+        
+        {/* AuthInput과 CustomButton은 내부적으로 수정했으므로 그대로 사용하면 됩니다. */}
         <AuthInput
           label="이메일 주소"
           value={email}
@@ -55,7 +69,6 @@ const LoginScreen = ({ navigation }) => {
           error={passwordError}
           isPassword={true}
         />
-
         <CustomButton
           type="primary"
           title="로그인"
@@ -64,15 +77,15 @@ const LoginScreen = ({ navigation }) => {
 
         <View style={styles.bottomNavContainer}>
           <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-            <Text style={styles.bottomNavLink}>회원가입</Text>
+            <Text style={[styles.bottomNavLink, { fontSize: responsiveFontSize(16) + fontOffset }]}>회원가입</Text>
           </TouchableOpacity>
-          <Text style={styles.bottomNavSeparator}>|</Text>
+          <Text style={[styles.bottomNavSeparator, { fontSize: responsiveFontSize(16) + fontOffset }]}>|</Text>
           <TouchableOpacity onPress={() => { navigation.navigate('FindEmail') }}>
-            <Text style={styles.bottomNavLink}>이메일 찾기</Text>
+            <Text style={[styles.bottomNavLink, { fontSize: responsiveFontSize(16) + fontOffset }]}>이메일 찾기</Text>
           </TouchableOpacity>
-          <Text style={styles.bottomNavSeparator}>|</Text>
+          <Text style={[styles.bottomNavSeparator, { fontSize: responsiveFontSize(16) + fontOffset }]}>|</Text>
           <TouchableOpacity onPress={() => { navigation.navigate('ForgotPassword') }}>
-            <Text style={styles.bottomNavLink}>비밀번호 찾기</Text>
+            <Text style={[styles.bottomNavLink, { fontSize: responsiveFontSize(16) + fontOffset }]}>비밀번호 찾기</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -81,4 +94,3 @@ const LoginScreen = ({ navigation }) => {
 };
 
 export default LoginScreen;
-

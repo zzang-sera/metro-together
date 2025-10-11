@@ -1,4 +1,4 @@
-// src/screens/searchstation/SearchStationScreen.js
+//src/screens/searchstation/SearchStationScreen.js
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -13,29 +13,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
+import { useFontSize } from '../../contexts/FontSizeContext';
+import { responsiveFontSize, responsiveHeight } from '../../utils/responsive'; // responsiveHeight 추가
 
-// 데이터
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
 
-// 호선 → 색상
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
 const SearchStationScreen = () => {
+  const { fontOffset } = useFontSize();
   const navigation = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
-
     const matchingStations = allStations.filter((station) =>
       station.name.startsWith(q)
     );
-
     const stationMap = new Map();
     matchingStations.forEach((station) => {
       if (stationMap.has(station.name)) {
@@ -44,7 +43,6 @@ const SearchStationScreen = () => {
         stationMap.set(station.name, { name: station.name, lines: [station.line] });
       }
     });
-
     return Array.from(stationMap.values());
   }, [searchQuery]);
 
@@ -54,7 +52,7 @@ const SearchStationScreen = () => {
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#8e8e93" style={styles.searchIcon} />
         <TextInput
-          style={styles.input}
+          style={[styles.input, { fontSize: responsiveFontSize(16) + fontOffset }]}
           placeholder="역 이름을 입력하세요"
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -63,7 +61,7 @@ const SearchStationScreen = () => {
         />
         {searchQuery.length > 0 && (
           <View style={styles.searchButton}>
-            <Text style={styles.searchButtonText}>검색</Text>
+            <Text style={[styles.searchButtonText, { fontSize: responsiveFontSize(14) + fontOffset }]}>검색</Text>
           </View>
         )}
       </View>
@@ -79,7 +77,6 @@ const SearchStationScreen = () => {
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.resultItem}
-              // ⬇️ 같은 탭의 스택(SearchStackNavigator)으로 push → 탭바 유지
               onPress={() =>
                 navigation.navigate('시설', { stationName: item.name, line: firstLine })
               }
@@ -94,14 +91,14 @@ const SearchStationScreen = () => {
                 color="black"
                 style={styles.locationIcon}
               />
-              <Text style={styles.stationName}>{item.name}</Text>
+              <Text style={[styles.stationName, { fontSize: responsiveFontSize(16) + fontOffset }]}>{item.name}</Text>
               <View style={styles.lineContainer}>
                 {item.lines.map((line) => (
                   <View
                     key={line}
                     style={[styles.lineCircle, { backgroundColor: getLineColor(line) }]}
                   >
-                    <Text style={styles.lineText}>{line.replace('호선', '')}</Text>
+                    <Text style={[styles.lineText, { fontSize: responsiveFontSize(12) + fontOffset }]}>{line.replace('호선', '')}</Text>
                   </View>
                 ))}
               </View>
@@ -110,7 +107,7 @@ const SearchStationScreen = () => {
         }}
         ListEmptyComponent={
           searchQuery.length > 0 ? (
-            <Text style={styles.emptyText}>검색 결과가 없습니다.</Text>
+            <Text style={[styles.emptyText, { fontSize: responsiveFontSize(16) + fontOffset }]}>검색 결과가 없습니다.</Text>
           ) : null
         }
       />
@@ -126,30 +123,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: '#e5e5e5',
   },
-  headerTitle: { fontSize: 18, fontWeight: '600', marginLeft: 16 },
+  headerTitle: { fontSize: responsiveFontSize(18), fontWeight: '600', marginLeft: 16 },
   searchContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#f0f0f0', borderRadius: 20,
     margin: 16, paddingHorizontal: 12,
   },
   searchIcon: { marginRight: 8 },
-  input: { flex: 1, height: 40, fontSize: 16 },
-  searchButton: { backgroundColor: '#00B8D4', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 6 },
-  searchButtonText: { color: 'white', fontWeight: 'bold' },
+  // 👇 [수정] 고정 높이를 삭제하고, 세로 여백(paddingVertical)으로 대체
+  input: {
+    flex: 1,
+    paddingVertical: responsiveHeight(10), // 높이가 유동적으로 변하도록 수정
+    fontSize: responsiveFontSize(16),
+  },
+  searchButton: { backgroundColor: '#00B8D4', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 4 },
+  searchButtonText: { color: 'white', fontWeight: 'bold', fontSize: responsiveFontSize(14) },
   resultItem: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
   },
   locationIcon: { marginRight: 12 },
-  stationName: { flex: 1, fontSize: 16 },
+  stationName: { flex: 1, fontSize: responsiveFontSize(16) },
   lineContainer: { flexDirection: 'row' },
   lineCircle: {
     width: 24, height: 24, borderRadius: 12,
     justifyContent: 'center', alignItems: 'center', marginLeft: 8,
   },
-  lineText: { color: 'white', fontSize: 12, fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', marginTop: 20, color: 'gray' },
+  lineText: { color: 'white', fontSize: responsiveFontSize(12), fontWeight: 'bold' },
+  emptyText: { textAlign: 'center', marginTop: 20, color: 'gray', fontSize: responsiveFontSize(16) },
 });
 
 export default SearchStationScreen;

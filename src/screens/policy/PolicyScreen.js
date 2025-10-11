@@ -1,24 +1,27 @@
-// src/screens/policy/PolicyScreen.js
-
+//src/screens/policy/PolicyScreen.js
 import React from 'react';
 import { ScrollView, Text, StyleSheet } from 'react-native';
-// 👇 [1. 수정] useNavigation을 더 이상 사용하지 않으므로 import 문 정리
 import { useRoute } from '@react-navigation/native';
-import { responsiveWidth, responsiveHeight } from '../../utils/responsive';
+// 1. 필요한 훅과 유틸리티를 불러옵니다.
+import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
+import { useFontSize } from '../../contexts/FontSizeContext';
 
-// 👇 [2. 수정] 컴포넌트가 navigation을 직접 prop으로 받도록 변경
 const PolicyScreen = ({ navigation }) => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
   const route = useRoute();
   const { title, content } = route.params;
 
-  // 헤더 제목을 동적으로 변경하기 위해 navigation을 사용
   React.useLayoutEffect(() => {
     navigation.setOptions({ title });
   }, [navigation, title]);
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.content}>{content}</Text>
+      {/* 3. Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
+      <Text style={[styles.content, { fontSize: responsiveFontSize(14) + fontOffset }]}>
+        {content}
+      </Text>
     </ScrollView>
   );
 };
@@ -31,7 +34,8 @@ const styles = StyleSheet.create({
   },
   content: {
     fontFamily: 'NotoSansKR',
-    fontSize: responsiveWidth(14),
+    // 4. responsiveWidth -> responsiveFontSize 로 수정 (코드 정확성 향상)
+    fontSize: responsiveFontSize(14),
     fontWeight: '700',
     lineHeight: responsiveHeight(24),
     color: '#17171B',
