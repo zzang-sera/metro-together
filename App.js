@@ -1,3 +1,4 @@
+// App.js
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image, ScrollView, StyleSheet } from 'react-native';
 import { NavigationContainer, useNavigation, useRoute } from '@react-navigation/native';
@@ -9,6 +10,10 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './src/config/firebaseConfig';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+// 접근성 관련
+import { FontSizeProvider } from './src/contexts/FontSizeContext'; 
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 
 // --- 화면들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
@@ -235,23 +240,19 @@ const AuthStack = () => (
 );
 
 const AppStack = () => <UserTabs />;
-
-export default function App() {
-  const [user, setUser] = useState(null);
+// 1. App의 실제 내용을 담을 AppContent 컴포넌트를 새로 만듭니다.
+const AppContent = () => {
+  // 2. AuthContext에서 user 정보와 인증 로딩 상태를 가져옵니다.
+  const { user, isLoading: isAuthLoading } = useAuth(); 
+  
   const [fontsLoaded] = useFonts({
     NotoSansKR: require('./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
     NotoSans: require('./src/assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
     'NotoSans-Italic': require('./src/assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
   });
 
-  useEffect(() => {
-    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-    if (webClientId) GoogleSignin.configure({ webClientId });
-    const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
-    return unsubscribe;
-  }, []);
-
-  if (!fontsLoaded) {
+  // 3. 폰트 로딩과 인증 로딩이 모두 끝날 때까지 로딩 화면을 보여줍니다.
+  if (!fontsLoaded || isAuthLoading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -259,11 +260,30 @@ export default function App() {
     );
   }
 
+  // 4. 로딩이 끝나면 로그인 상태에 따라 적절한 네비게이터를 보여줍니다.
+  return (
+    <NavigationContainer>
+      {user ? <AppStack /> : <AuthStack />}
+    </NavigationContainer>
+  );
+};
+
+
+// 5. 최종 App 컴포넌트는 Provider들을 감싸는 역할만 하도록 단순화합니다.
+export default function App() {
+  // GoogleSignin 설정은 앱의 진입점에서 한 번만 실행하면 되므로 여기에 둡니다.
+  useEffect(() => {
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    if (webClientId) GoogleSignin.configure({ webClientId });
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
-        {user ? <AppStack /> : <AuthStack />}
-      </NavigationContainer>
+      <AuthProvider>
+        <FontSizeProvider>
+          <AppContent />
+        </FontSizeProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

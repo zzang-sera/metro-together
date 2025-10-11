@@ -1,11 +1,16 @@
-// src/components/CustomButton.js
+// src/components/CustomButton.js (전체 수정 코드)
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-// 👇 [수정] widthPercentage를 responsiveWidth로 변경
 import { responsiveWidth, responsiveFontSize } from '../utils/responsive';
 
+// 1. 우리가 만든 useFontSize 훅을 불러옵니다.
+import { useFontSize } from '../contexts/FontSizeContext';
+
 const CustomButton = ({ title, onPress, type = 'feature' }) => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
+
   const getButtonStyles = () => {
     switch (type) {
       case 'outline':
@@ -31,17 +36,27 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
         return [styles.textBase, styles.featureButtonText];
     }
   };
+  
+  // 3. 버튼 타입별로 기본 폰트 크기를 정합니다. (기존 StyleSheet 참고)
+  const baseFontSize = type === 'primary' ? 18 : 20;
 
   return (
     <TouchableOpacity style={getButtonStyles()} onPress={onPress}>
-      <Text style={getTextStyles()}>{title}</Text>
+      {/* 4. 최종적으로 Text의 style에 fontOffset을 더한 값을 적용합니다. */}
+      <Text 
+        style={[
+          getTextStyles(), 
+          { fontSize: responsiveFontSize(baseFontSize) + fontOffset }
+        ]}
+      >
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   buttonBase: {
-    // 👇 [수정] widthPercentage를 responsiveWidth로 변경
     width: responsiveWidth(300),
     height: responsiveWidth(60),
     justifyContent: 'center',
@@ -64,7 +79,7 @@ const styles = StyleSheet.create({
   },
   featureButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(20),
+    // fontSize는 위에서 동적으로 계산하므로 여기서 제거해도 됩니다 (하지만 유지해도 문제 없음).
   },
   outlineButton: {
     backgroundColor: '#FAFAFA',
@@ -73,7 +88,6 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(20),
   },
   primaryButton: {
     backgroundColor: '#14CAC9',
@@ -84,14 +98,12 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(18),
   },
   destructiveButton: {
     backgroundColor: '#D32F2F',
   },
   destructiveButtonText: {
     color: '#FFFFFF',
-    fontSize: responsiveFontSize(20),
   },
 });
 

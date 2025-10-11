@@ -1,19 +1,25 @@
-// src/screens/main/MainScreen.js
-import React from 'react';
+// src/screens/main/MainScreen.js (수정된 코드)
+
+import React, { useState } from 'react'; // --- 1. useState 추가 ---
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { mainStyles } from '../../styles/mainStyles';
 import CustomButton from '../../components/CustomButton';
 import { auth } from '../../config/firebaseConfig';
 
+// --- 2. 필요한 훅과 컴포넌트, 유틸리티 추가 ---
+import { useFontSize } from '../../contexts/FontSizeContext';
+import { responsiveFontSize } from '../../utils/responsive';
+import FontSettingModal from '../../components/FontSettingModal';
+
 const MainScreen = () => {
   const navigation = useNavigation();
+  // --- 3. 모달 표시 상태와 Context 훅 사용 ---
+  const [isModalVisible, setModalVisible] = useState(false);
+  const { fontOffset } = useFontSize();
 
   const goTab = (name) => {
-    // 같은 TabNavigator 안이므로 바로 이름으로 이동
     navigation.navigate(name);
-    // 만약 이 화면이 탭 바깥에서 렌더링된다면 아래 주석처럼 사용
-    // navigation.navigate('Tabs', { screen: name });
   };
 
   const handleFeaturePress = (featureName) => {
@@ -37,9 +43,16 @@ const MainScreen = () => {
 
   return (
     <SafeAreaView style={mainStyles.container}>
+      {/* --- 4. 모달 컴포넌트 추가 --- */}
+      <FontSettingModal 
+        visible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+      />
+
       <View style={mainStyles.header}>
-        <Text style={mainStyles.greetingText}>
-          {auth.currentUser?.email}님,{"\n"}환영합니다!
+        {/* --- 5. 글자 크기 동적 적용 --- */}
+        <Text style={[mainStyles.greetingText, { fontSize: responsiveFontSize(22) + fontOffset }]}>
+          {auth.currentUser?.displayName || auth.currentUser?.email}님,{"\n"}환영합니다!
         </Text>
       </View>
 
@@ -63,6 +76,12 @@ const MainScreen = () => {
           type="outline"
           title="챗봇"
           onPress={handleChatbotPress}
+        />
+        {/* --- 6. 글자 크기 설정 버튼 추가 --- */}
+        <CustomButton
+          type="outline"
+          title="글자 크기 설정"
+          onPress={() => setModalVisible(true)}
         />
       </View>
     </SafeAreaView>
