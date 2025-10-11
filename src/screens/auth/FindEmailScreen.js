@@ -1,4 +1,4 @@
-// src/screens/FindEmailScreen.js
+//src/screens/auth/SignUpScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
@@ -7,28 +7,27 @@ import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
 
+// 1. 필요한 훅과 유틸리티를 불러옵니다.
+import { useFontSize } from '../../contexts/FontSizeContext';
+import { responsiveFontSize } from '../../utils/responsive';
+
 const FindEmailScreen = ({ navigation }) => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
+  
   const {
     name, setName, nameError, setNameError,
     dob, setDob, dobError, setDobError,
     securityAnswer, setSecurityAnswer, securityAnswerError, setSecurityAnswerError,
   } = useAuthForm();
 
- // ✨ 이 부분을 아래 새 코드로 바꿔주세요!
   const maskEmail = (email) => {
-    // 이메일을 '@' 기준으로 아이디와 도메인으로 나눕니다.
     const [localPart, domain] = email.split('@');
     const [domainName, topLevelDomain] = domain.split('.');
-
-    // 아이디의 앞 3글자만 남기고 나머지는 '*'로 바꿉니다.
     const maskedLocalPart = localPart.substring(0, 3) + '*'.repeat(localPart.length - 3);
-
-    // 도메인의 첫 글자만 남기고 나머지는 '*'로 바꿉니다.
     const maskedDomainName = domainName.substring(0, 1) + '*'.repeat(domainName.length - 1);
-
     return `${maskedLocalPart}@${maskedDomainName}.${topLevelDomain}`;
   };
-
 
   const handleFindEmail = async () => {
     let isValid = true;
@@ -53,14 +52,24 @@ const FindEmailScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>이메일 찾기</Text>
+        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
+          이메일 찾기
+        </Text>
         
+        {/* AuthInput과 CustomButton은 이미 수정되었으므로 그대로 사용합니다. */}
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>본인 확인 질문</Text>
-          <View style={styles.questionBox}><Text style={styles.questionText}>{SECURITY_QUESTION}</Text></View>
+          <Text style={[styles.label, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            본인 확인 질문
+          </Text>
+          <View style={styles.questionBox}>
+            <Text style={[styles.questionText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              {SECURITY_QUESTION}
+            </Text>
+          </View>
         </View>
         <AuthInput label="질문에 대한 답변" value={securityAnswer} onChangeText={setSecurityAnswer} error={securityAnswerError} />
 

@@ -1,4 +1,4 @@
-// src/screens/SignUpScreen.js
+//src/screens/auth/SignUpScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
@@ -8,8 +8,14 @@ import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
 
+// 1. 필요한 훅과 유틸리티를 불러옵니다.
+import { useFontSize } from '../../contexts/FontSizeContext';
+import { responsiveFontSize } from '../../utils/responsive';
+
 const SignUpScreen = ( ) => {
-  // useAuthForm에서 필요한 모든 상태와 함수를 가져옵니다.
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
+
   const {
     name, setName, nameError, setNameError,
     dob, setDob, dobError, setDobError,
@@ -25,7 +31,7 @@ const SignUpScreen = ( ) => {
   } = useAuthForm();
 
   const handleSignUp = async () => {
-    // ✨ 1. 버튼이 눌렸는지 확인하는 로그
+    // ... 기존 회원가입 로직은 그대로 유지 ...
     console.log("--- 회원가입 버튼 클릭됨 ---");
     console.log("입력된 값:", { name, dob, email, password, confirmPassword, securityAnswer });
 
@@ -42,7 +48,6 @@ const SignUpScreen = ( ) => {
     if (!name) {
       setNameError('이름을 입력해주세요.');
       isValid = false;
-      // ✨ 2. 어느 검사에서 실패했는지 확인하는 로그
       console.log("유효성 검사 실패: 이름이 비어있습니다.");
     }
     if (!dob) {
@@ -104,8 +109,12 @@ const SignUpScreen = ( ) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <Text style={styles.title}>회원가입</Text>
+        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
+          회원가입
+        </Text>
         
+        {/* AuthInput과 CustomButton은 내부적으로 글자 크기가 조절되므로 그대로 둡니다. */}
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
         <AuthInput label="이메일 주소" value={email} placeholder="hamkke@example.com" onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />
@@ -113,8 +122,14 @@ const SignUpScreen = ( ) => {
         <AuthInput label="비밀번호 확인" value={confirmPassword} onChangeText={handleConfirmPasswordChange} error={confirmPasswordError} isPassword={true} />
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>본인 확인 질문</Text>
-          <View style={styles.questionBox}><Text style={styles.questionText}>{SECURITY_QUESTION}</Text></View>
+          <Text style={[styles.label, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            본인 확인 질문
+          </Text>
+          <View style={styles.questionBox}>
+            <Text style={[styles.questionText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              {SECURITY_QUESTION}
+            </Text>
+          </View>
         </View>
         <AuthInput label="질문에 대한 답변" value={securityAnswer} onChangeText={setSecurityAnswer} error={securityAnswerError} />
 

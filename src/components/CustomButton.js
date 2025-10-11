@@ -1,11 +1,12 @@
-// src/components/CustomButton.js
-
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-// 👇 [수정] widthPercentage를 responsiveWidth로 변경
 import { responsiveWidth, responsiveFontSize } from '../utils/responsive';
+import { useFontSize } from '../contexts/FontSizeContext';
 
 const CustomButton = ({ title, onPress, type = 'feature' }) => {
+  const { fontOffset } = useFontSize();
+
+  // 모든 버튼이 기본 스타일(buttonBase)을 공유하고, 타입별 스타일을 덧입힙니다.
   const getButtonStyles = () => {
     switch (type) {
       case 'outline':
@@ -31,22 +32,31 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
         return [styles.textBase, styles.featureButtonText];
     }
   };
+  
+  const baseFontSize = (type === 'primary' || type === 'destructive') ? 20 : 20;
 
   return (
     <TouchableOpacity style={getButtonStyles()} onPress={onPress}>
-      <Text style={getTextStyles()}>{title}</Text>
+      <Text 
+        style={[
+          getTextStyles(), 
+          { fontSize: responsiveFontSize(baseFontSize) + fontOffset }
+        ]}
+      >
+        {title}
+      </Text>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
+  // --- ✨ [수정] 모든 버튼의 기본 모양을 둥근 타원형으로 통일 ---
   buttonBase: {
-    // 👇 [수정] widthPercentage를 responsiveWidth로 변경
-    width: responsiveWidth(300),
+    width: '100%', // ✨ [수정] 모든 버튼이 부모 컨테이너의 전체 너비를 차지하도록 변경
     height: responsiveWidth(60),
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
+    // alignSelf: 'center', // width가 100%이므로 더 이상 필요하지 않습니다.
     marginBottom: 12,
     borderRadius: 40,
     elevation: 2,
@@ -57,14 +67,15 @@ const styles = StyleSheet.create({
   },
   textBase: {
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
+  
+  // --- 타입별 색상 및 추가 스타일 ---
   featureButton: {
     backgroundColor: '#14CAC9',
   },
   featureButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(20),
   },
   outlineButton: {
     backgroundColor: '#FAFAFA',
@@ -73,26 +84,21 @@ const styles = StyleSheet.create({
   },
   outlineButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(20),
   },
   primaryButton: {
     backgroundColor: '#14CAC9',
-    width: '100%',
-    height: 56,
-    borderRadius: 8,
     marginTop: 16,
   },
   primaryButtonText: {
     color: '#17171B',
-    fontSize: responsiveFontSize(18),
   },
   destructiveButton: {
     backgroundColor: '#D32F2F',
   },
   destructiveButtonText: {
-    color: '#FFFFFF',
-    fontSize: responsiveFontSize(20),
+    color: '#17171B', 
   },
 });
 
 export default CustomButton;
+

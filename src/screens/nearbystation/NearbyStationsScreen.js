@@ -1,4 +1,5 @@
-// src/screens/nearbystation/NearbyStationsScreen.js
+// src/screens/nearbystation/NearbyStationsScreen.js 
+
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -10,14 +11,17 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
+import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
 
-// 실제 데이터 배열
+// 1. 필요한 훅을 불러옵니다.
+import { useFontSize } from '../../contexts/FontSizeContext';
+
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
 
-// 거리(km)
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -31,151 +35,193 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// 호선 → 색상
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return '#FFFFFF';
+  const r = parseInt(hexColor.substr(1, 2), 16);
+  const g = parseInt(hexColor.substr(3, 2), 16);
+  const b = parseInt(hexColor.substr(5, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? '#17171B' : '#FFFFFF';
+}
+
+
 const NearbyStationsScreen = () => {
+  // 2. Context에서 fontOffset 값을 가져옵니다.
+  const { fontOffset } = useFontSize();
   const navigation = useNavigation();
   const [nearbyStations, setNearbyStations] = useState([]);
   const [errorMsg, setErrorMsg] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
+      setIsLoading(true);
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('위치 정보 접근 권한이 거부되었습니다.');
+        setIsLoading(false);
         return;
       }
-
-      const currentLocation = await Location.getCurrentPositionAsync({});
-
-      const stationsWithTransferInfo = stationData.map((station) => {
-        const isTransfer = stationData.some(
-          (s) => s.name === station.name && s.line !== station.line
-        );
-        return { ...station, isTransfer };
-      });
-
-      const stationsWithDistance = stationsWithTransferInfo.map((station) => ({
-        ...station,
-        distance: getDistance(
-          currentLocation.coords.latitude,
-          currentLocation.coords.longitude,
-          station.lat,
-          station.lng
-        ),
-      }));
-
-      const sortedStations = stationsWithDistance.sort((a, b) => a.distance - b.distance);
-      setNearbyStations(sortedStations.slice(0, 10));
+      try {
+        const currentLocation = await Location.getCurrentPositionAsync({});
+        const stationsWithDistance = stationData.map((station) => ({
+          ...station,
+          distance: getDistance(currentLocation.coords.latitude, currentLocation.coords.longitude, station.lat, station.lng),
+        }));
+        const sortedStations = stationsWithDistance.sort((a, b) => a.distance - b.distance);
+        setNearbyStations(sortedStations.slice(0, 10));
+      } catch (error) {
+        setErrorMsg('현재 위치를 가져오는 데 실패했습니다.');
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, []);
 
-  if (errorMsg) {
+  if (isLoading) {
     return (
-      <View style={styles.container}>
-        <Text>{errorMsg}</Text>
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+        {/* 3. 로딩 텍스트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          주변 역을 찾고 있습니다...
+        </Text>
       </View>
     );
   }
 
-  if (nearbyStations.length === 0) {
+  if (errorMsg) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#0000ff" />
-        <Text style={styles.loadingText}>가까운 역을 찾고 있습니다...</Text>
+        {/* 3. 에러 텍스트에 동적 폰트 크기를 적용합니다. */}
+        <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          {errorMsg}
+        </Text>
       </View>
     );
   }
+
+  const renderStationItem = ({ item }) => {
+    const lineColor = getLineColor(item.line);
+    const textColor = getTextColorForBackground(lineColor);
+    const accessibilityLabel = `${item.line} ${item.name}, ${item.distance.toFixed(1)}km 거리`;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={styles.stationCard}
+        accessibilityLabel={accessibilityLabel}
+        onPress={() => navigation.navigate('시설', { stationName: item.name, line: item.line })}
+      >
+        <View style={styles.leftContent}>
+          <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
+            {/* 3. 호선 뱃지 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.lineBadgeText, { color: textColor, fontSize: responsiveFontSize(14) + fontOffset }]}>
+              {item.line}
+            </Text>
+          </View>
+          <View>
+            {/* 3. 역 이름 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>{item.name}</Text>
+            {/* 3. 거리 텍스트에 동적 폰트 크기를 적용합니다. */}
+            <Text style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+              {item.distance.toFixed(1)} km
+            </Text>
+          </View>
+        </View>
+        <Ionicons name="chevron-forward" size={30} color="#595959" />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>가까운 역 목록</Text>
       <FlatList
         data={nearbyStations}
-        keyExtractor={(item, index) => `${item.name}-${item.line}-${index}`}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.85}
-            style={styles.stationItem}
-            // ⬇️ 같은 탭 스택으로 push (탭바 유지)
-            onPress={() =>
-              navigation.navigate('시설', {
-                stationName: item.name,
-                line: item.line,
-              })
-            }
-            onLongPress={() =>
-              navigation.navigate('역상세', {
-                stationName: item.name,
-                line: item.line,
-              })
-            }
-            delayLongPress={250}
-          >
-            <View
-              style={[
-                styles.lineCircle,
-                { backgroundColor: getLineColor(item.line) },
-              ]}
-            >
-              <Text style={styles.lineText}>
-                {item.line.replace('호선', '')}
-              </Text>
-            </View>
-
-            <View style={styles.stationInfo}>
-              <Text style={styles.stationName}>{item.name}</Text>
-              {item.isTransfer && (
-                <View style={styles.transferBadge}>
-                  <Text style={styles.transferText}>환승</Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.distanceText}>
-              {item.distance.toFixed(1)}km
-            </Text>
-          </TouchableOpacity>
-        )}
+        keyExtractor={(item) => `${item.station_cd}-${item.line}`}
+        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
+        renderItem={renderStationItem}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f5f5f5', paddingTop: 50 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, fontSize: 16, color: '#333' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F9F9F9',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: responsiveFontSize(16),
+    color: '#333',
+    fontWeight: '700',
+  },
+  errorText: {
+    fontSize: responsiveFontSize(16),
+    color: '#D32F2F',
+    fontWeight: '700',
+    textAlign: 'center',
+  },
   title: {
-    fontSize: 24, fontWeight: 'bold', textAlign: 'center',
-    marginBottom: 20, color: '#111',
+    fontSize: responsiveFontSize(24),
+    fontWeight: '700',
+    color: '#17171B',
+    textAlign: 'center',
+    marginVertical: responsiveHeight(20),
   },
-  stationItem: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 15, paddingHorizontal: 20,
-    marginVertical: 6, marginHorizontal: 16,
-    borderRadius: 30, flexDirection: 'row', alignItems: 'center',
-    elevation: 2, shadowColor: '#000',
+  stationCard: {
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: responsiveWidth(16),
+    marginVertical: responsiveHeight(6),
+    borderRadius: responsiveWidth(40),
+    elevation: 2,
+    shadowColor: '#000000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2, shadowRadius: 1.41,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
-  lineCircle: {
-    width: 40, height: 40, borderRadius: 20,
-    justifyContent: 'center', alignItems: 'center', marginRight: 15,
+  leftContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  lineText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
-  stationInfo: { flex: 1, flexDirection: 'row', alignItems: 'center' },
-  stationName: { fontSize: 18, fontWeight: '500', color: '#333' },
-  distanceText: { fontSize: 16, fontWeight: 'bold', color: '#007bff' },
-  transferBadge: {
-    backgroundColor: '#f0f0f0', borderRadius: 8,
-    paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8,
+  lineBadge: {
+    borderRadius: responsiveWidth(40),
+    paddingHorizontal: responsiveWidth(12),
+    paddingVertical: responsiveHeight(5),
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: responsiveWidth(12),
   },
-  transferText: { color: '#555', fontSize: 12, fontWeight: 'bold' },
+  lineBadgeText: {
+    fontSize: responsiveFontSize(14),
+    fontWeight: '700',
+  },
+  stationName: {
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+    color: '#17171B',
+    marginBottom: responsiveHeight(2),
+  },
+  distanceText: {
+    fontSize: responsiveFontSize(15),
+    fontWeight: '700',
+    color: '#595959',
+  },
 });
 
 export default NearbyStationsScreen;
