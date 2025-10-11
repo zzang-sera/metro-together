@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
   },
   featureButtonText: {
     color: '#17171B',
-    // fontSize는 위에서 동적으로 계산하므로 여기서 제거해도 됩니다 (하지만 유지해도 문제 없음).
   },
   outlineButton: {
     backgroundColor: '#FAFAFA',

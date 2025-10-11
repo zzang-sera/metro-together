@@ -1,19 +1,17 @@
-// App.js
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Alert, Image, ScrollView, StyleSheet } from 'react-native';
-import { NavigationContainer, useNavigation, useRoute } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator, Alert, Image } from 'react-native';
+import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './src/config/firebaseConfig';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-// 접근성 관련
-import { FontSizeProvider } from './src/contexts/FontSizeContext'; 
+// --- Context Provider 및 훅 ---
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { FontSizeProvider, useFontSize } from './src/contexts/FontSizeContext'; 
+import { responsiveFontSize } from './src/utils/responsive';
 
 // --- 화면들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
@@ -39,7 +37,7 @@ const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 
-// --- 공통 탭 옵션 ---
+// --- 공통 탭 옵션 (기본값으로 사용) ---
 const commonTabOptions = {
   headerShown: true,
   headerTitleAlign: 'center',
@@ -47,67 +45,81 @@ const commonTabOptions = {
   headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
   tabBarActiveTintColor: '#17171B',
   tabBarInactiveTintColor: 'gray',
-  tabBarStyle: {
-    height: 90,
-    backgroundColor: '#F9F9F9',
-    elevation: 0,
-    shadowOpacity: 0,
-    borderTopWidth: 0,
-  },
-  tabBarLabelStyle: {
-    fontSize: 16,
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    marginBottom: 5,
-  },
 };
 
-// --- 재사용할 민트색 헤더 옵션 ---
+// --- 헤더 옵션 ---
 const mintHeaderOptions = {
   headerTitleAlign: 'center',
   headerStyle: { backgroundColor: '#F9F9F9', elevation: 0, shadowOpacity: 0 },
   headerTitleStyle: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  headerTintColor: '#17171B', // 뒤로가기 버튼 등 아이콘 색상
+  headerTintColor: '#17171B',
 };
 
-// --- 마이페이지 스택 ---
-const MyPageStackNavigator = () => (
-  <MyPageStack.Navigator
-    screenOptions={mintHeaderOptions}
-  >
-    <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '내 정보' }} />
-    <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
-    <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
-    <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
-  </MyPageStack.Navigator>
-);
+// --- 스택 네비게이터들 ---
+const MyPageStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <MyPageStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: {
+          ...mintHeaderOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        }
+      }}
+    >
+      <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '내 정보' }} />
+      <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
+      <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
+      <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
+    </MyPageStack.Navigator>
+  );
+};
 
-// --- 가까운 역 스택 ---
-const NearbyStackNavigator = () => (
-  <NearbyStack.Navigator
-    screenOptions={mintHeaderOptions}
-  >
-    <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
-    <NearbyStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
-    <NearbyStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
-  </NearbyStack.Navigator>
-);
+const NearbyStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <NearbyStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: {
+          ...mintHeaderOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        }
+      }}
+    >
+      <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '주변 역 목록' }} />
+      <NearbyStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
+      <NearbyStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
+    </NearbyStack.Navigator>
+  );
+};
 
-// --- 검색 스택 ---
-const SearchStackNavigator = () => (
-  <SearchStack.Navigator
-    screenOptions={mintHeaderOptions}
-  >
-    <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: '역 검색' }} />
-    <SearchStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
-    <SearchStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
-  </SearchStack.Navigator>
-);
+const SearchStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <SearchStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: {
+          ...mintHeaderOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        }
+      }}
+    >
+      <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: '역 검색' }} />
+      <SearchStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
+      <SearchStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
+    </SearchStack.Navigator>
+  );
+};
+
 
 // --- 비로그인 탭 ---
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const { fontOffset } = useFontSize();
 
   const tabBarStyle = {
     backgroundColor: '#F9F9F9',
@@ -115,23 +127,36 @@ const GuestTabs = () => {
     shadowOpacity: 0,
     borderTopWidth: 0,
     paddingBottom: Math.max(8, insets.bottom),
-    height: 70 + Math.max(8, insets.bottom),
+    height: 70 + Math.max(8, insets.bottom) + fontOffset,
   };
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         ...commonTabOptions,
+        headerTitleStyle: {
+          ...commonTabOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        },
         tabBarStyle,
         tabBarHideOnKeyboard: true,
+        tabBarLabelStyle: {
+          fontSize: responsiveFontSize(16) + fontOffset,
+          fontFamily: 'NotoSansKR',
+          fontWeight: '700',
+          marginBottom: 5,
+        },
         tabBarIcon: ({ focused, size }) => {
           let iconName;
           const iconColor = focused ? '#14CAC9' : 'gray';
+          const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
+
           if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+          else if (route.name === '주변') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
           else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
           else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-          return <Ionicons name={iconName} size={size} color={iconColor} />;
+          
+          return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
         },
       })}
     >
@@ -146,7 +171,8 @@ const GuestTabs = () => {
           },
         }}
       />
-      <Tab.Screen name="가까운 역" component={NearbyStackNavigator} options={{ headerShown: false }} />
+      {/* 👇 [수정] name을 '주변'으로 변경 */}
+      <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen
         name="마이"
@@ -173,6 +199,7 @@ const GuestTabs = () => {
 // --- 로그인 탭 ---
 const UserTabs = () => {
   const insets = useSafeAreaInsets();
+  const { fontOffset } = useFontSize();
 
   const tabBarStyle = {
     backgroundColor: '#F9F9F9',
@@ -180,17 +207,28 @@ const UserTabs = () => {
     shadowOpacity: 0,
     borderTopWidth: 0,
     paddingBottom: Math.max(8, insets.bottom),
-    height: 70 + Math.max(8, insets.bottom),
+    height: 70 + Math.max(8, insets.bottom) + fontOffset,
   };
 
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         ...commonTabOptions,
+        headerTitleStyle: {
+          ...commonTabOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        },
         tabBarStyle,
         tabBarHideOnKeyboard: true,
+        tabBarLabelStyle: {
+          fontSize: responsiveFontSize(16) + fontOffset,
+          fontFamily: 'NotoSansKR',
+          fontWeight: '700',
+          marginBottom: 5,
+        },
         tabBarIcon: ({ focused, size }) => {
           const iconColor = focused ? '#14CAC9' : 'gray';
+          const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
 
           if (route.name === '챗봇') {
             return (
@@ -199,8 +237,8 @@ const UserTabs = () => {
                 accessibilityLabel="챗봇과 대화하기"
                 resizeMode="contain"
                 style={{
-                  width: 70,
-                  height: 70,
+                  width: 70 + fontOffset * 2,
+                  height: 70 + fontOffset * 2,
                   marginBottom: 15,
                 }}
               />
@@ -209,50 +247,59 @@ const UserTabs = () => {
 
           let iconName;
           if (route.name === '홈') iconName = focused ? 'home' : 'home-outline';
-          else if (route.name === '가까운 역') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
+          else if (route.name === '주변') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
           else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
           else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
           else iconName = 'ellipse-outline';
 
-          return <Ionicons name={iconName} size={size} color={iconColor} />;
+          return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
         },
       })}
     >
-      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
-      <Tab.Screen name="가까운 역" component={NearbyStackNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
-      <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ title: '마이', headerShown: false }} />
+        <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
+        {/* 👇 [수정] name을 '주변'으로 변경 */}
+        <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
+        <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
+        <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
+        <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ title: '마이', headerShown: false }} />
     </Tab.Navigator>
   );
 };
 
-// --- 인증 스택 ---
-const AuthStack = () => (
-  <Stack.Navigator initialRouteName="Welcome">
-    <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
-    <Stack.Screen name="Login" component={LoginScreen} options={{ title: '로그인' }} />
-    <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: '회원가입' }} />
-    <Stack.Screen name="FindEmail" component={FindEmailScreen} options={{ title: '이메일 찾기' }} />
-    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
-    <Stack.Screen name="GuestTabs" component={GuestTabs} options={{ headerShown: false }} />
-  </Stack.Navigator>
-);
-
+// --- 나머지 스택 및 앱 컴포넌트 ---
+const AuthStack = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <Stack.Navigator
+      initialRouteName="Welcome"
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: {
+          ...mintHeaderOptions.headerTitleStyle,
+          fontSize: responsiveFontSize(18) + fontOffset,
+        }
+      }}
+    >
+      <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Login" component={LoginScreen} options={{ title: '로그인' }} />
+      <Stack.Screen name="SignUp" component={SignUpScreen} options={{ title: '회원가입' }} />
+      <Stack.Screen name="FindEmail" component={FindEmailScreen} options={{ title: '이메일 찾기' }} />
+      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
+      <Stack.Screen name="GuestTabs" component={GuestTabs} options={{ headerShown: false }} />
+    </Stack.Navigator>
+  );
+};
 const AppStack = () => <UserTabs />;
-// 1. App의 실제 내용을 담을 AppContent 컴포넌트를 새로 만듭니다.
+
 const AppContent = () => {
-  // 2. AuthContext에서 user 정보와 인증 로딩 상태를 가져옵니다.
-  const { user, isLoading: isAuthLoading } = useAuth(); 
-  
+  const { user, isLoading: isAuthLoading } = useAuth();
   const [fontsLoaded] = useFonts({
     NotoSansKR: require('./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf'),
     NotoSans: require('./src/assets/fonts/NotoSans-VariableFont_wdth,wght.ttf'),
     'NotoSans-Italic': require('./src/assets/fonts/NotoSans-Italic-VariableFont_wdth,wght.ttf'),
   });
 
-  // 3. 폰트 로딩과 인증 로딩이 모두 끝날 때까지 로딩 화면을 보여줍니다.
-  if (!fontsLoaded || isAuthLoading) {
+  if (isAuthLoading || !fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -260,7 +307,6 @@ const AppContent = () => {
     );
   }
 
-  // 4. 로딩이 끝나면 로그인 상태에 따라 적절한 네비게이터를 보여줍니다.
   return (
     <NavigationContainer>
       {user ? <AppStack /> : <AuthStack />}
@@ -268,10 +314,7 @@ const AppContent = () => {
   );
 };
 
-
-// 5. 최종 App 컴포넌트는 Provider들을 감싸는 역할만 하도록 단순화합니다.
 export default function App() {
-  // GoogleSignin 설정은 앱의 진입점에서 한 번만 실행하면 되므로 여기에 둡니다.
   useEffect(() => {
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
     if (webClientId) GoogleSignin.configure({ webClientId });
@@ -287,3 +330,4 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+

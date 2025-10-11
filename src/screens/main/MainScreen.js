@@ -1,20 +1,15 @@
-// src/screens/main/MainScreen.js (수정된 코드)
-
-import React, { useState } from 'react'; // --- 1. useState 추가 ---
+import React, { useState } from 'react';
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { mainStyles } from '../../styles/mainStyles';
 import CustomButton from '../../components/CustomButton';
 import { auth } from '../../config/firebaseConfig';
-
-// --- 2. 필요한 훅과 컴포넌트, 유틸리티 추가 ---
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 import FontSettingModal from '../../components/FontSettingModal';
 
 const MainScreen = () => {
   const navigation = useNavigation();
-  // --- 3. 모달 표시 상태와 Context 훅 사용 ---
   const [isModalVisible, setModalVisible] = useState(false);
   const { fontOffset } = useFontSize();
 
@@ -43,14 +38,12 @@ const MainScreen = () => {
 
   return (
     <SafeAreaView style={mainStyles.container}>
-      {/* --- 4. 모달 컴포넌트 추가 --- */}
       <FontSettingModal 
         visible={isModalVisible}
         onClose={() => setModalVisible(false)}
       />
 
       <View style={mainStyles.header}>
-        {/* --- 5. 글자 크기 동적 적용 --- */}
         <Text style={[mainStyles.greetingText, { fontSize: responsiveFontSize(22) + fontOffset }]}>
           {auth.currentUser?.displayName || auth.currentUser?.email}님,{"\n"}환영합니다!
         </Text>
@@ -60,7 +53,8 @@ const MainScreen = () => {
         <CustomButton
           type="feature"
           title="가까운 역 안내"
-          onPress={() => goTab('가까운 역')}
+          // 👇 [수정] '가까운 역' -> '주변'으로 목적지 변경
+          onPress={() => goTab('주변')}
         />
         <CustomButton
           type="feature"
@@ -77,7 +71,6 @@ const MainScreen = () => {
           title="챗봇"
           onPress={handleChatbotPress}
         />
-        {/* --- 6. 글자 크기 설정 버튼 추가 --- */}
         <CustomButton
           type="outline"
           title="글자 크기 설정"
@@ -89,3 +82,4 @@ const MainScreen = () => {
 };
 
 export default MainScreen;
+

@@ -1,4 +1,3 @@
-//src/screens/searchstation/SearchStationScreen.js
 import React, { useState, useMemo } from 'react';
 import {
   View,
@@ -14,7 +13,7 @@ import { useNavigation } from '@react-navigation/native';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import { responsiveFontSize, responsiveHeight } from '../../utils/responsive'; // responsiveHeight 추가
+import { responsiveFontSize, responsiveHeight } from '../../utils/responsive';
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
@@ -48,7 +47,6 @@ const SearchStationScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 검색창 */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#8e8e93" style={styles.searchIcon} />
         <TextInput
@@ -66,7 +64,6 @@ const SearchStationScreen = () => {
         )}
       </View>
 
-      {/* 검색 결과 */}
       <FlatList
         data={searchResults}
         keyExtractor={(item) => item.name}
@@ -115,7 +112,6 @@ const SearchStationScreen = () => {
   );
 };
 
-// 스타일
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: {
@@ -123,35 +119,67 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: '#e5e5e5',
   },
-  headerTitle: { fontSize: responsiveFontSize(18), fontWeight: '600', marginLeft: 16 },
+  headerTitle: { 
+    fontSize: responsiveFontSize(18), 
+    fontWeight: 'bold', 
+    marginLeft: 16,
+    fontFamily: 'NotoSansKR',
+  },
   searchContainer: {
     flexDirection: 'row', alignItems: 'center',
     backgroundColor: '#f0f0f0', borderRadius: 20,
     margin: 16, paddingHorizontal: 12,
   },
   searchIcon: { marginRight: 8 },
-  // 👇 [수정] 고정 높이를 삭제하고, 세로 여백(paddingVertical)으로 대체
+  // 👇 [수정] fontFamily와 fontWeight 추가
   input: {
     flex: 1,
-    paddingVertical: responsiveHeight(10), // 높이가 유동적으로 변하도록 수정
+    paddingVertical: responsiveHeight(10),
     fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: 'bold',
   },
   searchButton: { backgroundColor: '#00B8D4', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 4 },
-  searchButtonText: { color: 'white', fontWeight: 'bold', fontSize: responsiveFontSize(14) },
+  searchButtonText: { 
+    color: 'white', 
+    fontWeight: 'bold', 
+    fontSize: responsiveFontSize(14),
+    fontFamily: 'NotoSansKR',
+  },
   resultItem: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
   },
   locationIcon: { marginRight: 12 },
-  stationName: { flex: 1, fontSize: responsiveFontSize(16) },
+  // 👇 [수정] fontFamily와 fontWeight 추가
+  stationName: { 
+    flex: 1, 
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: 'bold',
+  },
   lineContainer: { flexDirection: 'row' },
   lineCircle: {
     width: 24, height: 24, borderRadius: 12,
     justifyContent: 'center', alignItems: 'center', marginLeft: 8,
   },
-  lineText: { color: 'white', fontSize: responsiveFontSize(12), fontWeight: 'bold' },
-  emptyText: { textAlign: 'center', marginTop: 20, color: 'gray', fontSize: responsiveFontSize(16) },
+  lineText: { 
+    color: 'white', 
+    fontSize: responsiveFontSize(12), 
+    fontWeight: 'bold',
+    fontFamily: 'NotoSansKR',
+  },
+  // 👇 [수정] fontFamily와 fontWeight 추가
+  emptyText: { 
+    textAlign: 'center', 
+    marginTop: 20, 
+    color: 'gray', 
+    fontSize: responsiveFontSize(16),
+    fontFamily: 'NotoSansKR',
+    fontWeight: 'bold',
+  },
 });
 
 export default SearchStationScreen;
+
