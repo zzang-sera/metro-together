@@ -135,7 +135,6 @@ export default function StationDetailScreen() {
             <Chip icon="cube-outline"            label={`엘리베이터 ${elevCount}대`} onPress={() => goList(TYPES.ELEVATOR)} />
             <Chip icon="trending-up-outline"     label="에스컬레이터"               onPress={() => goList(TYPES.ESCALATOR)} />
             <Chip icon="volume-high-outline"     label="음성 유도기"                 onPress={() => goList(TYPES.AUDIO_GUIDE)} />
-            <Chip icon="medkit-outline"          label="수유실"                       onPress={() => goList(TYPES.NURSING)} />
           </View>
 
           <View style={styles.chipsWrap}>
