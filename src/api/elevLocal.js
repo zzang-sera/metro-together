@@ -1,7 +1,8 @@
-// File: src/api/elevLocal.js
+// src/api/elevLocal.js
 // Data source:
 //   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
 
+// ✅ RN/Expo(Metro)는 JSON을 기본 import로 읽을 수 있음 (assert 불필요)
 import elevJson from "../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 
 /* ---------------------- 유틸 ---------------------- */
@@ -21,6 +22,7 @@ function pickArray(any) {
   return [];
 }
 
+// 역명 끝의 "(숫자)" 제거
 function sanitizeName(s = "") {
   return typeof s === "string" ? s.replace(/\(\s*\d+\s*\)$/g, "").trim() : "";
 }
@@ -55,8 +57,8 @@ function toPretty(raw) {
 /* ---------------------- 인덱스 (모듈 로드시 1회) ---------------------- */
 
 const RAW_ROWS = pickArray(elevJson);
-const INDEX_BY_CODE = new Map();
-const INDEX_BY_NAME = new Map();
+const INDEX_BY_CODE = new Map(); // stationCode → raw[]
+const INDEX_BY_NAME = new Map(); // stationName(sanitized) → raw[]
 
 for (const r of RAW_ROWS) {
   const code = String(
@@ -108,4 +110,24 @@ export function searchElev(query) {
   if (!q) return [];
   if (/^\d+$/.test(q)) return prettify(INDEX_BY_CODE.get(q) || []);
   return prettify(INDEX_BY_NAME.get(sanitizeName(q)) || []);
+}
+
+// 레거시 호환: 코드로 조회해 간단 키로 매핑 (StationFacilitiesScreen 등에서 사용)
+export function getElevatorsByCode(stnCd) {
+  const k = String(stnCd || "").trim();
+  const rows = INDEX_BY_CODE.get(k) || [];
+  if (!rows.length) return null;
+  return rows.map((r) => ({
+    type: r.elvtr_se ?? r.ELVTR_SE ?? r.kind ?? "",
+    name: r.elvtr_nm ?? r.ELVTR_NM ?? r.facilityName ?? "",
+    status: r.use_yn ?? r.USE_YN ?? r.status ?? "",
+    section: r.opr_sec ?? r.OPR_SEC ?? r.section ?? "",
+    position: r.instl_pstn ?? r.INSTL_PSTN ?? r.location ?? r.gate ?? "",
+    stationCode:
+      r.stn_cd ?? r.STN_CD ?? r.station_cd ?? r.code ?? r.stationCode ?? "",
+    stationName: sanitizeName(
+      r.stn_nm ?? r.STN_NM ?? r.station_nm ?? r.name ?? r.stationName ?? ""
+    ),
+    line: r.line ?? r.LINE_NUM ?? r.lineName ?? "",
+  }));
 }

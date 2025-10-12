@@ -1,4 +1,4 @@
-// src/screens/nearbystation/NearbyStationsScreen.js 
+// src/screens/nearbystation/NearbyStationsScreen.js
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -16,14 +16,14 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
 
-// 1. 필요한 훅을 불러옵니다.
+// 폰트 스케일 컨텍스트
 import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
 
 function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371;
+  const R = 6371; // km
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -49,9 +49,7 @@ function getTextColorForBackground(hexColor) {
   return luminance > 0.5 ? '#17171B' : '#FFFFFF';
 }
 
-
 const NearbyStationsScreen = () => {
-  // 2. Context에서 fontOffset 값을 가져옵니다.
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
   const [nearbyStations, setNearbyStations] = useState([]);
@@ -69,10 +67,13 @@ const NearbyStationsScreen = () => {
       }
       try {
         const currentLocation = await Location.getCurrentPositionAsync({});
+        const { latitude, longitude } = currentLocation.coords;
+
         const stationsWithDistance = stationData.map((station) => ({
           ...station,
-          distance: getDistance(currentLocation.coords.latitude, currentLocation.coords.longitude, station.lat, station.lng),
+          distance: getDistance(latitude, longitude, station.lat, station.lng),
         }));
+
         const sortedStations = stationsWithDistance.sort((a, b) => a.distance - b.distance);
         setNearbyStations(sortedStations.slice(0, 10));
       } catch (error) {
@@ -87,7 +88,6 @@ const NearbyStationsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" />
-        {/* 3. 로딩 텍스트에 동적 폰트 크기를 적용합니다. */}
         <Text style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           주변 역을 찾고 있습니다...
         </Text>
@@ -98,7 +98,6 @@ const NearbyStationsScreen = () => {
   if (errorMsg) {
     return (
       <View style={styles.centered}>
-        {/* 3. 에러 텍스트에 동적 폰트 크기를 적용합니다. */}
         <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           {errorMsg}
         </Text>
@@ -109,28 +108,56 @@ const NearbyStationsScreen = () => {
   const renderStationItem = ({ item }) => {
     const lineColor = getLineColor(item.line);
     const textColor = getTextColorForBackground(lineColor);
-    const accessibilityLabel = `${item.line} ${item.name}, ${item.distance.toFixed(1)}km 거리`;
+    const distanceKm = Number(item.distance || 0).toFixed(1);
+    const stationCode = String(
+      item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? ''
+    ).trim();
+    const stationName = item.name;
+
+    const accessibilityLabel = `${item.line} ${stationName}, ${distanceKm}킬로미터 거리`;
 
     return (
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.stationCard}
         accessibilityLabel={accessibilityLabel}
-        onPress={() => navigation.navigate('시설', { stationName: item.name, line: item.line })}
+        onPress={() =>
+          navigation.navigate('StationDetail', {
+            stationCode,
+            stationName,
+            line: item.line,
+            distanceKm,
+            // 필요 시 전화번호 등 추가: phone: item.phone
+          })
+        }
       >
         <View style={styles.leftContent}>
           <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            {/* 3. 호선 뱃지 텍스트에 동적 폰트 크기를 적용합니다. */}
-            <Text style={[styles.lineBadgeText, { color: textColor, fontSize: responsiveFontSize(14) + fontOffset }]}>
+            <Text
+              style={[
+                styles.lineBadgeText,
+                { color: textColor, fontSize: responsiveFontSize(14) + fontOffset },
+              ]}
+            >
               {item.line}
             </Text>
           </View>
           <View>
-            {/* 3. 역 이름 텍스트에 동적 폰트 크기를 적용합니다. */}
-            <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>{item.name}</Text>
-            {/* 3. 거리 텍스트에 동적 폰트 크기를 적용합니다. */}
-            <Text style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-              {item.distance.toFixed(1)} km
+            <Text
+              style={[
+                styles.stationName,
+                { fontSize: responsiveFontSize(18) + fontOffset },
+              ]}
+            >
+              {stationName}
+            </Text>
+            <Text
+              style={[
+                styles.distanceText,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
+              {distanceKm} km
             </Text>
           </View>
         </View>
@@ -143,7 +170,9 @@ const NearbyStationsScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={nearbyStations}
-        keyExtractor={(item) => `${item.station_cd}-${item.line}`}
+        keyExtractor={(item) =>
+          `${String(item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? '')}-${item.line}`
+        }
         contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
         renderItem={renderStationItem}
       />
