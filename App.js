@@ -1,3 +1,5 @@
+// App.js (전체 수정본)
+
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image } from 'react-native';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
@@ -10,7 +12,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 // --- Context Provider 및 훅 ---
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { FontSizeProvider, useFontSize } from './src/contexts/FontSizeContext'; 
+import { FontSizeProvider, useFontSize } from './src/contexts/FontSizeContext';
 import { responsiveFontSize } from './src/utils/responsive';
 
 // --- 화면들 ---
@@ -37,7 +39,7 @@ const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 
-// --- 공통 탭 옵션 (기본값으로 사용) ---
+// --- 공통 탭 옵션 ---
 const commonTabOptions = {
   headerShown: true,
   headerTitleAlign: 'center',
@@ -65,7 +67,7 @@ const MyPageStackNavigator = () => {
         headerTitleStyle: {
           ...mintHeaderOptions.headerTitleStyle,
           fontSize: responsiveFontSize(18) + fontOffset,
-        }
+        },
       }}
     >
       <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: '내 정보' }} />
@@ -85,12 +87,21 @@ const NearbyStackNavigator = () => {
         headerTitleStyle: {
           ...mintHeaderOptions.headerTitleStyle,
           fontSize: responsiveFontSize(18) + fontOffset,
-        }
+        },
       }}
     >
       <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '주변 역 목록' }} />
-      <NearbyStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
-      <NearbyStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
+      {/* 커스텀 헤더를 쓰는 화면: 네이티브 헤더 OFF */}
+      <NearbyStack.Screen
+        name="StationFacilities"
+        component={StationFacilitiesScreen}
+        options={{ headerShown: false }}
+      />
+      <NearbyStack.Screen
+        name="StationDetail"
+        component={StationDetailScreen}
+        options={{ headerShown: false }}
+      />
     </NearbyStack.Navigator>
   );
 };
@@ -104,16 +115,24 @@ const SearchStackNavigator = () => {
         headerTitleStyle: {
           ...mintHeaderOptions.headerTitleStyle,
           fontSize: responsiveFontSize(18) + fontOffset,
-        }
+        },
       }}
     >
       <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: '역 검색' }} />
-      <SearchStack.Screen name="시설" component={StationFacilitiesScreen} options={{ title: '시설 정보' }} />
-      <SearchStack.Screen name="역상세" component={StationDetailScreen} options={{ title: '역 상세정보' }} />
+      {/* 커스텀 헤더를 쓰는 화면: 네이티브 헤더 OFF */}
+      <SearchStack.Screen
+        name="StationFacilities"
+        component={StationFacilitiesScreen}
+        options={{ headerShown: false }}
+      />
+      <SearchStack.Screen
+        name="StationDetail"
+        component={StationDetailScreen}
+        options={{ headerShown: false }}
+      />
     </SearchStack.Navigator>
   );
 };
-
 
 // --- 비로그인 탭 ---
 const GuestTabs = () => {
@@ -155,7 +174,7 @@ const GuestTabs = () => {
           else if (route.name === '주변') iconName = focused ? 'navigate-circle' : 'navigate-circle-outline';
           else if (route.name === '검색') iconName = focused ? 'search' : 'search-outline';
           else if (route.name === '마이') iconName = focused ? 'person' : 'person-outline';
-          
+
           return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
         },
       })}
@@ -171,7 +190,6 @@ const GuestTabs = () => {
           },
         }}
       />
-      {/* 👇 [수정] name을 '주변'으로 변경 */}
       <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen
@@ -256,17 +274,16 @@ const UserTabs = () => {
         },
       })}
     >
-        <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
-        {/* 👇 [수정] name을 '주변'으로 변경 */}
-        <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
-        <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
-        <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
-        <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ title: '마이', headerShown: false }} />
+      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
+      <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
+      <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
+      <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
+      <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ title: '마이', headerShown: false }} />
     </Tab.Navigator>
   );
 };
 
-// --- 나머지 스택 및 앱 컴포넌트 ---
+// --- 인증 스택 & 앱 루트 ---
 const AuthStack = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -277,7 +294,7 @@ const AuthStack = () => {
         headerTitleStyle: {
           ...mintHeaderOptions.headerTitleStyle,
           fontSize: responsiveFontSize(18) + fontOffset,
-        }
+        },
       }}
     >
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -289,6 +306,7 @@ const AuthStack = () => {
     </Stack.Navigator>
   );
 };
+
 const AppStack = () => <UserTabs />;
 
 const AppContent = () => {
@@ -330,4 +348,3 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
-

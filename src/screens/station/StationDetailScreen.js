@@ -1,210 +1,241 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  ActivityIndicator,
-  SafeAreaView,
-  StyleSheet,
-  FlatList,
+  View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar
 } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontSize } from "../../contexts/FontSizeContext";
-import { responsiveFontSize, responsiveHeight } from "../../utils/responsive";
-import elevJson from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
-import stationJson from "../../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
+import { responsiveFontSize } from "../../utils/responsive";
+import { getElevatorsByCode } from "../../api/elevLocal";
 
-/* --- 유틸 함수 및 데이터 인덱싱 --- */
-const sanitizeName = (s = "") => (typeof s === "string" ? s.replace(/\(\s*\d+\s*\)$/g, "").trim() : "");
-const normalizeLine = (line = "") => {
-  const m = String(line).match(/(\d+)/);
-  return m ? `${parseInt(m[1], 10)}호선` : String(line);
+// 타입 키
+const TYPES = {
+  ELEVATOR: "elevator",
+  ESCALATOR: "escalator",
+  ACCESSIBLE_TOILET: "accessible_toilet",
+  WHEELCHAIR_LIFT: "wheelchair_lift",
+  WIDE_GATE: "wide_gate",
+  NURSING: "nursing_room",
+  LOCKER: "locker",
+  AUDIO_GUIDE: "audio_beacon",
+  PRIORITY_SEAT: "priority_seat",
 };
-const koStatus = (v = "") => (v === "Y" ? "사용가능" : v === "N" ? "중지" : v || "-");
-const koKind = (k = "") => (k === "EV" ? "엘리베이터" : k === "ES" ? "에스컬레이터" : k === "WL" ? "휠체어리프트" : k || "-");
-const STATION_ROWS = Array.isArray(stationJson?.DATA) ? stationJson.DATA : Array.isArray(stationJson) ? stationJson : [];
-const META_BY_CODE = new Map();
-for (const r of STATION_ROWS) {
-  const code = (r.station_cd ?? r.fr_code ?? r.bldn_id ?? "").toString().trim();
-  if (!code) continue;
-  META_BY_CODE.set(code, {
-    code,
-    name: sanitizeName(r.name ?? ""),
-    line: normalizeLine(r.line ?? ""),
-  });
-}
-function pickElevArray(any) {
-  if (Array.isArray(any)) return any;
-  if (Array.isArray(any?.DATA)) return any.DATA;
-  if (Array.isArray(any?.row)) return any.row;
-  for (const k of Object.keys(any || {})) {
-    const v = any[k];
-    if (Array.isArray(v)) return v;
-    if (v && typeof v === "object") {
-      if (Array.isArray(v.row)) return v.row;
-      if (Array.isArray(v.DATA)) return v.DATA;
-    }
-  }
-  return [];
-}
-function normalizeElevRow(raw) {
-  const stationCode = String(raw.station_cd ?? raw.STN_CD ?? raw.code ?? raw.stationCode ?? "").trim();
-  const stationName = sanitizeName(raw.station_nm ?? raw.STN_NM ?? raw.name ?? raw.stationName ?? "");
-  const facilityName = raw.elvtr_nm ?? raw.ELVTR_NM ?? raw.facilityName ?? "";
-  const section = raw.opr_sec ?? raw.OPR_SEC ?? raw.section ?? "";
-  const gate = raw.instl_pstn ?? raw.INSTL_PSTN ?? raw.location ?? raw.gate ?? "";
-  const status = koStatus(raw.use_yn ?? raw.USE_YN ?? raw.status ?? "");
-  const kind = raw.elvtr_se ?? raw.ELVTR_SE ?? raw.kind ?? "";
-  const meta = META_BY_CODE.get(stationCode) || {};
-  const line = meta.line || normalizeLine(raw.line ?? raw.LINE_NUM ?? raw.lineName ?? "");
-  return { stationCode, stationName: stationName || meta.name || "", line, facilityName, section, gate, status, kind };
-}
-const ELEV_ROWS = pickElevArray(elevJson).map(normalizeElevRow);
-const BY_CODE = new Map();
-const BY_NAME = new Map();
-for (const r of ELEV_ROWS) {
-  if (r.stationCode) {
-    const a = BY_CODE.get(r.stationCode) || [];
-    a.push(r);
-    BY_CODE.set(r.stationCode, a);
-  }
-  if (r.stationName) {
-    const n = sanitizeName(r.stationName);
-    const a = BY_NAME.get(n) || [];
-    a.push(r);
-    BY_NAME.set(n, a);
-  }
-}
 
-/* ---------- 컴포넌트 ---------- */
-export default function StationDetailScreen({ route }) {
+export default function StationDetailScreen() {
+  const navigation = useNavigation();
+  const route = useRoute();
+  const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
-  const { stationCode, stationName } = route.params ?? {};
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState(null);
-  const [rows, setRows] = useState([]);
+
+  // 기대 params
+  const { stationCode = "", stationName = "", line = "", distanceKm = null, phone = "" } =
+    route.params || {};
 
   useEffect(() => {
-    setLoading(true);
-    setErr(null);
-    try {
-      const out = stationCode
-        ? BY_CODE.get(String(stationCode)) || []
-        : BY_NAME.get(sanitizeName(stationName || "")) || [];
-      setRows(out);
-    } catch (e) {
-      setErr(e?.message || "불러오기 실패");
-    } finally {
-      setLoading(false);
-    }
-  }, [stationCode, stationName]);
+    console.log("[NAV] StationDetail mounted", { stationCode, stationName, line });
+  }, [stationCode, stationName, line]);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={s.center}>
-        <ActivityIndicator />
-        <Text style={[s.centerText, { fontSize: responsiveFontSize(16) + fontOffset, marginTop: 8 }]}>
-          불러오는 중…
-        </Text>
-      </SafeAreaView>
-    );
-  }
-  if (err) {
-    return (
-      <SafeAreaView style={s.center}>
-        <Text style={[s.centerText, { color: "red", fontSize: responsiveFontSize(16) + fontOffset }]}>
-          오류: {err}
-        </Text>
-      </SafeAreaView>
-    );
-  }
-  if (rows.length === 0) {
-    return (
-      <SafeAreaView style={s.center}>
-        <Text style={[s.centerText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-          표시할 시설 정보가 없습니다.
-        </Text>
-      </SafeAreaView>
-    );
-  }
+  // 엘리베이터 실제 데이터 로딩(개수/상태용)
+  const [elevCount, setElevCount] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const rows = (await getElevatorsByCode(String(stationCode))) || [];
+      if (!cancelled) setElevCount(rows.length);
+    })();
+    return () => { cancelled = true; };
+  }, [stationCode]);
 
-  const Header = () => (
-    <View style={s.header}>
-      <Text style={[s.headerTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}>
-        {rows[0]?.stationName} ({rows[0]?.stationCode})
-      </Text>
-      <Text style={[s.headerSub, { fontSize: responsiveFontSize(14) + fontOffset }]}>
-        상세 시설 정보
-      </Text>
+  // 헤더
+  const Header = useMemo(() => (
+    <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
+      <StatusBar barStyle="dark-content" backgroundColor={MINT} />
+
+      {/* 뒤로가기 */}
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={styles.headerBtn}
+        accessibilityLabel="뒤로가기"
+      >
+        <Ionicons name="chevron-back" size={22 + fontOffset / 2} color={INK} />
+      </TouchableOpacity>
+
+      {/* 중앙: 라인 뱃지 + 역명 */}
+      <View style={styles.headerCenter}>
+        <View style={styles.badge}>
+          <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+            {line || "?"}
+          </Text>
+        </View>
+        <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+          {stationName || "역명"}
+        </Text>
+      </View>
+
+      {/* 오른쪽: 즐겨찾기 + 간단히 보기 */}
+      <View style={styles.headerRight}>
+        <TouchableOpacity accessibilityLabel="즐겨찾기" style={styles.starBtn}>
+          <Ionicons name="star-outline" size={20 + fontOffset / 2} color={INK} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.quickBtn}
+          onPress={() =>
+            navigation.navigate("StationFacilities", {
+              stationCode, stationName, line, // type 없이 → 아이콘 그리드
+            })
+          }
+          accessibilityLabel="간단히 보기"
+        >
+          <Text style={[styles.quickBtnText, { fontSize: responsiveFontSize(11) + fontOffset * 0.6 }]}>
+            간단히 보기
+          </Text>
+        </TouchableOpacity>
+      </View>
     </View>
-  );
+  ), [navigation, stationName, line, fontOffset, insets.top, stationCode]);
 
-  const renderItem = ({ item }) => (
-    <View style={s.row}>
-      <Text style={[s.rowName, { fontSize: responsiveFontSize(16) + fontOffset }]}>{item.facilityName}</Text>
-      <Text style={[s.rowText, { fontSize: responsiveFontSize(14) + fontOffset }]}>위치: {item.gate || "-"}</Text>
-      <Text style={[s.rowText, { fontSize: responsiveFontSize(14) + fontOffset }]}>구간: {item.section || "-"}</Text>
-      <Text style={[s.rowText, { fontSize: responsiveFontSize(14) + fontOffset }]}>상태: {item.status || "-"}</Text>
-      <Text style={[s.rowText, { fontSize: responsiveFontSize(14) + fontOffset }]}>종류: {koKind(item.kind)}</Text>
-    </View>
+  // 공용 이동 함수
+  const goList = (type) => {
+    navigation.navigate("StationFacilities", { stationCode, stationName, line, type });
+  };
+
+  // 칩 컴포넌트
+  const Chip = ({ icon, label, onPress }) => (
+    <TouchableOpacity style={styles.chip} onPress={onPress} activeOpacity={0.85}>
+      <Ionicons name={icon} size={16} color="#0a7b7a" style={{ marginRight: 6 }} />
+      <Text style={[styles.chipText, { fontSize: responsiveFontSize(12) + fontOffset * 0.2 }]}>{label}</Text>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <FlatList
-        data={rows}
-        keyExtractor={(_, idx) => String(idx)}
-        renderItem={renderItem}
-        ListHeaderComponent={Header}
-        contentContainerStyle={{ paddingBottom: 24 }}
-      />
-    </SafeAreaView>
+    <View style={styles.container}>
+      {Header}
+
+      <ScrollView contentContainerStyle={{ padding: 12, paddingBottom: 24 }}>
+        {/* 카드 #1 — 역 기본 요약 */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <View style={styles.linePill}><Text style={styles.linePillText}>{line}</Text></View>
+            <Text style={[styles.cardTitle, { fontSize: responsiveFontSize(16) + fontOffset }]}>{stationName}</Text>
+            <TouchableOpacity style={{ marginLeft: "auto" }}>
+              <Ionicons name="star-outline" size={18 + fontOffset / 2} color="#5b6b6a" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.row}>
+            <Ionicons name="call-outline" size={16} color="#5b6b6a" />
+            <Text style={[styles.rowText, { fontSize: responsiveFontSize(13) + fontOffset * 0.2 }]}>
+              {phone || "02 - XXXX - XXXX"}
+            </Text>
+          </View>
+
+          <View style={styles.chipsWrap}>
+            <Chip icon="cube-outline"            label={`엘리베이터 ${elevCount}대`} onPress={() => goList(TYPES.ELEVATOR)} />
+            <Chip icon="trending-up-outline"     label="에스컬레이터"               onPress={() => goList(TYPES.ESCALATOR)} />
+            <Chip icon="volume-high-outline"     label="음성 유도기"                 onPress={() => goList(TYPES.AUDIO_GUIDE)} />
+            <Chip icon="medkit-outline"          label="수유실"                       onPress={() => goList(TYPES.NURSING)} />
+          </View>
+
+          <View style={styles.chipsWrap}>
+            <Chip icon="accessibility-outline"   label="휠체어리프트"                 onPress={() => goList(TYPES.WHEELCHAIR_LIFT)} />
+            <Chip icon="people-outline"          label="노약자석"                     onPress={() => goList(TYPES.PRIORITY_SEAT)} />
+            <Chip icon="scan-outline"            label="광폭 개찰구"                   onPress={() => goList(TYPES.WIDE_GATE)} />
+          </View>
+
+          <View style={[styles.row, { marginTop: 8 }]}>
+            <Ionicons name="navigate-outline" size={16} color="#5b6b6a" />
+            <Text style={[styles.rowText, { fontSize: responsiveFontSize(13) + fontOffset * 0.2 }]}>
+              {distanceKm != null ? `${distanceKm} km` : "거리 정보 없음"}
+            </Text>
+
+            <TouchableOpacity style={{ marginLeft: "auto" }} onPress={() => goList(TYPES.ELEVATOR)}>
+              <Text style={[styles.link, { fontSize: responsiveFontSize(12) + fontOffset * 0.2 }]}>자세히 보기</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 카드 #2 — 편의시설 요약(예시) */}
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <Text style={[styles.cardTitle, { fontSize: responsiveFontSize(16) + fontOffset }]}>편의시설</Text>
+          </View>
+
+          <View style={styles.chipsWrap}>
+            <Chip icon="male-female-outline"     label="장애인 화장실" onPress={() => goList(TYPES.ACCESSIBLE_TOILET)} />
+            <Chip icon="briefcase-outline"       label="물품보관함"     onPress={() => goList(TYPES.LOCKER)} />
+            <Chip icon="medkit-outline"          label="수유실"         onPress={() => goList(TYPES.NURSING)} />
+          </View>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 16, backgroundColor: '#FFFFFF' },
-  centerText: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: 'bold', // '700' -> 'bold'
-    color: '#333',
-  },
-  header: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderColor: "#eee",
-    backgroundColor: "#fafafa",
-  },
-  headerTitle: { 
-    fontSize: responsiveFontSize(20), 
-    fontWeight: "bold", // '700' -> 'bold'
-    fontFamily: 'NotoSansKR',
-    color: '#17171B',
-  },
-  headerSub: { 
-    marginTop: 4, 
-    color: "#666",
-    fontSize: responsiveFontSize(14),
-    fontFamily: 'NotoSansKR',
-    fontWeight: 'bold', // '500' -> 'bold'
-  },
-  row: { 
-    paddingVertical: 12,
-    paddingHorizontal: 16, 
-    borderBottomWidth: 1, 
-    borderColor: "#f1f1f1" 
-  },
-  rowName: { 
-    fontWeight: "bold", // '700' -> 'bold'
-    marginBottom: 8,
-    fontSize: responsiveFontSize(16),
-    fontFamily: 'NotoSansKR',
-    color: '#17171B',
-  },
-  rowText: {
-    fontSize: responsiveFontSize(14),
-    fontFamily: 'NotoSansKR',
-    color: '#333',
-    lineHeight: responsiveHeight(22),
-    fontWeight: 'bold', // fontWeight 추가
-  }
-});
+/* 색상 */
+const MINT = "#21C9C6";
+const INK  = "#003F40";
+const BG   = "#F9F9F9";
 
+/* 스타일 */
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: BG },
+
+  header: {
+    backgroundColor: MINT,
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerBtn: { padding: 6, minWidth: 36, alignItems: "center" },
+  headerCenter: { flex: 1, alignItems: "center" },
+  headerTitle: { color: INK, fontWeight: "bold" },
+  badge: { backgroundColor: "#AEEFED", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginBottom: 4 },
+  badgeText: { color: INK, fontWeight: "bold" },
+  headerRight: { alignItems: "center", justifyContent: "flex-start", gap: 6, minWidth: 72 },
+  starBtn: { padding: 6 },
+  quickBtn: {
+    paddingHorizontal: 10, paddingVertical: 4,
+    backgroundColor: "#ffffff",
+    borderRadius: 12, borderWidth: 1, borderColor: "#D7F3F2",
+  },
+  quickBtnText: { color: INK, fontWeight: "bold" },
+
+  /* 카드 공통 */
+  card: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#E6ECEB",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
+  linePill: { backgroundColor: "#e8fbfa", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginRight: 8 },
+  linePillText: { color: INK, fontWeight: "bold", fontSize: 12 },
+  cardTitle: { color: "#1f2937", fontWeight: "bold" },
+
+  row: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  rowText: { color: "#445655", fontWeight: "bold" },
+  link: { color: "#0a7b7a", fontWeight: "bold" },
+
+  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
+  chip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#e6fbfb",
+    borderWidth: 1,
+    borderColor: "#D7F3F2",
+  },
+  chipText: { color: "#0a7b7a", fontWeight: "bold" },
+});
