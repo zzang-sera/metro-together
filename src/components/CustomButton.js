@@ -1,16 +1,12 @@
-// src/components/CustomButton.js (전체 수정 코드)
-
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { responsiveWidth, responsiveFontSize } from '../utils/responsive';
-
-// 1. 우리가 만든 useFontSize 훅을 불러옵니다.
 import { useFontSize } from '../contexts/FontSizeContext';
 
 const CustomButton = ({ title, onPress, type = 'feature' }) => {
-  // 2. Context에서 fontOffset 값을 가져옵니다.
   const { fontOffset } = useFontSize();
 
+  // 모든 버튼이 기본 스타일(buttonBase)을 공유하고, 타입별 스타일을 덧입힙니다.
   const getButtonStyles = () => {
     switch (type) {
       case 'outline':
@@ -37,12 +33,10 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
     }
   };
   
-  // 3. 버튼 타입별로 기본 폰트 크기를 정합니다. (기존 StyleSheet 참고)
-  const baseFontSize = type === 'primary' ? 18 : 20;
+  const baseFontSize = (type === 'primary' || type === 'destructive') ? 20 : 20;
 
   return (
     <TouchableOpacity style={getButtonStyles()} onPress={onPress}>
-      {/* 4. 최종적으로 Text의 style에 fontOffset을 더한 값을 적용합니다. */}
       <Text 
         style={[
           getTextStyles(), 
@@ -56,12 +50,13 @@ const CustomButton = ({ title, onPress, type = 'feature' }) => {
 };
 
 const styles = StyleSheet.create({
+  // --- ✨ [수정] 모든 버튼의 기본 모양을 둥근 타원형으로 통일 ---
   buttonBase: {
-    width: responsiveWidth(300),
+    width: '100%', // ✨ [수정] 모든 버튼이 부모 컨테이너의 전체 너비를 차지하도록 변경
     height: responsiveWidth(60),
     justifyContent: 'center',
     alignItems: 'center',
-    alignSelf: 'center',
+    // alignSelf: 'center', // width가 100%이므로 더 이상 필요하지 않습니다.
     marginBottom: 12,
     borderRadius: 40,
     elevation: 2,
@@ -72,8 +67,10 @@ const styles = StyleSheet.create({
   },
   textBase: {
     fontFamily: 'NotoSansKR',
-    fontWeight: '700',
+    fontWeight: 'bold',
   },
+  
+  // --- 타입별 색상 및 추가 스타일 ---
   featureButton: {
     backgroundColor: '#14CAC9',
   },
@@ -90,9 +87,6 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     backgroundColor: '#14CAC9',
-    width: '100%',
-    height: 56,
-    borderRadius: 8,
     marginTop: 16,
   },
   primaryButtonText: {
@@ -102,8 +96,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#D32F2F',
   },
   destructiveButtonText: {
-    color: '#FFFFFF',
+    color: '#17171B', 
   },
 });
 
 export default CustomButton;
+
