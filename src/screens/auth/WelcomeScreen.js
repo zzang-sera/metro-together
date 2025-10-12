@@ -17,6 +17,11 @@ const WelcomeScreen = ({ navigation }) => {
       Alert.alert('로그인 오류', '구글 로그인에 실패했습니다. 다시 시도해주세요.');
     }
   };
+
+  // --- 👇 [수정] 글자 크기에 따라 줄바꿈 텍스트를 다르게 설정 ---
+  const footerTextContent = fontOffset >= 8
+    ? "즐겨찾기, 챗봇 기능을\n사용할 수 있습니다."
+    : "회원 가입 시\n즐겨찾기, 챗봇 기능을 사용할 수 있습니다.";
   
   return (
     <SafeAreaView style={styles.startContainer}>
@@ -50,7 +55,6 @@ const WelcomeScreen = ({ navigation }) => {
           title="원하는 역 검색"
           onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
         />
-        {/* --- 👇 [수정] 버튼 위치 이동 및 type 변경 --- */}
         <CustomButton
           type="outline" 
           title="글자 크기 설정"
@@ -66,8 +70,9 @@ const WelcomeScreen = ({ navigation }) => {
           title="Google로 시작하기"
           onPress={handleGoogleLogin}
         />
+        {/* --- 👇 [수정] 위에서 정의한 조건부 텍스트를 적용 --- */}
         <Text style={[styles.footerText, { fontSize: responsiveFontSize(12) + fontOffset, marginTop: 15 }]}>
-          회원 가입 시 {'\n'} 즐겨찾기, 챗봇 기능을 사용할 수 있습니다.
+          {footerTextContent}
         </Text>
       </View>
     </SafeAreaView>

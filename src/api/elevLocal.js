@@ -2,7 +2,6 @@
 // Data source:
 //   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
 
-// ✅ assert 제거: RN/Expo(Metro)는 JSON을 기본 import로 읽을 수 있습니다.
 import elevJson from "../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 
 /* ---------------------- 유틸 ---------------------- */
@@ -89,7 +88,7 @@ export async function getElevByCode(code) {
   return rows.slice();
 }
 
-// 역명으로 조회 (raw 배열 반환)
+// 역명으로 조회 (raw 배열 반환) — 역명은 괄호 숫자 제거 후 비교
 export async function getElevByName(name) {
   const k = sanitizeName(name || "");
   if (!k) return [];
@@ -103,7 +102,7 @@ export function prettify(rows) {
   return arr.map(toPretty);
 }
 
-// 단일 쿼리로 검색 + prettify (코드/역명 자동 판별)
+// 편의: 단일 쿼리로 검색 + prettify (코드/역명 자동 판별)
 export function searchElev(query) {
   const q = String(query || "").trim();
   if (!q) return [];
@@ -111,7 +110,7 @@ export function searchElev(query) {
   return prettify(INDEX_BY_NAME.get(sanitizeName(q)) || []);
 }
 
-// 레거시 호환: 코드로 조회해 간단 키로 매핑
+// 레거시/편의: 코드로 조회해 간단 키로 매핑 (Station* 화면에서 사용)
 export function getElevatorsByCode(stnCd) {
   const k = String(stnCd || "").trim();
   const rows = INDEX_BY_CODE.get(k) || [];
