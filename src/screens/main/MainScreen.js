@@ -53,7 +53,6 @@ const MainScreen = () => {
         <CustomButton
           type="feature"
           title="가까운 역 안내"
-          // 👇 [수정] '가까운 역' -> '주변'으로 목적지 변경
           onPress={() => goTab('주변')}
         />
         <CustomButton
@@ -64,7 +63,7 @@ const MainScreen = () => {
         <CustomButton
           type="outline"
           title="즐겨찾기"
-          onPress={() => handleFeaturePress('즐겨찾기')}
+          onPress={() => navigation.navigate('마이', { screen: 'Favorites' })}
         />
         <CustomButton
           type="outline"
