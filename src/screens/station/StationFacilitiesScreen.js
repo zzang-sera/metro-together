@@ -1,13 +1,14 @@
-//src/screens/station/StationFacilitiesScreen.js
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar,
+  View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator, StatusBar, Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import { responsiveFontSize } from "../../utils/responsive";
+import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { auth, db } from "../../config/firebaseConfig";
 import { getElevatorsByCode } from "../../api/elevLocal";
 import { getEscalatorsForStation } from "../../api/escalatorLocal";
 import { getAudioBeaconsForStation } from "../../api/voiceLocal";
@@ -30,12 +31,12 @@ const TYPES = {
 
 // 이동시설 / 편의시설 아이콘 정의
 const MOVE_FACILITIES = [
-  { key: TYPES.ELEVATOR,        label: "엘리베이터 위치",   icon: "cube-outline" },
-  { key: TYPES.ESCALATOR,       label: "에스컬레이터 위치", icon: "trending-up-outline" },
-  { key: TYPES.WHEELCHAIR_LIFT, label: "휠체어리프트 위치", icon: "accessibility-outline" },
-  { key: TYPES.AUDIO_GUIDE,     label: "음성 유도기 위치",  icon: "volume-high-outline" },
-  { key: TYPES.PRIORITY_SEAT,   label: "노약자석 위치",     icon: "people-outline" },
-  { key: TYPES.WIDE_GATE,       label: "광폭 개찰구 위치",  icon: "scan-outline" },
+  { key: TYPES.ELEVATOR,          label: "엘리베이터 위치",   icon: "cube-outline" },
+  { key: TYPES.ESCALATOR,         label: "에스컬레이터 위치", icon: "trending-up-outline" },
+  { key: TYPES.WHEELCHAIR_LIFT,   label: "휠체어리프트 위치", icon: "accessibility-outline" },
+  { key: TYPES.AUDIO_GUIDE,       label: "음성 유도기 위치",   icon: "volume-high-outline" },
+  { key: TYPES.PRIORITY_SEAT,     label: "노약자석 위치",     icon: "people-outline" },
+  { key: TYPES.WIDE_GATE,         label: "광폭 개찰구 위치",   icon: "scan-outline" },
 ];
 
 const CONVENIENCE = [
@@ -75,30 +76,50 @@ export default function StationFacilitiesScreen() {
   const { fontOffset } = useFontSize();
   const insets = useSafeAreaInsets();
 
-  // params: stationCode, stationName, line, type?(없으면 그리드)
   const { stationCode = "", stationName = "", line = "", type } = route.params || {};
   const normType = useMemo(() => normalizeType(type), [type]);
 
-  useEffect(() => {
-    console.log("[NAV] StationFacilities mounted", { stationCode, stationName, line, type, normType });
-  }, [stationCode, stationName, line, type, normType]);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const currentUser = auth.currentUser;
 
-  // ----------------- 상단 민트 배너 -----------------
+  useEffect(() => {
+    if (!currentUser || !stationCode) return;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onSnapshot(userDocRef, (doc) => {
+      if (doc.exists()) {
+        setIsFavorite(doc.data().favorites?.includes(stationCode));
+      }
+    });
+    return () => unsubscribe();
+  }, [currentUser, stationCode]);
+
+  const handleFavoriteToggle = async () => {
+    if (!currentUser || !stationCode) {
+      Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
+      return;
+    }
+    const userDocRef = doc(db, "users", currentUser.uid);
+    try {
+      if (isFavorite) {
+        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
+      } else {
+        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
+      }
+    } catch (error) {
+      console.error("즐겨찾기 업데이트 실패:", error);
+      Alert.alert("오류", "요청을 처리하는 중 오류가 발생했습니다.");
+    }
+  };
+
   const HeaderMint = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
         <StatusBar barStyle="dark-content" backgroundColor={MINT} />
 
-        {/* 뒤로가기 */}
-        <TouchableOpacity
-          onPress={() => navigation.goBack()}
-          style={styles.headerBtn}
-          accessibilityLabel="뒤로가기"
-        >
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} accessibilityLabel="뒤로가기">
           <Ionicons name="chevron-back" size={22 + fontOffset / 2} color={INK} />
         </TouchableOpacity>
 
-        {/* 중앙: 라인 뱃지 + 역명 */}
         <View style={styles.headerCenter}>
           <View style={styles.badge}>
             <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
@@ -110,33 +131,24 @@ export default function StationFacilitiesScreen() {
           </Text>
         </View>
 
-        {/* 오른쪽: 즐겨찾기 + 자세히 보기(=StationDetail로 전환) */}
         <View style={styles.headerRight}>
-          <TouchableOpacity accessibilityLabel="즐겨찾기" style={styles.starBtn}>
-            <Ionicons name="star-outline" size={20 + fontOffset / 2} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.switchBtn}
-            onPress={() => navigation.navigate("StationDetail", { stationCode, stationName, line })}
-            accessibilityLabel="자세히 보기"
-          >
-            <Text style={[styles.switchBtnText, { fontSize: responsiveFontSize(11) + fontOffset * 0.6 }]}>
-              자세히 보기
-            </Text>
+          <TouchableOpacity onPress={handleFavoriteToggle} accessibilityLabel="즐겨찾기" style={styles.starBtn}>
+            <Ionicons 
+              name={isFavorite ? "star" : "star-outline"} 
+              size={24 + fontOffset / 2}
+              color={isFavorite ? "#FFD700" : INK} 
+            />
           </TouchableOpacity>
         </View>
       </View>
     ),
-    [navigation, stationName, line, fontOffset, insets.top, stationCode]
+    [navigation, stationName, line, fontOffset, insets.top, isFavorite]
   );
 
-  // ----------------- 그리드 모드 (type 없음) -----------------
   const IconCard = ({ item }) => (
     <TouchableOpacity
       style={styles.iconCard}
       onPress={() => {
-        // 아이콘 탭 → 동일 화면을 리스트 모드로 전환(type 설정)
         navigation.navigate("StationFacilities", { stationCode, stationName, line, type: item.key });
       }}
     >
@@ -147,8 +159,7 @@ export default function StationFacilitiesScreen() {
     </TouchableOpacity>
   );
 
-  // ----------------- 리스트 모드 (type 있음) -----------------
-  const [items, setItems] = useState(null); // null=로딩, []=빈 목록, object[]=데이터
+  const [items, setItems] = useState(null);
 
   const typeLabel = useMemo(() => {
     const map = {
@@ -166,13 +177,11 @@ export default function StationFacilitiesScreen() {
   }, [normType]);
 
   useEffect(() => {
-    if (!normType) return; // 그리드 모드일 때는 로드하지 않음
+    if (!normType) return;
     let cancelled = false;
 
     async function load() {
       setItems(null);
-
-      // 로더 맵으로 분기 실수 방지
       const loaders = {
         [TYPES.ELEVATOR]: async () => {
           const rows = (await getElevatorsByCode(String(stationCode))) || [];
@@ -190,13 +199,11 @@ export default function StationFacilitiesScreen() {
         [TYPES.LOCKER]: async () => getLockersForStation(stationName, line),
         [TYPES.NURSING]: async () => getNursingRoomsForStation(stationName, line),
       };
-
       const fn = loaders[normType];
       if (fn) {
         const mapped = await fn();
         if (!cancelled) setItems(mapped);
       } else {
-        // 아직 연동 안 된 타입은 임시 표기
         const count = normType === TYPES.ACCESSIBLE_TOILET ? 2 : 5;
         if (!cancelled) setItems(mockItems(count, typeLabel));
       }
@@ -208,10 +215,22 @@ export default function StationFacilitiesScreen() {
     };
   }, [normType, stationCode, stationName, line, typeLabel]);
 
-  // ----------------- 렌더 -----------------
   return (
     <SafeAreaView style={styles.container}>
       {HeaderMint}
+
+      <View style={styles.toggleButtonContainer}>
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => navigation.navigate("StationDetail", { stationCode, stationName, line })}
+          accessibilityLabel="자세히 보기"
+        >
+          <Ionicons name="list-outline" size={16 + fontOffset} color="#003F40" />
+          <Text style={[styles.toggleButtonText, { fontSize: responsiveFontSize(13) + fontOffset }]}>
+            역 정보 자세히 보기
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       {!normType ? (
         <View style={styles.content}>
@@ -307,7 +326,6 @@ export default function StationFacilitiesScreen() {
   );
 }
 
-/* --- 색상 토큰 --- */
 const MINT = "#21C9C6";
 const INK = "#003F40";
 const BG = "#F9F9F9";
@@ -316,8 +334,6 @@ const FRAME_BG = "#F3F7F7";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-
-  // 상단 민트 배너
   mintHeader: {
     backgroundColor: MINT,
     paddingHorizontal: 12,
@@ -326,30 +342,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerBtn: { padding: 6, width: 40, alignItems: "center" },
-  headerCenter: { flex: 1, alignItems: "center" },
-  headerRight: { alignItems: "center", justifyContent: "flex-start", gap: 6, minWidth: 84 },
-  starBtn: { padding: 6 },
-  switchBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    backgroundColor: "#ffffff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#D7F3F2",
+  headerCenter: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
   },
-  switchBtnText: { color: INK, fontWeight: "bold" },
-
+  headerRight: { width: 48, alignItems: 'center' },
+  starBtn: { padding: 8 },
   badge: {
     backgroundColor: "#AEEFED",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    marginBottom: 4,
   },
   badgeText: { color: INK, fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold" },
-
-  // 그리드 공통
+  
+  toggleButtonContainer: {
+    backgroundColor: BG,
+    padding: 12,
+    paddingBottom: 0,
+  },
+  toggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E6FBFB',
+    paddingVertical: 14,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#D7F3F2',
+    gap: 8,
+  },
+  toggleButtonText: {
+    color: INK,
+    fontWeight: 'bold',
+  },
+  
   content: { paddingHorizontal: 12, paddingTop: 12, paddingBottom: 16 },
   sectionBox: {
     backgroundColor: FRAME_BG,
@@ -371,8 +402,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   iconLabel: { marginTop: 6, textAlign: "center", color: INK, fontWeight: "bold" },
-
-  // 리스트 모드
   listWrap: { flex: 1 },
   listHeader: { paddingHorizontal: 12, paddingTop: 12 },
   listTitle: { fontWeight: "bold", color: "#17171B" },
@@ -381,7 +410,6 @@ const styles = StyleSheet.create({
   loadingText: { color: "#333" },
   emptyWrap: { padding: 24, alignItems: "center" },
   emptyText: { color: "#666", fontWeight: "bold" },
-
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -396,7 +424,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontWeight: "bold", color: "#0f172a" },
   cardDesc: { color: "#334155", marginTop: 4 },
   cardMeta: { color: "#475569", marginTop: 2 },
-
   badge2: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   ok: { backgroundColor: "#d4f5f2" },
   warn: { backgroundColor: "#ffe4cc" },

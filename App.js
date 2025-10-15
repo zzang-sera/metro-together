@@ -61,7 +61,7 @@ const mintHeaderOptions = {
 const MyPageStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
-    <MyPageStack.Navigator
+ <MyPageStack.Navigator
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: {
@@ -74,8 +74,20 @@ const MyPageStackNavigator = () => {
       <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
       <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
       <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
+      
+      {/* [추가] 즐겨찾기 화면에서 이동할 상세 화면들을 여기에 등록합니다. */}
+      <MyPageStack.Screen
+        name="StationDetail"
+        component={StationDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <MyPageStack.Screen
+        name="StationFacilities"
+        component={StationFacilitiesScreen}
+        options={{ headerShown: false }}
+      />
     </MyPageStack.Navigator>
-  );
+    );
 };
 
 const NearbyStackNavigator = () => {
