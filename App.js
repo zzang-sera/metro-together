@@ -31,6 +31,7 @@ import MyPageScreen from './src/screens/auth/MyPageScreen';
 import AccountManagementScreen from './src/screens/auth/AccountManagementScreen';
 import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
+import FacilityTypeScreen from './src/screens/station/FacilityTypeScreen';
 
 // --- 네비게이터들 ---
 const Stack = createStackNavigator();
@@ -102,6 +103,12 @@ const NearbyStackNavigator = () => {
         component={StationDetailScreen}
         options={{ headerShown: false }}
       />
+      {/* ✅ 추가: FacilityType */}
+      <NearbyStack.Screen
+        name="FacilityType"
+        component={FacilityTypeScreen}
+        options={{ headerShown: false }}
+      />
     </NearbyStack.Navigator>
   );
 };
@@ -128,6 +135,12 @@ const SearchStackNavigator = () => {
       <SearchStack.Screen
         name="StationDetail"
         component={StationDetailScreen}
+        options={{ headerShown: false }}
+      />
+      {/* ✅ 추가: FacilityType */}
+      <SearchStack.Screen
+        name="FacilityType"
+        component={FacilityTypeScreen}
         options={{ headerShown: false }}
       />
     </SearchStack.Navigator>

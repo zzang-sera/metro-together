@@ -12,8 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
+
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize, responsiveHeight } from '../../utils/responsive';
 
@@ -25,11 +27,9 @@ function getLineColor(lineNum) {
   return lineInfo ? lineInfo.color : '#666666';
 }
 
-// 이름+호선으로 stationCode 찾아오기 (데이터 키 변형 대응)
+// 이름 + 호선으로 stationCode 찾아오기 (데이터 키 변형 대응)
 function findStationCodeBy(name, line) {
-  const hit = allStations.find(
-    (s) => s?.name === name && s?.line === line
-  );
+  const hit = allStations.find((s) => s?.name === name && s?.line === line);
   const code = String(
     hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ''
   ).trim();
@@ -150,10 +150,14 @@ const SearchStationScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+
   header: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#e5e5e5',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e5e5',
   },
   headerTitle: {
     fontSize: responsiveFontSize(18),
@@ -161,10 +165,14 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     fontFamily: 'NotoSansKR',
   },
+
   searchContainer: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#f0f0f0', borderRadius: 20,
-    margin: 16, paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    margin: 16,
+    paddingHorizontal: 12,
   },
   searchIcon: { marginRight: 8 },
   input: {
@@ -174,17 +182,27 @@ const styles = StyleSheet.create({
     fontFamily: 'NotoSansKR',
     fontWeight: 'bold',
   },
-  searchButton: { backgroundColor: '#00B8D4', borderRadius: 15, paddingHorizontal: 12, paddingVertical: 6, marginLeft: 4 },
+  searchButton: {
+    backgroundColor: '#00B8D4',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginLeft: 4,
+  },
   searchButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: responsiveFontSize(14),
     fontFamily: 'NotoSansKR',
   },
+
   resultItem: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 1, borderBottomColor: '#f0f0f0',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
   },
   locationIcon: { marginRight: 12 },
   stationName: {
@@ -193,10 +211,15 @@ const styles = StyleSheet.create({
     fontFamily: 'NotoSansKR',
     fontWeight: 'bold',
   },
+
   lineContainer: { flexDirection: 'row' },
   lineCircle: {
-    width: 24, height: 24, borderRadius: 12,
-    justifyContent: 'center', alignItems: 'center', marginLeft: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 8,
   },
   lineText: {
     color: 'white',
@@ -204,6 +227,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontFamily: 'NotoSansKR',
   },
+
   emptyText: {
     textAlign: 'center',
     marginTop: 20,

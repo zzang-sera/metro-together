@@ -12,15 +12,34 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
-import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
 
-// 폰트 스케일 컨텍스트
+import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
+
+/** 좌표 보정: 데이터 키가 파일마다 다를 수 있어 안전하게 가져오기 */
+function extractLatLng(station) {
+  // 선호: lat/lng → 없으면 Y/X → 없으면 y/x
+  const lat = station.lat ?? station.Lat ?? station.latitude ?? station.Y ?? station.y;
+  const lng = station.lng ?? station.Lng ?? station.longitude ?? station.X ?? station.x;
+  return { lat: Number(lat), lng: Number(lng) };
+}
+
+/** 역 코드 보정 */
+function extractStationCode(station) {
+  return String(
+    station.station_cd ??
+    station.STN_CD ??
+    station.code ??
+    station.stationCode ??
+    ''
+  ).trim();
+}
 
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371; // km
@@ -69,10 +88,13 @@ const NearbyStationsScreen = () => {
         const currentLocation = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = currentLocation.coords;
 
-        const stationsWithDistance = stationData.map((station) => ({
-          ...station,
-          distance: getDistance(latitude, longitude, station.lat, station.lng),
-        }));
+        const stationsWithDistance = stationData.map((station) => {
+          const { lat, lng } = extractLatLng(station);
+          const dist = (Number.isFinite(lat) && Number.isFinite(lng))
+            ? getDistance(latitude, longitude, lat, lng)
+            : Number.POSITIVE_INFINITY;
+          return { ...station, distance: dist };
+        });
 
         const sortedStations = stationsWithDistance.sort((a, b) => a.distance - b.distance);
         setNearbyStations(sortedStations.slice(0, 10));
@@ -109,9 +131,7 @@ const NearbyStationsScreen = () => {
     const lineColor = getLineColor(item.line);
     const textColor = getTextColorForBackground(lineColor);
     const distanceKm = Number(item.distance || 0).toFixed(1);
-    const stationCode = String(
-      item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? ''
-    ).trim();
+    const stationCode = extractStationCode(item);
     const stationName = item.name;
 
     const accessibilityLabel = `${item.line} ${stationName}, ${distanceKm}킬로미터 거리`;
@@ -127,9 +147,17 @@ const NearbyStationsScreen = () => {
             stationName,
             line: item.line,
             distanceKm,
-            // 필요 시 전화번호 등 추가: phone: item.phone
           })
         }
+        // ✅ 길게 누르면 바로 “편의시설 그리드” 화면으로 이동
+        onLongPress={() =>
+          navigation.navigate('StationFacilities', {
+            stationCode,
+            stationName,
+            line: item.line,
+          })
+        }
+        delayLongPress={250}
       >
         <View style={styles.leftContent}>
           <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
@@ -171,7 +199,7 @@ const NearbyStationsScreen = () => {
       <FlatList
         data={nearbyStations}
         keyExtractor={(item) =>
-          `${String(item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? '')}-${item.line}`
+          `${extractStationCode(item)}-${item.line}`
         }
         contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
         renderItem={renderStationItem}

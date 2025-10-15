@@ -29,13 +29,15 @@
       "softwareKeyboardLayoutMode": "resize",
       "edgeToEdge": true,
       "googleServicesFile": "./google-services.json",
-      "package": "com.hamkkenuri.metrotogether"
+      "package": "com.hamkkenuri.metrotogether",
+      "permissions": ["INTERNET"]
     },
     "web": {
       "favicon": "./src/assets/favicon.png"
     },
     "extra": {
       "SEOUL_KEY": "585554694f6e6f6f3438516f444446",
+      "EXPO_PUBLIC_NAVER_CLIENT_ID": "1stxzdmhn9",
       "eas": {
         "projectId": "c3c5e2a7-bb90-45ab-a05a-abfc6375d923"
       }
