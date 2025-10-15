@@ -14,6 +14,7 @@ import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { FontSizeProvider, useFontSize } from './src/contexts/FontSizeContext';
 import { responsiveFontSize } from './src/utils/responsive';
+import MetroTestScreen from "./src/screens/test/metroTestScreen";
 
 // --- 화면들 ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
@@ -336,12 +337,13 @@ const AppContent = () => {
       </View>
     );
   }
-
-  return (
+// return <MetroTestScreen />;//api 테스트용
+return (
     <NavigationContainer>
       {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
-  );
+  ); 
+  
 };
 
 export default function App() {
