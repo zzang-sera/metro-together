@@ -1,4 +1,4 @@
-// metroAPI.js
+// src/api/metroAPI.js
 import { SUPABASE_URL } from "../constants/constants";
 
 export async function getEscalatorStatus() {
