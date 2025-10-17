@@ -1,7 +1,6 @@
-// App.js (전체 수정본)
-
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image } from 'react-native';
+// [수정] useNavigation 대신 CommonActions를 임포트할 수도 있지만, 이번 수정에서는 navigation.navigate를 사용하므로 필수적이지는 않습니다.
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -62,7 +61,7 @@ const mintHeaderOptions = {
 const MyPageStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
- <MyPageStack.Navigator
+    <MyPageStack.Navigator
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: {
@@ -75,8 +74,6 @@ const MyPageStackNavigator = () => {
       <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: '회원관리' }} />
       <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: '즐겨찾기' }} />
       <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: '이용약관' }} />
-      
-      {/* [추가] 즐겨찾기 화면에서 이동할 상세 화면들을 여기에 등록합니다. */}
       <MyPageStack.Screen
         name="StationDetail"
         component={StationDetailScreen}
@@ -88,7 +85,7 @@ const MyPageStackNavigator = () => {
         options={{ headerShown: false }}
       />
     </MyPageStack.Navigator>
-    );
+  );
 };
 
 const NearbyStackNavigator = () => {
@@ -104,7 +101,6 @@ const NearbyStackNavigator = () => {
       }}
     >
       <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '주변 역 목록' }} />
-      {/* 커스텀 헤더를 쓰는 화면: 네이티브 헤더 OFF */}
       <NearbyStack.Screen
         name="StationFacilities"
         component={StationFacilitiesScreen}
@@ -132,7 +128,6 @@ const SearchStackNavigator = () => {
       }}
     >
       <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: '역 검색' }} />
-      {/* 커스텀 헤더를 쓰는 화면: 네이티브 헤더 OFF */}
       <SearchStack.Screen
         name="StationFacilities"
         component={StationFacilitiesScreen}
@@ -146,6 +141,7 @@ const SearchStackNavigator = () => {
     </SearchStack.Navigator>
   );
 };
+
 
 // --- 비로그인 탭 ---
 const GuestTabs = () => {
@@ -203,8 +199,34 @@ const GuestTabs = () => {
           },
         }}
       />
-      <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
+      <Tab.Screen 
+        name="주변" 
+        component={NearbyStackNavigator} 
+        options={{ headerShown: false }} 
+        // [수정] popToTop 대신 navigate로 스택의 첫 화면으로 직접 이동
+        listeners={({ navigation, route }) => ({
+          tabPress: e => {
+            if (navigation.isFocused()) {
+              e.preventDefault();
+              navigation.navigate(route.name, { screen: 'NearbyHome' });
+            }
+          }
+        })}
+      />
+      <Tab.Screen 
+        name="검색" 
+        component={SearchStackNavigator} 
+        options={{ headerShown: false }} 
+        // [수정] popToTop 대신 navigate로 스택의 첫 화면으로 직접 이동
+        listeners={({ navigation, route }) => ({
+          tabPress: e => {
+            if (navigation.isFocused()) {
+              e.preventDefault();
+              navigation.navigate(route.name, { screen: 'SearchHome' });
+            }
+          }
+        })}
+      />
       <Tab.Screen
         name="마이"
         component={MyPageScreen}
@@ -288,10 +310,49 @@ const UserTabs = () => {
       })}
     >
       <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
-      <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
+      <Tab.Screen 
+        name="주변" 
+        component={NearbyStackNavigator} 
+        options={{ headerShown: false }} 
+        // [수정] popToTop 대신 navigate로 스택의 첫 화면으로 직접 이동
+        listeners={({ navigation, route }) => ({
+          tabPress: e => {
+            if (navigation.isFocused()) {
+              e.preventDefault();
+              navigation.navigate(route.name, { screen: 'NearbyHome' });
+            }
+          }
+        })}
+      />
       <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
-      <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ title: '마이', headerShown: false }} />
+      <Tab.Screen 
+        name="검색" 
+        component={SearchStackNavigator} 
+        options={{ headerShown: false }} 
+        // [수정] popToTop 대신 navigate로 스택의 첫 화면으로 직접 이동
+        listeners={({ navigation, route }) => ({
+          tabPress: e => {
+            if (navigation.isFocused()) {
+              e.preventDefault();
+              navigation.navigate(route.name, { screen: 'SearchHome' });
+            }
+          }
+        })}
+      />
+      <Tab.Screen 
+        name="마이" 
+        component={MyPageStackNavigator} 
+        options={{ title: '마이', headerShown: false }} 
+        // [수정] popToTop 대신 navigate로 스택의 첫 화면으로 직접 이동
+        listeners={({ navigation, route }) => ({
+          tabPress: e => {
+            if (navigation.isFocused()) {
+              e.preventDefault();
+              navigation.navigate(route.name, { screen: 'MyPageMain' });
+            }
+          }
+        })}
+      />
     </Tab.Navigator>
   );
 };
@@ -337,13 +398,13 @@ const AppContent = () => {
       </View>
     );
   }
-// return <MetroTestScreen />;//api 테스트용
-return (
+  // return <MetroTestScreen />;//api 테스트용
+  return (
     <NavigationContainer>
       {user ? <AppStack /> : <AuthStack />}
     </NavigationContainer>
-  ); 
-  
+  );
+
 };
 
 export default function App() {
