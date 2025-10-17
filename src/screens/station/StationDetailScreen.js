@@ -1,283 +1,84 @@
 // src/screens/station/StationDetailScreen.js
-import React, { useMemo, useEffect, useState } from "react";
-import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert
-} from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { Ionicons } from "@expo/vector-icons";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFontSize } from "../../contexts/FontSizeContext";
-import { responsiveFontSize } from "../../utils/responsive";
-import { getElevatorsByCode } from "../../api/elevLocal";
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { auth, db } from "../../config/firebaseConfig";
 
-const TYPES = {
-  ELEVATOR: "elevator",
-  ESCALATOR: "escalator",
-  ACCESSIBLE_TOILET: "accessible_toilet",
-  WHEELCHAIR_LIFT: "wheelchair_lift",
-  WIDE_GATE: "wide_gate",
-  NURSING: "nursing_room",
-  LOCKER: "locker",
-  AUDIO_GUIDE: "audio_beacon",
-  PRIORITY_SEAT: "priority_seat",
-};
+import React from "react";
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
 
 export default function StationDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const insets = useSafeAreaInsets();
-  const { fontOffset } = useFontSize();
+  const { stationCode, stationName, line } = route.params || {};
 
-  const [isFavorite, setIsFavorite] = useState(false);
-  const currentUser = auth.currentUser;
-
-  const { stationCode = "", stationName = "", line = "", distanceKm = null, phone = "" } =
-    route.params || {};
-
-  useEffect(() => {
-    if (!currentUser || !stationCode) return;
-    const userDocRef = doc(db, "users", currentUser.uid);
-    const unsubscribe = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists()) {
-        const userData = doc.data();
-        setIsFavorite(userData.favorites?.includes(stationCode));
-      }
+  const handleFacilityPress = () => {
+    navigation.navigate("StationFacilities", {
+      stationCode,
+      stationName,
+      line,
     });
-    return () => unsubscribe();
-  }, [currentUser, stationCode]);
-
-  const [elevCount, setElevCount] = useState(0);
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const rows = (await getElevatorsByCode(String(stationCode))) || [];
-      if (!cancelled) setElevCount(rows.length);
-    })();
-    return () => { cancelled = true; };
-  }, [stationCode]);
-
-  const handleFavoriteToggle = async () => {
-    if (!currentUser || !stationCode) {
-      Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
-      return;
-    }
-    const userDocRef = doc(db, "users", currentUser.uid);
-    try {
-      if (isFavorite) {
-        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
-      } else {
-        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
-      }
-    } catch (error) {
-      console.error("즐겨찾기 업데이트 실패:", error);
-      Alert.alert("오류", "요청을 처리하는 중 오류가 발생했습니다.");
-    }
   };
-
-  // 헤더
-  const Header = useMemo(() => (
-    <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={MINT} />
-
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} accessibilityLabel="뒤로가기">
-        <Ionicons name="chevron-back" size={22 + fontOffset / 2} color={INK} />
-      </TouchableOpacity>
-
-      {/* [수정] 중앙 정렬된 타이틀 (뱃지 + 역명) */}
-      <View style={styles.headerCenter}>
-        <View style={styles.badge}>
-          <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
-            {line || "?"}
-          </Text>
-        </View>
-        <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
-          {stationName || "역명"}
-        </Text>
-      </View>
-
-      {/* [수정] 오른쪽: 즐겨찾기 버튼만 남김 */}
-      <View style={styles.headerRight}>
-        <TouchableOpacity onPress={handleFavoriteToggle} accessibilityLabel="즐겨찾기" style={styles.starBtn}>
-          <Ionicons 
-            name={isFavorite ? "star" : "star-outline"} 
-            size={24 + fontOffset / 2}
-            color={isFavorite ? "#FFD700" : INK} 
-          />
-        </TouchableOpacity>
-      </View>
-    </View>
-  ), [navigation, stationName, line, fontOffset, insets.top, isFavorite]);
-
-  const goList = (type) => {
-    navigation.navigate("StationFacilities", { stationCode, stationName, line, type });
-  };
-
-  const Chip = ({ icon, label, onPress }) => (
-    <TouchableOpacity style={styles.chip} onPress={onPress} activeOpacity={0.85}>
-      <Ionicons name={icon} size={16} color="#0a7b7a" style={{ marginRight: 6 }} />
-      <Text style={[styles.chipText, { fontSize: responsiveFontSize(12) + fontOffset * 0.2 }]}>{label}</Text>
-    </TouchableOpacity>
-  );
 
   return (
-    <View style={styles.container}>
-      {Header}
+    <ScrollView style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={24} color="#003F40" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{stationName || "역 정보"}</Text>
+      </View>
 
-      {/* [추가] 화면 최상단 '간단히 보기' 버튼 */}
-      <View style={styles.toggleButtonContainer}>
-        <TouchableOpacity
-          style={styles.toggleButton}
-          onPress={() => navigation.navigate("StationFacilities", { stationCode, stationName, line })}
-          accessibilityLabel="간단히 보기"
-        >
-          <Ionicons name="grid-outline" size={16 + fontOffset} color="#003F40" />
-          <Text style={[styles.toggleButtonText, { fontSize: responsiveFontSize(13) + fontOffset }]}>
-            시설 아이콘으로 간단히 보기
-          </Text>
+      {/* 기본 정보 */}
+      <View style={styles.section}>
+        <Text style={styles.label}>노선</Text>
+        <Text style={styles.value}>{line || "-"}</Text>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.label}>역 코드</Text>
+        <Text style={styles.value}>{stationCode || "-"}</Text>
+      </View>
+
+      {/* 시설 보기 버튼 */}
+      <View style={styles.section}>
+        <TouchableOpacity style={styles.facilityButton} onPress={handleFacilityPress}>
+          <Ionicons name="construct-outline" size={18} color="#fff" />
+          <Text style={styles.facilityText}>이 역의 이동시설 보기</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 12, paddingTop: 0, paddingBottom: 24 }}>
-        {/* 카드 #1 — 역 기본 요약 */}
-        <View style={styles.card}>
-          {/* ... 이하 내용은 이전과 동일 ... */}
-          <View style={styles.cardHeader}>
-            <View style={styles.linePill}><Text style={styles.linePillText}>{line}</Text></View>
-            <Text style={[styles.cardTitle, { fontSize: responsiveFontSize(16) + fontOffset }]}>{stationName}</Text>
-          </View>
-
-          <View style={styles.row}>
-            <Ionicons name="call-outline" size={16} color="#5b6b6a" />
-            <Text style={[styles.rowText, { fontSize: responsiveFontSize(13) + fontOffset * 0.2 }]}>
-              {phone || "02 - XXXX - XXXX"}
-            </Text>
-          </View>
-
-          <View style={styles.chipsWrap}>
-            <Chip icon="cube-outline"            label={`엘리베이터 ${elevCount}대`} onPress={() => goList(TYPES.ELEVATOR)} />
-            <Chip icon="trending-up-outline"     label="에스컬레이터"               onPress={() => goList(TYPES.ESCALATOR)} />
-            <Chip icon="volume-high-outline"     label="음성 유도기"                 onPress={() => goList(TYPES.AUDIO_GUIDE)} />
-          </View>
-
-          <View style={styles.chipsWrap}>
-            <Chip icon="accessibility-outline"   label="휠체어리프트"                 onPress={() => goList(TYPES.WHEELCHAIR_LIFT)} />
-            <Chip icon="people-outline"          label="노약자석"                     onPress={() => goList(TYPES.PRIORITY_SEAT)} />
-            <Chip icon="scan-outline"            label="광폭 개찰구"                   onPress={() => goList(TYPES.WIDE_GATE)} />
-          </View>
-
-          <View style={[styles.row, { marginTop: 8 }]}>
-            <Ionicons name="navigate-outline" size={16} color="#5b6b6a" />
-            <Text style={[styles.rowText, { fontSize: responsiveFontSize(13) + fontOffset * 0.2 }]}>
-              {distanceKm != null ? `${distanceKm} km` : "거리 정보 없음"}
-            </Text>
-
-            <TouchableOpacity style={{ marginLeft: "auto" }} onPress={() => goList(TYPES.ELEVATOR)}>
-              <Text style={[styles.link, { fontSize: responsiveFontSize(12) + fontOffset * 0.2 }]}>자세히 보기</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* 카드 #2 — 편의시설 요약(예시) */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={[styles.cardTitle, { fontSize: responsiveFontSize(16) + fontOffset }]}>편의시설</Text>
-          </View>
-
-          <View style={styles.chipsWrap}>
-            <Chip icon="male-female-outline"     label="장애인 화장실" onPress={() => goList(TYPES.ACCESSIBLE_TOILET)} />
-            <Chip icon="briefcase-outline"       label="물품보관함"     onPress={() => goList(TYPES.LOCKER)} />
-            <Chip icon="medkit-outline"          label="수유실"         onPress={() => goList(TYPES.NURSING)} />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+      {/* 설명 */}
+      <View style={styles.section}>
+        <Text style={styles.desc}>
+          선택한 역의 엘리베이터·에스컬레이터 등 이동시설 정보를 실시간으로 확인할 수 있습니다.
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
-const MINT = "#21C9C6";
-const INK  = "#003F40";
-const BG   = "#F9F9F9";
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: BG },
+  container: { flex: 1, backgroundColor: "#fff", padding: 16 },
   header: {
-    backgroundColor: MINT,
-    paddingHorizontal: 12,
-    paddingBottom: 12,
     flexDirection: "row",
     alignItems: "center",
+    marginBottom: 20,
   },
-  headerBtn: { padding: 6, minWidth: 36, alignItems: "center" },
-  // [수정] 헤더 중앙 영역 가로 배치
-  headerCenter: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  headerTitle: { color: INK, fontWeight: "bold" },
-  // [수정] 뱃지 아래쪽 마진 제거
-  badge: { backgroundColor: "#AEEFED", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, },
-  badgeText: { color: INK, fontWeight: "bold" },
-  // [수정] 헤더 오른쪽 영역, 즐겨찾기 버튼만 남김
-  headerRight: { width: 48, alignItems: "center" },
-  starBtn: { padding: 8 },
-  
-  // [추가] '간단히/자세히 보기' 토글 버튼 스타일
-  toggleButtonContainer: {
-    backgroundColor: BG,
-    padding: 12,
-    paddingBottom: 0,
-  },
-  toggleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#E6FBFB',
-    paddingVertical: 14,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: '#D7F3F2',
-    gap: 8,
-  },
-  toggleButtonText: {
-    color: INK,
-    fontWeight: 'bold',
-  },
-  
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#E6ECEB",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 10 },
-  linePill: { backgroundColor: "#e8fbfa", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10, marginRight: 8 },
-  linePillText: { color: INK, fontWeight: "bold", fontSize: 12 },
-  cardTitle: { color: "#1f2937", fontWeight: "bold", flex: 1 }, // [수정] flex:1 추가하여 공간 차지
-  row: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
-  rowText: { color: "#445655", fontWeight: "bold" },
-  link: { color: "#0a7b7a", fontWeight: "bold" },
-  chipsWrap: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
-  chip: {
+  backButton: { marginRight: 8 },
+  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#003F40" },
+  section: { marginBottom: 16 },
+  label: { fontSize: 14, color: "#6b7280", marginBottom: 4 },
+  value: { fontSize: 16, color: "#111827", fontWeight: "600" },
+  facilityButton: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "#e6fbfb",
-    borderWidth: 1,
-    borderColor: "#D7F3F2",
+    backgroundColor: "#21C9C6",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    justifyContent: "center",
+    gap: 6,
   },
-  chipText: { color: "#0a7b7a", fontWeight: "bold" },
+  facilityText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
+  desc: { color: "#374151", fontSize: 13, lineHeight: 18 },
 });

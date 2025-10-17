@@ -1,50 +1,67 @@
 /// <reference lib="deno.ns" />
 
-// Deno 환경 호환되는 경량 XML 파서
-import { parse } from "https://deno.land/x/xml@2.1.0/mod.ts";
+const SEOUL_API_KEY = Deno.env.get("SEOUL_OPEN_API_KEY");
+const BASE = "http://openapi.seoul.go.kr:8088";
+const SERVICE = "SeoulMetroFaciInfo";
 
-Deno.serve(async (_req: Request) => {
+type RawRow = {
+  STN_CD?: string | number;
+  STN_NM?: string;
+  ELVTR_NM?: string;
+  OPR_SEC?: string;
+  INSTL_PSTN?: string;
+  USE_YN?: string;
+  ELVTR_SE?: string; // EV / ES
+};
+
+function ok(v: unknown): v is string {
+  return typeof v === "string" && v.trim().length > 0;
+}
+
+async function fetchStationData(station: string): Promise<RawRow[]> {
+  const encoded = encodeURIComponent(station);
+  const url = `${BASE}/${SEOUL_API_KEY}/json/${SERVICE}/1/100/${encoded}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Seoul API HTTP ${res.status}`);
+  const json = await res.json();
+  const rows = json?.[SERVICE]?.row ?? [];
+  return Array.isArray(rows) ? rows : [];
+}
+
+Deno.serve(async (req) => {
   try {
-    const API_KEY = Deno.env.get("SEOUL_OPEN_API_KEY");
-    if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "Missing SEOUL_OPEN_API_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    const url = new URL(req.url);
+    const stationName = url.searchParams.get("stationName") ?? "";
+    const type = url.searchParams.get("type") ?? ""; // EV / ES
+
+    if (!ok(SEOUL_API_KEY)) throw new Error("Missing SEOUL_OPEN_API_KEY");
+    if (!ok(stationName)) throw new Error("stationName is required");
+
+    const data = await fetchStationData(stationName);
+
+    let result = data;
+    if (type === "EV" || type === "ES") {
+      result = result.filter((r) => r.ELVTR_SE === type);
     }
 
-    // 서울교통공사_교통약자_이용시설_승강기_가동현황 (XML)
-    const url = `http://openapi.seoul.go.kr:8088/${API_KEY}/xml/SeoulMetroFaciInfo/1/100/`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: `Open API HTTP ${res.status}` }), {
-        status: res.status,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const xmlText = await res.text();
-    const xmlObj: any = parse(xmlText);
-    const rows = xmlObj?.SeoulMetroFaciInfo?.row ?? [];
-
-    const data = rows.map((item: Record<string, string>) => ({
-      stationCode: Number(item.STN_CD),
-      stationName: item.STN_NM,
-      elevatorName: item.ELVTR_NM,
-      section: item.OPR_SEC,
-      position: item.INSTL_PSTN,
-      status: item.USE_YN,
-      type: item.ELVTR_SE,
+    const mapped = result.map((r) => ({
+      stationCode: r.STN_CD ?? "",
+      stationName: r.STN_NM ?? "",
+      facilityName: r.ELVTR_NM ?? "",
+      section: r.OPR_SEC ?? "",
+      position: r.INSTL_PSTN ?? "",
+      status: r.USE_YN ?? "",
+      type: r.ELVTR_SE ?? "",
     }));
 
-    return new Response(JSON.stringify(data), {
+    return new Response(JSON.stringify(mapped), {
       headers: { "Content-Type": "application/json" },
+      status: 200,
     });
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+  } catch (err) {
+    return new Response(
+      JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
   }
 });
