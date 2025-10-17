@@ -1,84 +1,178 @@
-// src/screens/station/StationDetailScreen.js
-
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  StatusBar,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { auth, db } from "../../config/firebaseConfig";
+import { responsiveFontSize } from "../../utils/responsive";
+import { useFontSize } from "../../contexts/FontSizeContext";
+
+const MINT = "#21C9C6";
+const INK = "#003F40";
+const BG = "#F9F9F9";
 
 export default function StationDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { stationCode, stationName, line } = route.params || {};
+  const { stationName, stationCode, line } = route.params || {};
+  const insets = useSafeAreaInsets();
+  const { fontOffset } = useFontSize();
 
-  const handleFacilityPress = () => {
-    navigation.navigate("StationFacilities", {
-      stationCode,
-      stationName,
-      line,
+  const currentUser = auth.currentUser;
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (!currentUser || !stationCode) return;
+    const userDocRef = doc(db, "users", currentUser.uid);
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const favs = docSnap.data().favorites || [];
+        setIsFavorite(favs.includes(stationCode));
+      }
     });
+    return () => unsubscribe();
+  }, [currentUser, stationCode]);
+
+  const handleFavoriteToggle = async () => {
+    if (!currentUser || !stationCode) {
+      Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
+      return;
+    }
+    const userDocRef = doc(db, "users", currentUser.uid);
+    try {
+      if (isFavorite) {
+        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
+      } else {
+        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
+      }
+    } catch (err) {
+      console.error("즐겨찾기 오류:", err);
+      Alert.alert("오류", "즐겨찾기 업데이트 중 문제가 발생했습니다.");
+    }
   };
 
+  const Header = useMemo(
+    () => (
+      <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={MINT} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+          <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <View style={styles.badge}>
+            <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+              {line || "?"}
+            </Text>
+          </View>
+          <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+            {stationName || "역명"}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
+          <Ionicons
+            name={isFavorite ? "star" : "star-outline"}
+            size={24 + fontOffset / 2}
+            color={isFavorite ? "#FFD700" : INK}
+          />
+        </TouchableOpacity>
+      </View>
+    ),
+    [navigation, stationName, line, fontOffset, insets.top, isFavorite]
+  );
+
   return (
-    <ScrollView style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="chevron-back" size={24} color="#003F40" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{stationName || "역 정보"}</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      {Header}
 
-      {/* 기본 정보 */}
-      <View style={styles.section}>
-        <Text style={styles.label}>노선</Text>
-        <Text style={styles.value}>{line || "-"}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>역 코드</Text>
-        <Text style={styles.value}>{stationCode || "-"}</Text>
-      </View>
-
-      {/* 시설 보기 버튼 */}
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.facilityButton} onPress={handleFacilityPress}>
-          <Ionicons name="construct-outline" size={18} color="#fff" />
-          <Text style={styles.facilityText}>이 역의 이동시설 보기</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 설명 */}
-      <View style={styles.section}>
-        <Text style={styles.desc}>
-          선택한 역의 엘리베이터·에스컬레이터 등 이동시설 정보를 실시간으로 확인할 수 있습니다.
+      <View style={styles.infoBox}>
+        <Text style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          {line}
+        </Text>
+        <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+          코드: {stationCode}
         </Text>
       </View>
-    </ScrollView>
+
+      <View style={styles.iconRow}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() =>
+            navigation.navigate("StationFacilities", {
+              stationCode,
+              stationName,
+              line,
+              type: "EV",
+            })
+          }
+        >
+          <Ionicons name="cube-outline" size={42} color={MINT} />
+          <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(13) + fontOffset }]}>
+            엘리베이터
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() =>
+            navigation.navigate("StationFacilities", {
+              stationCode,
+              stationName,
+              line,
+              type: "ES",
+            })
+          }
+        >
+          <Ionicons name="swap-vertical-outline" size={42} color={MINT} />
+          <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(13) + fontOffset }]}>
+            에스컬레이터
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff", padding: 16 },
-  header: {
+  container: { flex: 1, backgroundColor: BG },
+  mintHeader: {
+    backgroundColor: MINT,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    paddingBottom: 10,
   },
-  backButton: { marginRight: 8 },
-  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#003F40" },
-  section: { marginBottom: 16 },
-  label: { fontSize: 14, color: "#6b7280", marginBottom: 4 },
-  value: { fontSize: 16, color: "#111827", fontWeight: "600" },
-  facilityButton: {
-    flexDirection: "row",
+  headerBtn: { width: 36, alignItems: "center" },
+  headerCenter: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" },
+  badge: { backgroundColor: "#AEEFED", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
+  badgeText: { color: INK, fontWeight: "bold" },
+  headerTitle: { color: INK, fontWeight: "bold" },
+  starBtn: { padding: 6 },
+  infoBox: { alignItems: "center", marginTop: 16, marginBottom: 30 },
+  lineText: { color: "#003F40", fontWeight: "600" },
+  codeText: { color: "#6B7280", marginTop: 4 },
+  iconRow: { flexDirection: "row", justifyContent: "space-around", alignItems: "center", marginTop: 40 },
+  iconButton: {
     alignItems: "center",
-    backgroundColor: "#21C9C6",
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    justifyContent: "center",
     gap: 6,
+    backgroundColor: "#F1FAFA",
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    borderRadius: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  facilityText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
-  desc: { color: "#374151", fontSize: 13, lineHeight: 18 },
+  iconLabel: { color: INK, fontWeight: "bold" },
 });

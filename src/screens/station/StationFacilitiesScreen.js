@@ -1,7 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import {
-  View, Text, StyleSheet, FlatList, TouchableOpacity,
-  SafeAreaView, ActivityIndicator, StatusBar, Alert,
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  SafeAreaView,
+  ActivityIndicator,
+  StatusBar,
+  Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -11,39 +18,41 @@ import { responsiveFontSize } from "../../utils/responsive";
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
 
-// ✅ Supabase Edge Function (실시간)
+// ✅ API: 역 이름으로 요청
 import { getEscalatorStatusByName } from "../../api/metroAPI";
-
-// ✅ 로컬 데이터 (fallback)
-import { getElevByName, prettify as prettifyElev } from "../../api/elevLocal";
-import { getEscalatorsByName, prettifyEsc } from "../../api/escalatorLocal";
+// ✅ 로컬 fallback
+import { getElevatorsByCode } from "../../api/elevLocal";
+import { getEscalatorsForStation } from "../../api/escalatorLocal";
 
 const MINT = "#21C9C6";
-const INK  = "#003F40";
-const BG   = "#F9F9F9";
+const INK = "#003F40";
+const BG = "#F9F9F9";
 
 export default function StationFacilitiesScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
+  const insets = useSafeAreaInsets();
 
   const { stationCode = "", stationName = "", line = "", type } = route.params || {};
+  const currentUser = auth.currentUser;
 
   const [isFavorite, setIsFavorite] = useState(false);
   const [items, setItems] = useState(null);
-  const [isOfflineData, setIsOfflineData] = useState(false); // ✅ 로컬 fallback 여부 표시
+  const [usingLocal, setUsingLocal] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const currentUser = auth.currentUser;
-
-  // 즐겨찾기 상태 구독
+  // ✅ 즐겨찾기 실시간 동기화
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
-    const unsub = onSnapshot(userDocRef, (snap) => {
-      if (snap.exists()) setIsFavorite(snap.data().favorites?.includes(stationCode));
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const favs = docSnap.data().favorites || [];
+        setIsFavorite(favs.includes(stationCode));
+      }
     });
-    return () => unsub();
+    return () => unsubscribe();
   }, [currentUser, stationCode]);
 
   const handleFavoriteToggle = async () => {
@@ -53,27 +62,36 @@ export default function StationFacilitiesScreen() {
     }
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
-      if (isFavorite) await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
-      else await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
-    } catch (e) {
-      console.error(e);
-      Alert.alert("오류", "요청 처리 중 문제가 발생했습니다.");
+      if (isFavorite) {
+        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
+      } else {
+        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
+      }
+    } catch (error) {
+      console.error("즐겨찾기 업데이트 실패:", error);
+      Alert.alert("오류", "요청을 처리하는 중 오류가 발생했습니다.");
     }
   };
 
-  const Header = useMemo(() => (
-    <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
-      <StatusBar barStyle="dark-content" backgroundColor={MINT} />
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn} accessibilityLabel="뒤로가기">
-        <Ionicons name="chevron-back" size={22 + fontOffset / 2} color={INK} />
-      </TouchableOpacity>
-      <View style={styles.headerCenter}>
-        <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
-          {stationName}
-        </Text>
-      </View>
-      <View style={styles.headerRight}>
-        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn} accessibilityLabel="즐겨찾기">
+  // ✅ 상단 헤더
+  const HeaderMint = useMemo(
+    () => (
+      <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
+        <StatusBar barStyle="dark-content" backgroundColor={MINT} />
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
+          <Ionicons name="chevron-back" size={22 + fontOffset / 2} color={INK} />
+        </TouchableOpacity>
+        <View style={styles.headerCenter}>
+          <View style={styles.badge}>
+            <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+              {line || "?"}
+            </Text>
+          </View>
+          <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+            {stationName || "역명"}
+          </Text>
+        </View>
+        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
           <Ionicons
             name={isFavorite ? "star" : "star-outline"}
             size={24 + fontOffset / 2}
@@ -81,80 +99,92 @@ export default function StationFacilitiesScreen() {
           />
         </TouchableOpacity>
       </View>
-    </View>
-  ), [navigation, stationName, fontOffset, insets.top, isFavorite]);
+    ),
+    [navigation, stationName, line, fontOffset, insets.top, isFavorite]
+  );
 
-  // ✅ 핵심: API 우선 → 빈 결과/오류 시 로컬 fallback
+  // ✅ 데이터 로드 (역 이름으로 API 호출)
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       setItems(null);
-      setIsOfflineData(false);
+      setUsingLocal(false);
+      setErrorMsg("");
 
       try {
-        // 1) 실시간 API (Supabase Edge Function) 우선
-        const apiData = await getEscalatorStatusByName(stationName);
-        let finalList = Array.isArray(apiData) ? apiData : [];
+        console.log("🚀 API 요청:", stationName);
+        const all = await getEscalatorStatusByName(stationName);
 
-        if (finalList.length > 0) {
-          // API 결과 매핑
-          finalList = finalList.map((r, idx) => ({
-            id: `${r.stationCode ?? stationCode}-api-${idx}`,
-            title: r.facilityName || "승강기",
-            desc: [r.section, r.position].filter(Boolean).join(" · "),
-            status: r.status || "-",         // "사용가능" / "중지" 등
-            line: r.line || line,
-            type: r.type,                    // EV / ES / WL ...
-          }));
-        } else {
-          // 2) API에 해당 역 없음 → 로컬 fallback
-          setIsOfflineData(true);
-          const elevs = prettifyElev(await getElevByName(stationName));
-          const escs  = prettifyEsc(await getEscalatorsByName(stationName), line);
-          finalList = [...elevs, ...escs].map((r, i) => ({
-            id: `${stationCode}-local-${i}`,
-            title: r.facilityName || r.title || "승강기",
-            desc: [r.section, r.gate || r.position].filter(Boolean).join(" · "),
-            status: r.status || "정보없음",
-            line: r.line || line,
-          }));
+        const filtered = all.filter((r) => {
+          if (type === "EV") return r.type?.toUpperCase() === "EV";
+          if (type === "ES") return r.type?.toUpperCase() === "ES";
+          return true;
+        });
+
+        console.log("✅ API 응답:", filtered.length, "건");
+
+        if (!cancelled && filtered.length > 0) {
+          setItems(
+            filtered.map((r, idx) => ({
+              id: `${r.stationCode || r.STN_CD}-${idx}`,
+              title: r.facilityName || (type === "EV" ? "엘리베이터" : "에스컬레이터"),
+              desc: [r.section, r.position].filter(Boolean).join(" "),
+              status: r.status || "-",
+              line: r.line || line,
+            }))
+          );
+          return;
         }
 
-        if (!cancelled) setItems(finalList);
+        // ✅ API에 데이터 없으면 로컬 fallback
+        let local = [];
+        if (type === "EV") {
+          local = await getElevatorsByCode(String(stationCode));
+        } else if (type === "ES") {
+          local = await getEscalatorsForStation(stationName, line);
+        }
+
+        if (!cancelled) {
+          setUsingLocal(true);
+          setItems(local);
+          setErrorMsg("API에서 해당 역 정보를 찾을 수 없습니다.");
+        }
       } catch (err) {
-        // 3) 네트워크/서버 오류 → 로컬 fallback
         console.error("실시간 API 오류, 로컬 대체:", err);
-        setIsOfflineData(true);
-        const elevs = prettifyElev(await getElevByName(stationName));
-        const escs  = prettifyEsc(await getEscalatorsByName(stationName), line);
-        const all = [...elevs, ...escs].map((r, i) => ({
-          id: `${stationCode}-local-${i}`,
-          title: r.facilityName || r.title || "승강기",
-          desc: [r.section, r.gate || r.position].filter(Boolean).join(" · "),
-          status: r.status || "정보없음",
-          line: r.line || line,
-        }));
-        if (!cancelled) setItems(all);
+        setErrorMsg(err.message || JSON.stringify(err));
+
+        let local = [];
+        if (type === "EV") {
+          local = await getElevatorsByCode(String(stationCode));
+        } else if (type === "ES") {
+          local = await getEscalatorsForStation(stationName, line);
+        }
+        if (!cancelled) {
+          setUsingLocal(true);
+          setItems(local);
+        }
       }
     }
 
     load();
-    return () => { cancelled = true; };
-  }, [stationName, stationCode, line]);
+    return () => {
+      cancelled = true;
+    };
+  }, [type, stationCode, stationName, line]);
 
   return (
     <SafeAreaView style={styles.container}>
-      {Header}
+      {HeaderMint}
 
-      {isOfflineData && (
-        <View style={styles.alertBox} accessibilityLiveRegion="polite">
-          <Ionicons name="alert-circle-outline" size={18} color="#b45309" />
-          <Text style={styles.alertText}>실시간 사용 가능 여부를 알 수 없는 역입니다.</Text>
+      {usingLocal && (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>실시간 데이터를 가져올 수 없어 로컬 데이터로 표시합니다.</Text>
+          {!!errorMsg && <Text style={styles.errorText}>({errorMsg})</Text>}
         </View>
       )}
 
-      {!items ? (
+      {items === null ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator />
           <Text style={styles.loadingText}>불러오는 중…</Text>
@@ -173,17 +203,18 @@ export default function StationFacilitiesScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 {!!item.desc && <Text style={styles.cardDesc}>{item.desc}</Text>}
-                {!!item.line && <Text style={styles.cardMeta}>라인: {item.line}</Text>}
               </View>
-              <View style={[
-                styles.badge2,
-                item.status === "사용가능" || item.status === "정상"
-                  ? styles.ok
-                  : /중/.test(item.status)
-                  ? styles.warn
-                  : styles.neutral,
-              ]}>
-                <Text style={styles.badgeText2}>{item.status}</Text>
+              <View
+                style={[
+                  styles.badge2,
+                  item.status === "사용가능" || item.status === "정상"
+                    ? styles.ok
+                    : /중/.test(item.status)
+                    ? styles.warn
+                    : styles.neutral,
+                ]}
+              >
+                <Text style={styles.badgeText2}>{item.status || "-"}</Text>
               </View>
             </View>
           )}
@@ -203,26 +234,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerBtn: { padding: 6, width: 40, alignItems: "center" },
-  headerCenter: { flex: 1, alignItems: "center" },
-  headerRight: { width: 48, alignItems: "center" },
+  headerCenter: { flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
   starBtn: { padding: 8 },
+  badge: { backgroundColor: "#AEEFED", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badgeText: { color: INK, fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold" },
-
-  alertBox: {
-    backgroundColor: "#fef3c7",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    gap: 6,
+  banner: {
+    backgroundColor: "#FFF4D6",
+    borderColor: "#FFE2A8",
+    borderWidth: 1,
+    margin: 12,
+    borderRadius: 10,
+    padding: 10,
   },
-  alertText: { color: "#78350f", fontWeight: "bold" },
-
+  bannerText: { color: "#7A5B00", fontWeight: "700" },
+  errorText: { color: "#B3261E", fontSize: 12, marginTop: 4 },
   loadingWrap: { flexDirection: "row", alignItems: "center", gap: 8, padding: 16 },
   loadingText: { color: "#333" },
   emptyWrap: { padding: 24, alignItems: "center" },
   emptyText: { color: "#666", fontWeight: "bold" },
-
   card: {
     flexDirection: "row",
     alignItems: "center",
@@ -236,7 +266,6 @@ const styles = StyleSheet.create({
   },
   cardTitle: { fontWeight: "bold", color: "#0f172a" },
   cardDesc: { color: "#334155", marginTop: 4 },
-  cardMeta: { color: "#475569", marginTop: 2 },
   badge2: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999 },
   ok: { backgroundColor: "#d4f5f2" },
   warn: { backgroundColor: "#ffe4cc" },
