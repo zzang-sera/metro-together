@@ -1,3 +1,4 @@
+// src/screens/station/StationDetailScreen.js
 import React, { useMemo, useEffect, useState } from "react";
 import {
   View, Text, TouchableOpacity, StyleSheet, ScrollView, StatusBar, Alert
