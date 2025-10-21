@@ -1,6 +1,6 @@
 // src/hooks/useApiFacilities.js
 import { useEffect, useState } from "react";
-import { getEscalatorStatusByName } from "../api/metroAPI";
+import { getEscalatorStatusByName } from "../api/metro/metroAPI";
 
 export function useApiFacilities(stationName, stationCode, line, type) {
   const [data, setData] = useState([]);

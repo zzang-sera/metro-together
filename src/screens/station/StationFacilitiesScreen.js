@@ -20,10 +20,10 @@ import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/fi
 import { auth, db } from "../../config/firebaseConfig";
 
 // ✅ API: 역 이름으로 요청
-import { getEscalatorStatusByName } from "../../api/metroAPI";
+import { getEscalatorStatusByName } from "../../api/metro/metroAPI";
 // ✅ 로컬 fallback
-import { getElevatorsByCode } from "../../api/elevLocal";
-import { getEscalatorsForStation } from "../../api/escalatorLocal";
+import { getElevatorsByCode } from "../../api/metro/elevLocal";
+import { getEscalatorsForStation } from "../../api/metro/escalatorLocal";
 
 const MINT = "#21C9C6";
 const INK = "#003F40";

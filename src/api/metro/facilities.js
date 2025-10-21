@@ -1,4 +1,4 @@
-// src/api/facilities.js
+// src/api/metro/facilities.js
 // 시설 유형 키 → 실제 조회 함수 라우팅
 import { summarizeElevators } from './elevator';
 

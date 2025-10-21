@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { getEscalatorStatus } from "../../api/metroAPI";
+import { getEscalatorStatus } from "../../api/metro/metroAPI";
 import { SUPABASE_URL } from "../../constants/constants";
 
 export default function MetroTestScreen() {

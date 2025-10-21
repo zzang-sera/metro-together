@@ -1,4 +1,4 @@
-// src/api/elevLocal.js
+// src/api/metro/elevLocal.js
 // Data source:
 //   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
 

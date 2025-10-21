@@ -1,8 +1,8 @@
 // src/hooks/useLocalFacilities.js
 import { useEffect, useState } from "react";
-import { getElevatorsByCode } from "../api/elevLocal";
-import { getEscalatorsForStation } from "../api/escalatorLocal";
-import { getLockersForStation } from "../api/lockerLocal";
+import { getElevatorsByCode } from "../api/metro/elevLocal";
+import { getEscalatorsForStation } from "../api/metro/escalatorLocal";
+import { getLockersForStation } from "../api/metro/lockerLocal";
 
 export function useLocalFacilities(stationName, stationCode, line, type) {
   const [data, setData] = useState([]);

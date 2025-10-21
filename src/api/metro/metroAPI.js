@@ -1,4 +1,4 @@
-// src/api/metroAPI.js
+// src/api/metro/metroAPI.js
 import { SUPABASE_URL } from "../../constants/constants";
 
 // ✅ 역 이름으로 실시간 데이터 요청
