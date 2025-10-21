@@ -1,8 +1,8 @@
-// ✅ src/api/metro/nursingRoomLocal.js
+// ✅ src/api/metro/toiletLocal.js
 // Source:
-//   src/assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json
+//   src/assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json
 
-import rawJson from "../../assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json";
+import rawJson from "../../assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json";
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
@@ -28,15 +28,17 @@ function sanitizeName(s = "") {
 /* ---------------------- 키 매핑 ---------------------- */
 const K = {
   seq: "연번",
-  line: "호선",
+  line: "운영노선명",
   name: "역명",
-  address: "주소",
+  address: "소재지도로명주소",
   location: "상세위치",
-  type: "시설구분",
-  area: "면적(제곱미터)",
-  seat: "비품(2인용 소파)",
-  table: "비품(탁자)",
-  year: "조성연도",
+  gate: "(근접) 출입구 번호",
+  floor: "역층",
+  openTime: "개방시간",
+  maleToilet: "남성용-대변기수",
+  femaleToilet: "여성용-대변기수",
+  cctv: "화장실입구cctv설치유무",
+  bell: "비상벨 설치유무",
 };
 
 /* ---------------------- 변환 ---------------------- */
@@ -49,13 +51,15 @@ function toPretty(raw) {
     line: String(raw[K.line] ?? "").trim(),
     stationName,
     stationNameRaw: stationNameFull,
-    location: String(raw[K.location] ?? "").trim(),
     address: String(raw[K.address] ?? "").trim(),
-    type: String(raw[K.type] ?? "").trim(),
-    area: String(raw[K.area] ?? "").trim(),
-    seat: String(raw[K.seat] ?? "").trim(),
-    table: String(raw[K.table] ?? "").trim(),
-    year: String(raw[K.year] ?? "").trim(),
+    location: String(raw[K.location] ?? "").trim(),
+    gate: String(raw[K.gate] ?? "").trim(),
+    floor: String(raw[K.floor] ?? "").trim(),
+    openTime: String(raw[K.openTime] ?? "").trim(),
+    maleToilet: String(raw[K.maleToilet] ?? "").trim(),
+    femaleToilet: String(raw[K.femaleToilet] ?? "").trim(),
+    cctv: String(raw[K.cctv] ?? "").trim(),
+    bell: String(raw[K.bell] ?? "").trim(),
   };
 }
 
@@ -65,29 +69,31 @@ const PRETTY = RAW_ROWS.map(toPretty);
 
 const INDEX_BY_NAME = new Map();
 for (const r of PRETTY) {
-  const arr = INDEX_BY_NAME.get(r.stationName) || [];
+  const key = r.stationName;
+  const arr = INDEX_BY_NAME.get(key) || [];
   arr.push(r);
-  INDEX_BY_NAME.set(r.stationName, arr);
+  INDEX_BY_NAME.set(key, arr);
 }
 
 /* ---------------------- 공개 API ---------------------- */
-export function getNursingRoomsByName(stationName) {
+export function getToiletsByName(stationName) {
   const k = sanitizeName(stationName || "");
   if (!k) return [];
   return (INDEX_BY_NAME.get(k) || []).slice();
 }
 
-export function prettifyNursingRooms(rows, fallbackLine = "") {
+export function prettifyToilets(rows, fallbackLine = "") {
   const arr = Array.isArray(rows) ? rows : [];
   return arr.map((r, i) => ({
-    id: `${r.stationName}-nursing-${r.seq || i}`,
-    title: r.type || "수유실",
+    id: `${r.stationName}-toilet-${r.seq || i}`,
+    title: "화장실",
     desc: [
       r.location,
-      r.area ? `${r.area}㎡` : "",
-      r.table === "O" ? "탁자 있음" : "",
-      r.seat === "O" ? "소파 있음" : "",
-      r.year ? `조성연도: ${r.year}` : "",
+      r.gate ? `출입구: ${r.gate}` : "",
+      r.floor ? `${r.floor}층` : "",
+      r.openTime ? `운영시간: ${r.openTime}` : "",
+      r.bell === "Y" ? "비상벨 있음" : "",
+      r.cctv === "Y" ? "입구 CCTV" : "",
     ]
       .filter(Boolean)
       .join(" · "),
@@ -96,7 +102,7 @@ export function prettifyNursingRooms(rows, fallbackLine = "") {
   }));
 }
 
-export function getNursingRoomsForStation(stationName, fallbackLine = "") {
-  const rows = getNursingRoomsByName(stationName);
-  return prettifyNursingRooms(rows, fallbackLine);
+export function getToiletsForStation(stationName, fallbackLine = "") {
+  const rows = getToiletsByName(stationName);
+  return prettifyToilets(rows, fallbackLine);
 }
