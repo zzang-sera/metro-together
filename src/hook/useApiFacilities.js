@@ -1,4 +1,4 @@
-// src/hooks/useApiFacilities.js
+// src/hook/useApiFacilities.js
 import { useEffect, useState } from "react";
 import { getEscalatorStatusByName } from "../api/metro/metroAPI";
 

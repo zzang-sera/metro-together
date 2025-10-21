@@ -1,4 +1,4 @@
-// src/hooks/useLocalFacilities.js
+// src/hook/useLocalFacilities.js
 import { useEffect, useState } from "react";
 import { getElevatorsByCode } from "../api/metro/elevLocal";
 import { getEscalatorsForStation } from "../api/metro/escalatorLocal";
