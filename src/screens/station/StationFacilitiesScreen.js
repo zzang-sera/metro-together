@@ -88,50 +88,61 @@ export default function StationFacilitiesScreen() {
     error: localError,
   } = useLocalFacilities(stationName, stationCode, line, type);
 
-  // ✅ 데이터 결정 로직
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
+// ✅ 데이터 결정 로직
+useEffect(() => {
+  let cancelled = false;
+  setLoading(true);
 
-    async function decideData() {
-      // 🚀 stationCode 기준으로 판단
-      if ((type === "EV" || type === "ES") && stationCode) {
-        if (!apiLoading && apiData?.length > 0) {
-          console.log(`✅ ${stationName}(${stationCode}): API ${apiData.length}개 가져옴`);
-          if (!cancelled) {
-            setFacilities(apiData);
-            setUsingLocal(false);
-            setErrorMsg("");
-          }
-        } else if (!apiLoading && (apiError || apiData?.length === 0)) {
-          console.log(`⚠️ ${stationName}(${stationCode}): API 실패 → 로컬 대체`);
-          if (!localLoading && localData?.length > 0) {
-            console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
-            if (!cancelled) {
-              setFacilities(localData);
-              setUsingLocal(true);
-              setErrorMsg("실시간 데이터를 불러올 수 없어 로컬 데이터를 표시합니다.");
-            }
-          }
+  async function decideData() {
+    // 🚀 stationCode 기준으로 판단
+    if ((type === "EV" || type === "ES" || type === "TO") && stationCode) {
+      // ✅ API 데이터 우선
+      if (!apiLoading && apiData?.length > 0) {
+        console.log(`✅ ${stationName}(${stationCode}): API ${apiData.length}개 가져옴`);
+        if (!cancelled) {
+          setFacilities(apiData);
+          setUsingLocal(false);
+          setErrorMsg("");
         }
-      } else {
-        // 🚀 나머지 타입은 로컬 JSON만
+      } 
+      // ✅ API 실패 → 로컬 대체
+      else if (!apiLoading && (apiError || apiData?.length === 0)) {
+        console.log(`⚠️ ${stationName}(${stationCode}): API 실패 → 로컬 대체`);
         if (!localLoading && localData?.length > 0) {
           console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
           if (!cancelled) {
             setFacilities(localData);
             setUsingLocal(true);
-            setErrorMsg(localError || "");
+            setErrorMsg("실시간 데이터를 불러올 수 없어 로컬 데이터를 표시합니다.");
+          }
+        } else {
+          console.log(`🚫 ${stationName}: 로컬 데이터도 없음`);
+          if (!cancelled) {
+            setFacilities([]);
+            setUsingLocal(true);
+            setErrorMsg("표시할 데이터가 없습니다.");
           }
         }
       }
-
-      if (!cancelled) setLoading(false);
+    } 
+    // 🚀 나머지 타입은 로컬 JSON만
+    else {
+      if (!localLoading && localData?.length > 0) {
+        console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
+        if (!cancelled) {
+          setFacilities(localData);
+          setUsingLocal(true);
+          setErrorMsg(localError || "");
+        }
+      }
     }
 
-    decideData();
-    return () => (cancelled = true);
-  }, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
+    if (!cancelled) setLoading(false);
+  }
+
+  decideData();
+  return () => (cancelled = true);
+}, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
 
   // ✅ 헤더
   const HeaderMint = useMemo(
