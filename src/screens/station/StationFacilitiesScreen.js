@@ -1,9 +1,8 @@
 // 🧭 StationFacilitiesScreen.js
-// 기능 요약:
-// - useApiFacilities + useLocalFacilities 훅을 활용해 데이터 관리
-// - 엘리베이터/에스컬레이터는 API → 로컬 fallback
-// - 나머지는 로컬 JSON만 사용
-// - “사당: n개 가져오는 중” 로그 출력
+// 개선사항:
+// ✅ stationCode 기준으로 API 판단
+// ✅ 로그 중복 방지
+// ✅ API → 로컬 fallback 명확화
 
 import React, { useMemo, useState, useEffect } from "react";
 import {
@@ -25,7 +24,6 @@ import { responsiveFontSize } from "../../utils/responsive";
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
 
-// ✅ 커스텀 훅
 import { useApiFacilities } from "../../hook/useApiFacilities";
 import { useLocalFacilities } from "../../hook/useLocalFacilities";
 
@@ -77,7 +75,7 @@ export default function StationFacilitiesScreen() {
     }
   };
 
-  // ✅ 훅 사용
+  // ✅ 커스텀 훅
   const {
     data: apiData,
     loading: apiLoading,
@@ -93,23 +91,21 @@ export default function StationFacilitiesScreen() {
   // ✅ 데이터 결정 로직
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
 
     async function decideData() {
-      setLoading(true);
-
-      if (type === "EV" || type === "ES") {
-        // API 먼저 확인
-        if (!apiLoading && apiData && apiData.length > 0) {
-          console.log(`✅ ${stationName}: ${apiData.length}개 가져오는 중`);
+      // 🚀 stationCode 기준으로 판단
+      if ((type === "EV" || type === "ES") && stationCode) {
+        if (!apiLoading && apiData?.length > 0) {
+          console.log(`✅ ${stationName}(${stationCode}): API ${apiData.length}개 가져옴`);
           if (!cancelled) {
             setFacilities(apiData);
             setUsingLocal(false);
             setErrorMsg("");
           }
-        } else if (!apiLoading && (!apiData || apiData.length === 0 || apiError)) {
-          // API 실패 → 로컬 fallback
-          console.log(`⚠️ ${stationName}: API 데이터 없음 → 로컬로 대체`);
-          if (!localLoading && localData) {
+        } else if (!apiLoading && (apiError || apiData?.length === 0)) {
+          console.log(`⚠️ ${stationName}(${stationCode}): API 실패 → 로컬 대체`);
+          if (!localLoading && localData?.length > 0) {
             console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
             if (!cancelled) {
               setFacilities(localData);
@@ -119,8 +115,8 @@ export default function StationFacilitiesScreen() {
           }
         }
       } else {
-        // 나머지는 로컬 JSON만 사용
-        if (!localLoading) {
+        // 🚀 나머지 타입은 로컬 JSON만
+        if (!localLoading && localData?.length > 0) {
           console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
           if (!cancelled) {
             setFacilities(localData);
@@ -134,21 +130,10 @@ export default function StationFacilitiesScreen() {
     }
 
     decideData();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    type,
-    stationName,
-    apiData,
-    apiError,
-    apiLoading,
-    localData,
-    localError,
-    localLoading,
-  ]);
+    return () => (cancelled = true);
+  }, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
 
-  // ✅ 상단 헤더
+  // ✅ 헤더
   const HeaderMint = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -240,9 +225,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerBtn: { padding: 6, width: 40, alignItems: "center" },
-  headerCenter: { flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
   starBtn: { padding: 8 },
-  badge: { backgroundColor: "#AEEFED", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badge: {
+    backgroundColor: "#AEEFED",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
   badgeText: { color: INK, fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold" },
   banner: {

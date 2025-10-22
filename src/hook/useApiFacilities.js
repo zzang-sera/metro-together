@@ -1,4 +1,5 @@
 // src/hook/useApiFacilities.js
+
 import { useEffect, useState } from "react";
 import { getEscalatorStatusByName } from "../api/metro/metroAPI";
 
@@ -15,7 +16,8 @@ export function useApiFacilities(stationName, stationCode, line, type) {
       setError(null);
 
       try {
-        const res = await getEscalatorStatusByName(stationName);
+        // ✅ 함수명 수정
+        const res = await getEscalatorStatusByName(stationName, stationCode, type);
 
         const filtered = res.filter((r) => {
           if (type === "EV") return r.type?.toUpperCase() === "EV";
