@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { 
   getEscalatorStatusByName,
-  getToiletStatusByName 
+  getToiletStatusByName,
+  getDisabledToiletStatusByName // ✅ 추가
 } from "../api/metro/metroAPI";
 
 export function useApiFacilities(stationName, stationCode, line, type) {
@@ -19,15 +20,18 @@ export function useApiFacilities(stationName, stationCode, line, type) {
       try {
         let res = [];
 
-        // ✅ 타입별로 다른 API 호출
+        // ✅ 타입별 API 호출
         if (type === "EV" || type === "ES") {
           res = await getEscalatorStatusByName(stationName, stationCode, type);
         } 
         else if (type === "TO") {
           res = await getToiletStatusByName(stationName);
-        } 
+        }
+        else if (type === "DT") {
+          res = await getDisabledToiletStatusByName(stationName);
+        }
         else {
-          // 나머지는 API 미지원 (로컬만 사용)
+          // API 미지원 (로컬 데이터만)
           setData([]);
           setLoading(false);
           return;
@@ -42,19 +46,21 @@ export function useApiFacilities(stationName, stationCode, line, type) {
 
         // ✅ 공통 매핑
         const mapped = filtered.map((r, i) => ({
-          id: `${r.stationCode || r.STN_CD}-${i}`,
+          id: `${r.stationCode || r.STN_CD || stationCode}-${i}`,
           title:
             r.facilityName ||
             (type === "EV"
               ? "엘리베이터"
               : type === "ES"
               ? "에스컬레이터"
+              : type === "DT"
+              ? "장애인 화장실"
               : "화장실"),
-          desc: [r.section, r.position, r.dtlPstn]
+          desc: [r.section, r.position, r.floor, r.dtlPstn]
             .filter(Boolean)
             .join(" "),
           status: r.status || r.whlchrAcsPsbltyYn || "-",
-          line: r.lineNm || r.line || line,
+          line: r.lineNm || r.lineName || line,
         }));
 
         setData(mapped);

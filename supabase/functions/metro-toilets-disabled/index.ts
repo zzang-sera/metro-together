@@ -2,9 +2,9 @@
 
 const SEOUL_API_KEY = Deno.env.get("SEOUL_OPEN_API_KEY");
 const BASE = "http://openapi.seoul.go.kr:8088";
-const SERVICE = "getFcRstrm";
+const SERVICE = "getWksnRstrm";
 
-interface ToiletRow {
+interface DisabledToiletRow {
   facilityId: string;
   facilityName: string;
   lineName: string;
@@ -14,13 +14,13 @@ interface ToiletRow {
   position: string;
   floor: string;
   access: string;
-  restInfo: string;
+  gender: string;
   groundType: string;
   inout: string;
 }
 
-/** ✅ 간단한 XML → JSON 변환기 (DOMParser 없이) */
-function parseXmlToJson(xml: string): ToiletRow[] {
+/** ✅ XML → JSON 변환기 */
+function parseXmlToJson(xml: string): DisabledToiletRow[] {
   const items = xml.split(/<item>/).slice(1);
   const extract = (text: string, tag: string) => {
     const match = text.match(new RegExp(`<${tag}>(.*?)<\\/${tag}>`, "s"));
@@ -37,7 +37,7 @@ function parseXmlToJson(xml: string): ToiletRow[] {
     position: extract(itemText, "dtlPstn"),
     floor: extract(itemText, "stnFlr"),
     access: extract(itemText, "whlchrAcsPsbltyYn"),
-    restInfo: extract(itemText, "rstrmInfo"),
+    gender: extract(itemText, "rstrmSe"),
     groundType: extract(itemText, "grndUdgdSe"),
     inout: extract(itemText, "gateInoutSe"),
   }));
@@ -48,7 +48,7 @@ function ok(v: unknown): v is string {
 }
 
 /** ✅ 구간별 요청 */
-async function fetchChunk(start: number, end: number): Promise<ToiletRow[]> {
+async function fetchChunk(start: number, end: number): Promise<DisabledToiletRow[]> {
   const url = `${BASE}/${SEOUL_API_KEY}/xml/${SERVICE}/${start}/${end}/`;
   const res = await fetch(url);
   const xml = await res.text();
@@ -60,21 +60,19 @@ async function fetchChunk(start: number, end: number): Promise<ToiletRow[]> {
   return parseXmlToJson(xml);
 }
 
-/** ✅ 전체 데이터 요청 (1~500 범위) */
-async function fetchAllToilets(): Promise<ToiletRow[]> {
-  const chunks = await Promise.all([
-    fetchChunk(1, 200),
-    fetchChunk(201, 400),
-    fetchChunk(401, 600),
-    fetchChunk(601, 800),
-    fetchChunk(801, 1000),
-    fetchChunk(1001, 1200),
-    fetchChunk(1201, 1400),
-    fetchChunk(1401, 1600),
-    fetchChunk(1601, 1800),
-    fetchChunk(1801, 2000),
-  ]);
-  return chunks.flat();
+/** ✅ 전체 데이터 요청 (1~2000, 200개 단위) */
+async function fetchAllToilets(): Promise<DisabledToiletRow[]> {
+  const chunkSize = 200;
+  const total = 2000;
+  const promises: Promise<DisabledToiletRow[]>[] = [];
+
+  for (let start = 1; start <= total; start += chunkSize) {
+    const end = start + chunkSize - 1;
+    promises.push(fetchChunk(start, end));
+  }
+
+  const results = await Promise.all(promises);
+  return results.flat();
 }
 
 /** ✅ Deno Edge Function entry */
@@ -92,7 +90,14 @@ Deno.serve(async (req) => {
       const target = stationName.replace(/\s/g, "");
       filtered = allData.filter((r) => {
         const name = (r.stationName ?? "").replace(/\s/g, "");
-        return name === target || name.startsWith(target + "(");
+        const matchStation = name === target || name.startsWith(target + "(");
+
+        // ✅ 교통약자 전용 또는 접근 가능(Y) 포함
+        const isAccessible =
+          (r.facilityName || "").includes("교통약자") ||
+          (r.access && r.access.toUpperCase() === "Y");
+
+        return matchStation && isAccessible;
       });
     }
 

@@ -88,61 +88,60 @@ export default function StationFacilitiesScreen() {
     error: localError,
   } = useLocalFacilities(stationName, stationCode, line, type);
 
-// ✅ 데이터 결정 로직
-useEffect(() => {
-  let cancelled = false;
-  setLoading(true);
+  // ✅ 데이터 결정 로직
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
 
-  async function decideData() {
-    // 🚀 stationCode 기준으로 판단
-    if ((type === "EV" || type === "ES" || type === "TO") && stationCode) {
-      // ✅ API 데이터 우선
-      if (!apiLoading && apiData?.length > 0) {
-        console.log(`✅ ${stationName}(${stationCode}): API ${apiData.length}개 가져옴`);
-        if (!cancelled) {
-          setFacilities(apiData);
-          setUsingLocal(false);
-          setErrorMsg("");
+    async function decideData() {
+      // 🚀 API 지원 타입
+      if ((type === "EV" || type === "ES" || type === "TO" || type === "DT") && stationCode) {
+        if (!apiLoading && apiData?.length > 0) {
+          console.log(`✅ ${stationName}(${stationCode}): ${type} API ${apiData.length}개 가져옴`);
+          if (!cancelled) {
+            setFacilities(apiData);
+            setUsingLocal(false);
+            setErrorMsg("");
+          }
+        } 
+        // ✅ API 실패 → 로컬 대체
+        else if (!apiLoading && (apiError || apiData?.length === 0)) {
+          console.log(`⚠️ ${stationName}(${stationCode}): ${type} API 실패 → 로컬 대체`);
+          if (!localLoading && localData?.length > 0) {
+            console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
+            if (!cancelled) {
+              setFacilities(localData);
+              setUsingLocal(true);
+              setErrorMsg("실시간 데이터를 불러올 수 없어 로컬 데이터를 표시합니다.");
+            }
+          } else {
+            console.log(`🚫 ${stationName}: 로컬 데이터도 없음`);
+            if (!cancelled) {
+              setFacilities([]);
+              setUsingLocal(true);
+              setErrorMsg("표시할 데이터가 없습니다.");
+            }
+          }
         }
       } 
-      // ✅ API 실패 → 로컬 대체
-      else if (!apiLoading && (apiError || apiData?.length === 0)) {
-        console.log(`⚠️ ${stationName}(${stationCode}): API 실패 → 로컬 대체`);
+      // 🚀 나머지 타입은 로컬 JSON만
+      else {
         if (!localLoading && localData?.length > 0) {
           console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
           if (!cancelled) {
             setFacilities(localData);
             setUsingLocal(true);
-            setErrorMsg("실시간 데이터를 불러올 수 없어 로컬 데이터를 표시합니다.");
-          }
-        } else {
-          console.log(`🚫 ${stationName}: 로컬 데이터도 없음`);
-          if (!cancelled) {
-            setFacilities([]);
-            setUsingLocal(true);
-            setErrorMsg("표시할 데이터가 없습니다.");
+            setErrorMsg(localError || "");
           }
         }
       }
-    } 
-    // 🚀 나머지 타입은 로컬 JSON만
-    else {
-      if (!localLoading && localData?.length > 0) {
-        console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
-        if (!cancelled) {
-          setFacilities(localData);
-          setUsingLocal(true);
-          setErrorMsg(localError || "");
-        }
-      }
+
+      if (!cancelled) setLoading(false);
     }
 
-    if (!cancelled) setLoading(false);
-  }
-
-  decideData();
-  return () => (cancelled = true);
-}, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
+    decideData();
+    return () => (cancelled = true);
+  }, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
 
   // ✅ 헤더
   const HeaderMint = useMemo(
@@ -202,7 +201,9 @@ useEffect(() => {
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{item.title || "시설"}</Text>
+                <Text style={styles.cardTitle}>
+                  {item.title || "시설"}{type === "DT" ? " ♿️" : ""}
+                </Text>
                 {!!item.desc && <Text style={styles.cardDesc}>{item.desc}</Text>}
               </View>
               <View
