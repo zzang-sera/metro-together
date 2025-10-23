@@ -4,9 +4,9 @@ import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig'; 
 
-import { Ionicons } from '@expo/vector-icons'; // [수정] 빠뜨렸던 import 구문 추가
+import { Ionicons } from '@expo/vector-icons';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import { responsiveFontSize } from '../../utils/responsive';
+import { responsiveFontSize, responsiveWidth, responsiveHeight } from '../../utils/responsive'; 
 import allStationsData from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineData from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
@@ -14,6 +14,18 @@ import lineData from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.j
 function getLineColor(lineNum) {
   const lineInfo = lineData.DATA.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#A8A8A8';
+}
+
+// 배경색에 따른 텍스트 색상 결정 함수
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return '#FFFFFF';
+  try {
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#17171B' : '#FFFFFF'; 
+  } catch (e) { return '#FFFFFF'; }
 }
 
 const FavoritesScreen = () => {
@@ -26,12 +38,12 @@ const FavoritesScreen = () => {
   const currentUser = auth.currentUser;
 
   useEffect(() => {
+    // ... (데이터 로딩 로직은 동일하게 유지) ...
     if (!currentUser) {
       setFavoriteStations([]);
       setIsLoading(false);
       return;
     }
-
     const userDocRef = doc(db, 'users', currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       setIsLoading(true);
@@ -54,18 +66,16 @@ const FavoritesScreen = () => {
       console.error("즐겨찾기 로딩 실패:", error);
       setIsLoading(false);
     });
-
     return () => unsubscribe();
   }, [currentUser]);
 
-
   if (isLoading) {
-    return <View style={styles.container}><ActivityIndicator size="large" color="#003F40" /></View>;
+    return <View style={styles.centered}><ActivityIndicator size="large" color="#003F40" /></View>;
   }
 
   if (!currentUser) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centered}>
         <Text style={[styles.infoText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           로그인 후 자주 가는 역을 추가해보세요.
         </Text>
@@ -75,7 +85,7 @@ const FavoritesScreen = () => {
 
   if (favoriteStations.length === 0) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centered}>
         <Text style={[styles.infoText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           역 상세 화면에서 {'\n'}★ 아이콘을 눌러 즐겨찾기를 추가할 수 있습니다.
         </Text>
@@ -83,89 +93,125 @@ const FavoritesScreen = () => {
     );
   }
 
-  return (
-    <FlatList
-      data={favoriteStations}
-      keyExtractor={(item) => item.stationCode + item.line}
-      contentContainerStyle={styles.listContainer}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('StationDetail', { 
-            stationCode: item.stationCode,
-            stationName: item.stationName,
+  const renderFavoriteItem = ({ item }) => {
+    const lineColor = item.lineColor;
+    const textColor = getTextColorForBackground(lineColor);
+    const stationCode = item.stationCode;
+    const stationName = item.stationName;
+
+    const accessibilityLabel = `${item.line} ${stationName}`;
+
+    return (
+      <TouchableOpacity
+        activeOpacity={0.8}
+        style={styles.stationCard}
+        accessibilityLabel={accessibilityLabel}
+        onPress={() =>
+          navigation.navigate('StationDetail', {
+            stationCode,
+            stationName,
             line: item.line,
-          })}
-        >
-          <View style={[styles.lineBadge, { backgroundColor: item.lineColor }]}>
-             <Text style={styles.lineText}>{item.line.replace('호선','')}</Text>
+          })
+        }
+      >
+        <View style={styles.leftContent}>
+          <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
+            <Text
+              style={[
+                styles.lineBadgeText,
+                { color: textColor, fontSize: responsiveFontSize(14) + fontOffset },
+              ]}
+            >
+              {item.line}
+            </Text>
           </View>
-          <Text style={[styles.buttonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-            {item.stationName}
+          <Text
+            style={[
+              styles.stationName,
+              { fontSize: responsiveFontSize(18) + fontOffset },
+            ]}
+          >
+            {stationName}
           </Text>
-          <Ionicons name="chevron-forward" size={24} color="#A8A8A8" style={styles.chevronIcon} />
-        </TouchableOpacity>
-      )}
-    />
+        </View>
+        <Ionicons name="chevron-forward" size={30} color="#595959" />
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={favoriteStations}
+        keyExtractor={(item) => item.stationCode + item.line}
+        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16), paddingTop: responsiveHeight(10) }} 
+        renderItem={renderFavoriteItem}
+      />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#F9F9F9',
-    padding: 20,
   },
-  listContainer: {
-    padding: 16,
-  },
-  button: {
-    backgroundColor: 'white',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#EFEFEF',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  lineBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 15,
-    marginRight: 12,
+  centered: { 
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 40,
-    height: 28,
+    padding: 20,
+    backgroundColor: '#F9F9F9',
   },
-  lineText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: responsiveFontSize(12),
-  },
-  buttonText: {
-    fontFamily: 'NotoSansKR-Bold',
-    color: '#333',
-    flex: 1, 
-  },
-  infoText: {
+  infoText: { 
     fontFamily: 'NotoSansKR-Medium',
     color: '#888',
     textAlign: 'center',
     lineHeight: 24,
   },
-  chevronIcon: {
-    marginLeft: 10,
-  }
+  stationCard: { 
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: responsiveWidth(16),
+    marginVertical: responsiveHeight(6),
+    borderRadius: responsiveWidth(40), 
+    elevation: 2,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    minHeight: responsiveHeight(70),
+  },
+  leftContent: { 
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  lineBadge: { 
+    borderRadius: responsiveWidth(40),
+    paddingHorizontal: responsiveWidth(12),
+    // [수정] 세로 패딩 증가 및 고정 높이 제거
+    paddingVertical: responsiveHeight(8), 
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: responsiveWidth(9),
+    minWidth: responsiveWidth(60), 
+    // height: responsiveHeight(30), // 고정 높이 제거
+  },
+  lineBadgeText: { 
+    fontSize: responsiveFontSize(14),
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR-Bold',
+  },
+  stationName: { 
+    fontSize: responsiveFontSize(18),
+    fontWeight: '700',
+    color: '#17171B',
+    fontFamily: 'NotoSansKR-Bold',
+    flexShrink: 1, 
+    marginTop: -3,
+  },
 });
 
 export default FavoritesScreen;
