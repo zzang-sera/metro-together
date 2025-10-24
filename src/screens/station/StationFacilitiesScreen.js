@@ -1,5 +1,10 @@
-// src/screens/station/StationFacilitiesScreen.js
-import React, { useEffect, useMemo, useState } from "react";
+// 🧭 StationFacilitiesScreen.js
+// 개선사항:
+// ✅ stationCode 기준으로 API 판단
+// ✅ 로그 중복 방지
+// ✅ API → 로컬 fallback 명확화
+
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,11 +24,8 @@ import { responsiveFontSize } from "../../utils/responsive";
 import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
 
-// ✅ API: 역 이름으로 요청
-import { getEscalatorStatusByName } from "../../api/metroAPI";
-// ✅ 로컬 fallback
-import { getElevatorsByCode } from "../../api/elevLocal";
-import { getEscalatorsForStation } from "../../api/escalatorLocal";
+import { useApiFacilities } from "../../hook/useApiFacilities";
+import { useLocalFacilities } from "../../hook/useLocalFacilities";
 
 const MINT = "#21C9C6";
 const INK = "#003F40";
@@ -39,9 +41,10 @@ export default function StationFacilitiesScreen() {
   const currentUser = auth.currentUser;
 
   const [isFavorite, setIsFavorite] = useState(false);
-  const [items, setItems] = useState(null);
+  const [facilities, setFacilities] = useState([]);
   const [usingLocal, setUsingLocal] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(true);
 
   // ✅ 즐겨찾기 실시간 동기화
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function StationFacilitiesScreen() {
     return () => unsubscribe();
   }, [currentUser, stationCode]);
 
+  // ✅ 즐겨찾기 토글
   const handleFavoriteToggle = async () => {
     if (!currentUser || !stationCode) {
       Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
@@ -63,18 +67,83 @@ export default function StationFacilitiesScreen() {
     }
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
-      if (isFavorite) {
-        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
-      } else {
-        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
-      }
+      if (isFavorite) await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
+      else await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
     } catch (error) {
       console.error("즐겨찾기 업데이트 실패:", error);
-      Alert.alert("오류", "요청을 처리하는 중 오류가 발생했습니다.");
+      Alert.alert("오류", "요청을 처리하는 중 문제가 발생했습니다.");
     }
   };
 
-  // ✅ 상단 헤더
+  // ✅ 커스텀 훅
+  const {
+    data: apiData,
+    loading: apiLoading,
+    error: apiError,
+  } = useApiFacilities(stationName, stationCode, line, type);
+
+  const {
+    data: localData,
+    loading: localLoading,
+    error: localError,
+  } = useLocalFacilities(stationName, stationCode, line, type);
+
+  // ✅ 데이터 결정 로직
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+
+    async function decideData() {
+      // 🚀 API 지원 타입
+      if ((type === "EV" || type === "ES" || type === "TO" || type === "DT") && stationCode) {
+        if (!apiLoading && apiData?.length > 0) {
+          console.log(`✅ ${stationName}(${stationCode}): ${type} API ${apiData.length}개 가져옴`);
+          if (!cancelled) {
+            setFacilities(apiData);
+            setUsingLocal(false);
+            setErrorMsg("");
+          }
+        } 
+        // ✅ API 실패 → 로컬 대체
+        else if (!apiLoading && (apiError || apiData?.length === 0)) {
+          console.log(`⚠️ ${stationName}(${stationCode}): ${type} API 실패 → 로컬 대체`);
+          if (!localLoading && localData?.length > 0) {
+            console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
+            if (!cancelled) {
+              setFacilities(localData);
+              setUsingLocal(true);
+              setErrorMsg("실시간 데이터를 불러올 수 없어 로컬 데이터를 표시합니다.");
+            }
+          } else {
+            console.log(`🚫 ${stationName}: 로컬 데이터도 없음`);
+            if (!cancelled) {
+              setFacilities([]);
+              setUsingLocal(true);
+              setErrorMsg("표시할 데이터가 없습니다.");
+            }
+          }
+        }
+      } 
+      // 🚀 나머지 타입은 로컬 JSON만
+      else {
+        if (!localLoading && localData?.length > 0) {
+          console.log(`📁 ${stationName}: 로컬 ${localData.length}개 불러옴`);
+          if (!cancelled) {
+            setFacilities(localData);
+            setUsingLocal(true);
+            setErrorMsg(localError || "");
+          }
+        }
+      }
+
+      if (!cancelled) setLoading(false);
+    }
+
+    decideData();
+    return () => (cancelled = true);
+  }, [stationCode, type, apiData, apiError, apiLoading, localData, localError, localLoading]);
+
+  // ✅ 헤더
   const HeaderMint = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -104,105 +173,37 @@ export default function StationFacilitiesScreen() {
     [navigation, stationName, line, fontOffset, insets.top, isFavorite]
   );
 
-  // ✅ 데이터 로드 (역 이름으로 API 호출)
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setItems(null);
-      setUsingLocal(false);
-      setErrorMsg("");
-
-      try {
-        console.log("🚀 API 요청:", stationName);
-        const all = await getEscalatorStatusByName(stationName);
-
-        const filtered = all.filter((r) => {
-          if (type === "EV") return r.type?.toUpperCase() === "EV";
-          if (type === "ES") return r.type?.toUpperCase() === "ES";
-          return true;
-        });
-
-        console.log("✅ API 응답:", filtered.length, "건");
-
-        if (!cancelled && filtered.length > 0) {
-          setItems(
-            filtered.map((r, idx) => ({
-              id: `${r.stationCode || r.STN_CD}-${idx}`,
-              title: r.facilityName || (type === "EV" ? "엘리베이터" : "에스컬레이터"),
-              desc: [r.section, r.position].filter(Boolean).join(" "),
-              status: r.status || "-",
-              line: r.line || line,
-            }))
-          );
-          return;
-        }
-
-        // ✅ API에 데이터 없으면 로컬 fallback
-        let local = [];
-        if (type === "EV") {
-          local = await getElevatorsByCode(String(stationCode));
-        } else if (type === "ES") {
-          local = await getEscalatorsForStation(stationName, line);
-        }
-
-        if (!cancelled) {
-          setUsingLocal(true);
-          setItems(local);
-          setErrorMsg("API에서 해당 역 정보를 찾을 수 없습니다.");
-        }
-      } catch (err) {
-        console.error("실시간 API 오류, 로컬 대체:", err);
-        setErrorMsg(err.message || JSON.stringify(err));
-
-        let local = [];
-        if (type === "EV") {
-          local = await getElevatorsByCode(String(stationCode));
-        } else if (type === "ES") {
-          local = await getEscalatorsForStation(stationName, line);
-        }
-        if (!cancelled) {
-          setUsingLocal(true);
-          setItems(local);
-        }
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [type, stationCode, stationName, line]);
-
+  // ✅ UI
   return (
     <SafeAreaView style={styles.container}>
       {HeaderMint}
 
-      {usingLocal && (
+      {usingLocal && !!errorMsg && (
         <View style={styles.banner}>
-          <Text style={styles.bannerText}>실시간 데이터를 가져올 수 없어 로컬 데이터로 표시합니다.</Text>
-          {!!errorMsg && <Text style={styles.errorText}>({errorMsg})</Text>}
+          <Text style={styles.bannerText}>{errorMsg}</Text>
         </View>
       )}
 
-      {items === null ? (
+      {loading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator />
           <Text style={styles.loadingText}>불러오는 중…</Text>
         </View>
-      ) : items.length === 0 ? (
+      ) : facilities.length === 0 ? (
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyText}>표시할 항목이 없어요</Text>
         </View>
       ) : (
         <FlatList
-          data={items}
-          keyExtractor={(it) => it.id}
+          data={facilities}
+          keyExtractor={(it, i) => it.id || `${i}`}
           contentContainerStyle={{ padding: 12, gap: 10, paddingBottom: 20 }}
           renderItem={({ item }) => (
             <View style={styles.card}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
+                <Text style={styles.cardTitle}>
+                  {item.title || "시설"}{type === "DT" ? " ♿️" : ""}
+                </Text>
                 {!!item.desc && <Text style={styles.cardDesc}>{item.desc}</Text>}
               </View>
               <View
@@ -225,6 +226,7 @@ export default function StationFacilitiesScreen() {
   );
 }
 
+/* ---------------- 스타일 ---------------- */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   mintHeader: {
@@ -235,9 +237,20 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerBtn: { padding: 6, width: 40, alignItems: "center" },
-  headerCenter: { flex: 1, flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 8 },
+  headerCenter: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
   starBtn: { padding: 8 },
-  badge: { backgroundColor: "#AEEFED", paddingHorizontal: 8, paddingVertical: 2, borderRadius: 10 },
+  badge: {
+    backgroundColor: "#AEEFED",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
   badgeText: { color: INK, fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold" },
   banner: {
@@ -249,7 +262,6 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   bannerText: { color: "#7A5B00", fontWeight: "700" },
-  errorText: { color: "#B3261E", fontSize: 12, marginTop: 4 },
   loadingWrap: { flexDirection: "row", alignItems: "center", gap: 8, padding: 16 },
   loadingText: { color: "#333" },
   emptyWrap: { padding: 24, alignItems: "center" },

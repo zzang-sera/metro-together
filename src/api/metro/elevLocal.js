@@ -1,9 +1,9 @@
-// src/api/elevLocal.js
+// src/api/metro/elevLocal.js
 // Data source:
 //   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
 
 // ✅ RN/Expo(Metro)는 JSON을 기본 import로 읽을 수 있음 (assert 불필요)
-import elevJson from "../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
+import elevJson from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 
 /* ---------------------- 유틸 ---------------------- */
 

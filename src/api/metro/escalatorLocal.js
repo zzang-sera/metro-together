@@ -1,7 +1,7 @@
-// src/api/escalatorLocal.js
+// src/api/metro/escalatorLocal.js
 // Source: src/assets/metro-data/metro/escalator/서울교통공사_에스컬레이터 설치 정보_20250310.json
 
-import escJson from "../assets/metro-data/metro/escalator/서울교통공사_에스컬레이터 설치 정보_20250310.json";
+import escJson from "../../assets/metro-data/metro/escalator/서울교통공사_에스컬레이터 설치 정보_20250310.json";
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {

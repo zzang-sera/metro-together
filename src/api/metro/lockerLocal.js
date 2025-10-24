@@ -1,8 +1,8 @@
-// src/api/lockerLocal.js
+// src/api/metro/lockerLocal.js
 // Source:
 //   src/assets/metro-data/metro/lostandFound/서울교통공사_물품보관함 위치정보_20240930.json
 
-import rawJson from "../assets/metro-data/metro/lostandFound/서울교통공사_물품보관함 위치정보_20240930.json";
+import rawJson from "../../assets/metro-data/metro/lostandFound/서울교통공사_물품보관함 위치정보_20240930.json";
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {

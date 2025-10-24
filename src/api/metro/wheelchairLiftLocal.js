@@ -1,8 +1,8 @@
-// src/api/wheelchairLiftLocal.js
+// src/api/metro/wheelchairLiftLocal.js
 // Source:
 //   src/assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json
 
-import liftJson from "../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
+import liftJson from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {

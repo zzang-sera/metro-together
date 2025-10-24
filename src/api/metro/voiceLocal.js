@@ -1,10 +1,10 @@
-// src/api/voiceLocal.js
+// src/api/metro/voiceLocal.js
 // Source:
 //   src/assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json
 
-import voiceJson from "../assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json";
+import voiceJson from "../../assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json";
 // station 데이터에서 stationCode(내부) -> 외부역번호(FR_CODE) 매핑을 얻는다.
-import stationJson from "../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
+import stationJson from "../../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
