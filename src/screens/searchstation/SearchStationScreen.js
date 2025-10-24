@@ -24,9 +24,7 @@ function getLineColor(lineNum) {
 }
 
 function findStationCodeBy(name, line) {
-  const hit = allStations.find(
-    (s) => s?.name === name && s?.line === line
-  );
+  const hit = allStations.find((s) => s?.name === name && s?.line === line);
   const code = String(
     hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ''
   ).trim();
@@ -77,80 +75,41 @@ const SearchStationScreen = () => {
           const firstLine = item.lines[0];
           const stationCode = findStationCodeBy(item.name, firstLine);
 
-          const baseIconSize = 24;
-          const sizeOffset = fontOffset > 0 ? fontOffset * 0.75 : fontOffset;
-          const dynamicIconSize = Math.max(18, baseIconSize + sizeOffset);
-          const dynamicCircleSize = Math.max(24, responsiveFontSize(14) + fontOffset + 12);
-
-          // 호선 아이콘을 2개의 열(column)으로 나누기
-          const column1Lines = item.lines.filter((_, index) => index % 2 === 0); // 짝수 인덱스 (0, 2, ...)
-          const column2Lines = item.lines.filter((_, index) => index % 2 !== 0); // 홀수 인덱스 (1, 3, ...)
-
           return (
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.resultItem}
-              onPress={() => navigation.navigate('StationDetail', { stationCode, stationName: item.name, line: firstLine })}
-              onLongPress={() => navigation.navigate('StationFacilities', { stationCode, stationName: item.name, line: firstLine, type: 'elevator' })}
+              onPress={() =>
+                navigation.navigate('MainStack', {
+                  screen: 'StationDetail',
+                  params: { stationCode, stationName: item.name, line: firstLine },
+                })
+              }
+              onLongPress={() =>
+                navigation.navigate('MainStack', {
+                  screen: 'BarrierFreeMap',
+                  params: { stationName: item.name, line: firstLine },
+                })
+              }
               delayLongPress={250}
               accessibilityLabel={`${firstLine} ${item.name}`}
             >
-              <Ionicons
-                name="location-outline"
-                size={dynamicIconSize}
-                color="black"
-                style={styles.locationIcon}
-              />
+              <Ionicons name="location-outline" size={24} color="black" style={styles.locationIcon} />
               <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>
                 {item.name}
               </Text>
-
-              {/* lineContainer 안에 2개의 column View 배치 */}
               <View style={styles.lineContainer}>
-                {/* 첫 번째 열 */}
-                <View style={styles.lineColumn}>
-                  {column1Lines.map((line) => (
-                    <View
-                      key={line}
-                      style={[
-                        styles.lineCircle,
-                        {
-                          backgroundColor: getLineColor(line),
-                          width: dynamicCircleSize,
-                          height: dynamicCircleSize,
-                          borderRadius: dynamicCircleSize / 2,
-                        }
-                      ]}
-                    >
-                      <Text style={[styles.lineText, { fontSize: responsiveFontSize(14) + fontOffset }]}>
-                        {line.replace('호선', '')}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-                {/* 두 번째 열 (아이콘이 있을 경우에만 렌더링) */}
-                {column2Lines.length > 0 && (
-                  <View style={styles.lineColumn}>
-                    {column2Lines.map((line) => (
-                      <View
-                        key={line}
-                        style={[
-                          styles.lineCircle,
-                          {
-                            backgroundColor: getLineColor(line),
-                            width: dynamicCircleSize,
-                            height: dynamicCircleSize,
-                            borderRadius: dynamicCircleSize / 2,
-                          }
-                        ]}
-                      >
-                        <Text style={[styles.lineText, { fontSize: responsiveFontSize(14) + fontOffset }]}>
-                          {line.replace('호선', '')}
-                        </Text>
-                      </View>
-                    ))}
+                {item.lines.map((line) => (
+                  <View
+                    key={line}
+                    style={[
+                      styles.lineCircle,
+                      { backgroundColor: getLineColor(line) },
+                    ]}
+                  >
+                    <Text style={styles.lineText}>{line.replace('호선', '')}</Text>
                   </View>
-                )}
+                ))}
               </View>
             </TouchableOpacity>
           );
@@ -170,61 +129,35 @@ const SearchStationScreen = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   searchContainer: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#f0f0f0', borderRadius: 20,
-    margin: 16, paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    margin: 16,
+    paddingHorizontal: 12,
   },
   searchIcon: { marginRight: 8 },
-  input: {
-    flex: 1,
-    paddingVertical: responsiveHeight(10),
-    fontSize: responsiveFontSize(18),
-    fontFamily: 'NotoSansKR',
-    fontWeight: 'bold',
-  },
+  input: { flex: 1, fontWeight: 'bold' },
   resultItem: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderBottomWidth: 3, borderBottomColor: '#f0f0f0',
-    minHeight: responsiveHeight(60), // 세로 공간 확보
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#f0f0f0',
   },
-  locationIcon: { marginRight: 8, },
-  stationName: {
-    flexShrink: 1,
-    marginRight: 'auto', // 역 이름이 최대한 공간 차지하고, lineContainer는 오른쪽으로 밀어냄
-    fontSize: responsiveFontSize(18),
-    fontFamily: 'NotoSansKR',
-    fontWeight: 'bold',
-    // alignSelf: 'flex-start', // 아이콘이 여러 줄일 때 역 이름이 위쪽에 붙도록 함
-  },
-  lineContainer: {
-    flexDirection: 'row', // 세로 컬럼들을 가로로 배치
-    alignItems: 'flex-start', // 컬럼들 상단 정렬
-  },
-  lineColumn: {
-    flexDirection: 'column', // 아이콘들을 세로로 배치
-    alignItems: 'center',    // 아이콘들 가운데 정렬
-    marginLeft: 4,          // 왼쪽 컬럼과의 간격 (첫번째 컬럼은 무시됨)
-  },
+  locationIcon: { marginRight: 8 },
+  stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
+  lineContainer: { flexDirection: 'row', gap: 6 },
   lineCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 4, // 아이콘 세로 간격
   },
-  lineText: {
-    color: 'white',
-    fontSize: responsiveFontSize(14),
-    fontWeight: 'bold',
-    fontFamily: 'NotoSansKR',
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: 'gray',
-    fontSize: responsiveFontSize(16),
-    fontFamily: 'NotoSansKR',
-    fontWeight: 'bold',
-  },
+  lineText: { color: 'white', fontWeight: 'bold' },
+  emptyText: { textAlign: 'center', color: 'gray', marginTop: 20 },
 });
 
 export default SearchStationScreen;

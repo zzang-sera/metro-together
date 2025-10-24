@@ -2,21 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { auth, db } from '../../config/firebaseConfig'; 
-
+import { auth, db } from '../../config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import { responsiveFontSize, responsiveWidth, responsiveHeight } from '../../utils/responsive'; 
+import { responsiveFontSize, responsiveWidth, responsiveHeight } from '../../utils/responsive';
 import allStationsData from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineData from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
-// 호선 색상을 가져오는 함수
 function getLineColor(lineNum) {
   const lineInfo = lineData.DATA.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#A8A8A8';
 }
 
-// 배경색에 따른 텍스트 색상 결정 함수
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
   try {
@@ -24,21 +21,21 @@ function getTextColorForBackground(hexColor) {
     const g = parseInt(hexColor.substr(3, 2), 16);
     const b = parseInt(hexColor.substr(5, 2), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? '#17171B' : '#FFFFFF'; 
-  } catch (e) { return '#FFFFFF'; }
+    return luminance > 0.5 ? '#17171B' : '#FFFFFF';
+  } catch (e) {
+    return '#FFFFFF';
+  }
 }
 
 const FavoritesScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
-  const isFocused = useIsFocused(); 
-
+  const isFocused = useIsFocused();
   const [favoriteStations, setFavoriteStations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const currentUser = auth.currentUser;
 
   useEffect(() => {
-    // ... (데이터 로딩 로직은 동일하게 유지) ...
     if (!currentUser) {
       setFavoriteStations([]);
       setIsLoading(false);
@@ -51,7 +48,7 @@ const FavoritesScreen = () => {
         const favoriteCodes = docSnap.data().favorites || [];
         const stationDetails = allStationsData.DATA
           .filter(station => favoriteCodes.includes(String(station.station_cd ?? station.code)))
-          .map(station => ({ 
+          .map(station => ({
             stationCode: String(station.station_cd ?? station.code),
             stationName: station.name,
             line: station.line,
@@ -63,11 +60,11 @@ const FavoritesScreen = () => {
       }
       setIsLoading(false);
     }, (error) => {
-      console.error("즐겨찾기 로딩 실패:", error);
+      console.error('즐겨찾기 로딩 실패:', error);
       setIsLoading(false);
     });
     return () => unsubscribe();
-  }, [currentUser]);
+  }, [currentUser, isFocused]);
 
   if (isLoading) {
     return <View style={styles.centered}><ActivityIndicator size="large" color="#003F40" /></View>;
@@ -99,38 +96,22 @@ const FavoritesScreen = () => {
     const stationCode = item.stationCode;
     const stationName = item.stationName;
 
-    const accessibilityLabel = `${item.line} ${stationName}`;
-
     return (
       <TouchableOpacity
         activeOpacity={0.8}
         style={styles.stationCard}
-        accessibilityLabel={accessibilityLabel}
         onPress={() =>
-          navigation.navigate('StationDetail', {
-            stationCode,
-            stationName,
-            line: item.line,
+          navigation.navigate('MainStack', {
+            screen: 'StationDetail',
+            params: { stationCode, stationName, line: item.line },
           })
         }
       >
         <View style={styles.leftContent}>
           <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            <Text
-              style={[
-                styles.lineBadgeText,
-                { color: textColor, fontSize: responsiveFontSize(14) + fontOffset },
-              ]}
-            >
-              {item.line}
-            </Text>
+            <Text style={[styles.lineBadgeText, { color: textColor }]}>{item.line}</Text>
           </View>
-          <Text
-            style={[
-              styles.stationName,
-              { fontSize: responsiveFontSize(18) + fontOffset },
-            ]}
-          >
+          <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>
             {stationName}
           </Text>
         </View>
@@ -144,7 +125,10 @@ const FavoritesScreen = () => {
       <FlatList
         data={favoriteStations}
         keyExtractor={(item) => item.stationCode + item.line}
-        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16), paddingTop: responsiveHeight(10) }} 
+        contentContainerStyle={{
+          paddingHorizontal: responsiveWidth(16),
+          paddingTop: responsiveHeight(10),
+        }}
         renderItem={renderFavoriteItem}
       />
     </View>
@@ -152,66 +136,33 @@ const FavoritesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F9F9',
-  },
-  centered: { 
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#F9F9F9',
-  },
-  infoText: { 
-    fontFamily: 'NotoSansKR-Medium',
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  stationCard: { 
-    backgroundColor: '#FFFFFF',
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  infoText: { color: '#888', textAlign: 'center', lineHeight: 24 },
+  stationCard: {
+    backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
-    borderRadius: responsiveWidth(40), 
+    borderRadius: responsiveWidth(40),
     elevation: 2,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    minHeight: responsiveHeight(70),
   },
-  leftContent: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  lineBadge: { 
-    borderRadius: responsiveWidth(40),
+  leftContent: { flexDirection: 'row', alignItems: 'center' },
+  lineBadge: {
+    borderRadius: 40,
     paddingHorizontal: responsiveWidth(12),
-    // [수정] 세로 패딩 증가 및 고정 높이 제거
-    paddingVertical: responsiveHeight(8), 
+    paddingVertical: responsiveHeight(8),
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: responsiveWidth(9),
-    minWidth: responsiveWidth(60), 
-    // height: responsiveHeight(30), // 고정 높이 제거
   },
-  lineBadgeText: { 
-    fontSize: responsiveFontSize(14),
-    fontWeight: '700',
-    fontFamily: 'NotoSansKR-Bold',
-  },
-  stationName: { 
-    fontSize: responsiveFontSize(18),
-    fontWeight: '700',
-    color: '#17171B',
-    fontFamily: 'NotoSansKR-Bold',
-    flexShrink: 1, 
-    marginTop: -3,
-  },
+  lineBadgeText: { fontWeight: '700' },
+  stationName: { fontWeight: '700', color: '#17171B' },
 });
 
 export default FavoritesScreen;

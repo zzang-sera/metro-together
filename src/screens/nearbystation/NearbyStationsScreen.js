@@ -1,5 +1,3 @@
-// src/screens/nearbystation/NearbyStationsScreen.js
-
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,16 +12,19 @@ import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
-import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../../utils/responsive';
-
-// 폰트 스케일 컨텍스트
+import {
+  responsiveWidth,
+  responsiveHeight,
+  responsiveFontSize,
+} from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
 
+// 📍 두 좌표 거리 계산 함수
 function getDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // km
+  const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
   const dLon = (lon2 - lon1) * (Math.PI / 180);
   const a =
@@ -35,11 +36,13 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// 🚇 노선별 색상 반환
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
+// ⚪ 배경 대비 텍스트 색상
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
   const r = parseInt(hexColor.substr(1, 2), 16);
@@ -68,13 +71,13 @@ const NearbyStationsScreen = () => {
       try {
         const currentLocation = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = currentLocation.coords;
-
         const stationsWithDistance = stationData.map((station) => ({
           ...station,
           distance: getDistance(latitude, longitude, station.lat, station.lng),
         }));
-
-        const sortedStations = stationsWithDistance.sort((a, b) => a.distance - b.distance);
+        const sortedStations = stationsWithDistance.sort(
+          (a, b) => a.distance - b.distance
+        );
         setNearbyStations(sortedStations.slice(0, 10));
       } catch (error) {
         setErrorMsg('현재 위치를 가져오는 데 실패했습니다.');
@@ -109,59 +112,46 @@ const NearbyStationsScreen = () => {
     const lineColor = getLineColor(item.line);
     const textColor = getTextColorForBackground(lineColor);
     const distanceKm = Number(item.distance || 0).toFixed(1);
-    const stationCode = String(
-      item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? ''
-    ).trim();
+    const stationCode = String(item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? '').trim();
     const stationName = item.name;
-
-    const accessibilityLabel = `${item.line} ${stationName}, ${distanceKm}킬로미터 거리`;
 
     return (
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         style={styles.stationCard}
-        accessibilityLabel={accessibilityLabel}
         onPress={() =>
-          navigation.navigate('StationDetail', {
-            stationCode,
-            stationName,
-            line: item.line,
-            distanceKm,
-            // 필요 시 전화번호 등 추가: phone: item.phone
+          navigation.navigate('MainStack', {
+            screen: 'StationDetail',
+            params: { stationCode, stationName, line: item.line, distanceKm },
           })
         }
       >
         <View style={styles.leftContent}>
           <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            <Text
-              style={[
-                styles.lineBadgeText,
-                { color: textColor, fontSize: responsiveFontSize(14) + fontOffset },
-              ]}
-            >
+            <Text style={[styles.lineBadgeText, { color: textColor }]}>
               {item.line}
             </Text>
           </View>
           <View>
-            <Text
-              style={[
-                styles.stationName,
-                { fontSize: responsiveFontSize(18) + fontOffset },
-              ]}
-            >
-              {stationName}
-            </Text>
-            <Text
-              style={[
-                styles.distanceText,
-                { fontSize: responsiveFontSize(15) + fontOffset },
-              ]}
-            >
-              {distanceKm} km
-            </Text>
+            <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>{stationName}</Text>
+            <Text style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}>{distanceKm} km</Text>
           </View>
         </View>
-        <Ionicons name="chevron-forward" size={30} color="#595959" />
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('MainStack', {
+                screen: 'BarrierFreeMap',
+                params: { stationName, line: item.line, lat: item.lat, lng: item.lng },
+              })
+            }
+            style={styles.mapIconButton}
+          >
+            <Ionicons name="navigate-circle-outline" size={28} color="#14CAC9" />
+          </TouchableOpacity>
+          <Ionicons name="chevron-forward" size={28} color="#595959" />
+        </View>
       </TouchableOpacity>
     );
   };
@@ -170,9 +160,7 @@ const NearbyStationsScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={nearbyStations}
-        keyExtractor={(item) =>
-          `${String(item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? '')}-${item.line}`
-        }
+        keyExtractor={(item) => `${item.station_cd}-${item.line}`}
         contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
         renderItem={renderStationItem}
       />
@@ -181,37 +169,12 @@ const NearbyStationsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F9F9',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: responsiveFontSize(16),
-    color: '#333',
-    fontWeight: '700',
-  },
-  errorText: {
-    fontSize: responsiveFontSize(16),
-    color: '#D32F2F',
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-  title: {
-    fontSize: responsiveFontSize(24),
-    fontWeight: '700',
-    color: '#17171B',
-    textAlign: 'center',
-    marginVertical: responsiveHeight(20),
-  },
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 10, fontWeight: '700', color: '#333' },
+  errorText: { fontWeight: '700', color: '#D32F2F', textAlign: 'center' },
   stationCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -219,38 +182,23 @@ const styles = StyleSheet.create({
     marginVertical: responsiveHeight(6),
     borderRadius: responsiveWidth(40),
     elevation: 2,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
-  leftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  leftContent: { flexDirection: 'row', alignItems: 'center' },
   lineBadge: {
-    borderRadius: responsiveWidth(40),
-    paddingHorizontal: responsiveWidth(12),
-    paddingVertical: responsiveHeight(5),
+    borderRadius: 40,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: responsiveWidth(12),
+    marginRight: 12,
   },
-  lineBadgeText: {
-    fontSize: responsiveFontSize(14),
-    fontWeight: '700',
-  },
-  stationName: {
-    fontSize: responsiveFontSize(18),
-    fontWeight: '700',
-    color: '#17171B',
-    marginBottom: responsiveHeight(2),
-  },
-  distanceText: {
-    fontSize: responsiveFontSize(15),
-    fontWeight: '700',
-    color: '#595959',
-  },
+  lineBadgeText: { fontWeight: '700' },
+  stationName: { fontWeight: '700', color: '#17171B' },
+  distanceText: { fontWeight: '700', color: '#595959' },
+  mapIconButton: { backgroundColor: '#E6FAF9', padding: 6, borderRadius: 50 },
 });
 
 export default NearbyStationsScreen;

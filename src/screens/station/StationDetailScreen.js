@@ -1,8 +1,6 @@
 // 🏙️ StationDetailScreen.js
-// 기능 요약:
-// - 역 상세 화면: 노선, 역명, 코드, 즐겨찾기 표시
-// - 기존 시설(엘리베이터, 에스컬레이터, 보관함, 휠체어리프트, 음성유도기) 유지
-// - 새로 화장실, 장애인 화장실, 수유실 아이콘만 추가
+// - DB/테이블 일절 사용 안 함
+// - 시설 버튼 탭 시 BarrierFreeMapScreen으로 역이름/노선/코드 + type만 전달
 
 import React, { useEffect, useState, useMemo } from "react";
 import {
@@ -36,7 +34,7 @@ export default function StationDetailScreen() {
   const currentUser = auth.currentUser;
   const [isFavorite, setIsFavorite] = useState(false);
 
-  /* ------------------ 즐겨찾기 반영 ------------------ */
+  // ✅ 즐겨찾기 실시간 반영
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -49,6 +47,7 @@ export default function StationDetailScreen() {
     return () => unsubscribe();
   }, [currentUser, stationCode]);
 
+  // ✅ 즐겨찾기 추가/제거
   const handleFavoriteToggle = async () => {
     if (!currentUser || !stationCode) {
       Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
@@ -67,7 +66,17 @@ export default function StationDetailScreen() {
     }
   };
 
-  /* ------------------ 헤더 ------------------ */
+  // ✅ BarrierFreeMap으로 이동 (좌표는 안 넘김)
+  const goToFacilityMap = (type) => {
+    navigation.push("BarrierFreeMap", {
+      stationName,
+      stationCode,
+      line,
+      type, // EV | ES | TO | DT | NU ...
+    });
+  };
+
+  // ✅ 헤더
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -97,11 +106,11 @@ export default function StationDetailScreen() {
     [navigation, stationName, line, fontOffset, insets.top, isFavorite]
   );
 
-  /* ------------------ 렌더 ------------------ */
   return (
     <SafeAreaView style={styles.container}>
       {Header}
 
+      {/* 역 기본정보 */}
       <View style={styles.infoBox}>
         <Text style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           {line}
@@ -113,32 +122,12 @@ export default function StationDetailScreen() {
 
       {/* 1행: 엘리베이터 / 에스컬레이터 */}
       <View style={styles.iconRow}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "EV",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("EV")}>
           <Ionicons name="cube-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>엘리베이터</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "ES",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("ES")}>
           <Ionicons name="swap-vertical-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>에스컬레이터</Text>
         </TouchableOpacity>
@@ -146,47 +135,17 @@ export default function StationDetailScreen() {
 
       {/* 2행: 보관함 / 휠체어 리프트 / 음성유도기 */}
       <View style={styles.iconRow}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "LO",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("LO")}>
           <Ionicons name="briefcase-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>보관함</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "WL",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("WL")}>
           <Ionicons name="walk-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>휠체어 리프트</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "VO",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("VO")}>
           <Ionicons name="volume-high-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>음성유도기</Text>
         </TouchableOpacity>
@@ -194,48 +153,19 @@ export default function StationDetailScreen() {
 
       {/* 3행: 화장실 / 장애인 화장실 / 수유실 */}
       <View style={styles.iconRow}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "TO",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("TO")}>
           <Ionicons name="water-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>화장실</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "DT",
-            })
-          }
-        >
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("DT")}>
           <Ionicons name="accessibility-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>장애인 화장실</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() =>
-            navigation.navigate("StationFacilities", {
-              stationCode,
-              stationName,
-              line,
-              type: "NU",
-            })
-          }
-        >
-          <Ionicons name="baby-outline" size={42} color={MINT} />
+        <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("NU")}>
+          {/* Expo Ionicons에 baby-outline 없음 → 대체 */}
+          <Ionicons name="body-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>수유실</Text>
         </TouchableOpacity>
       </View>
@@ -243,7 +173,6 @@ export default function StationDetailScreen() {
   );
 }
 
-/* ------------------ 스타일 ------------------ */
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
   mintHeader: {
@@ -276,10 +205,6 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 24,
     borderRadius: 18,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
     elevation: 3,
   },
   iconLabel: { color: INK, fontWeight: "bold" },
