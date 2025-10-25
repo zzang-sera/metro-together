@@ -1,6 +1,7 @@
 // 🏙️ StationDetailScreen.js
-// - DB/테이블 일절 사용 안 함
-// - 시설 버튼 탭 시 BarrierFreeMapScreen으로 역이름/노선/코드 + type만 전달
+// ✅ 다중 호선 표시 및 전달 지원 (lines 배열)
+// - DB/테이블 사용 없음
+// - 시설 버튼 탭 시 BarrierFreeMapScreen으로 역이름/노선/코드 + type 전달
 
 import React, { useEffect, useState, useMemo } from "react";
 import {
@@ -15,19 +16,43 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+} from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
-import { responsiveFontSize } from "../../utils/responsive";
+import { responsiveFontSize, responsiveWidth } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
+import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.json";
 
+const lineData = lineJson.DATA;
 const MINT = "#21C9C6";
 const INK = "#003F40";
 const BG = "#F9F9F9";
 
+// 🚇 노선 색상 가져오기
+function getLineColor(lineNum) {
+  const lineInfo = lineData.find((l) => l.line === lineNum);
+  return lineInfo ? lineInfo.color : "#666666";
+}
+
+// ⚪ 배경 대비 텍스트 색상
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return "#FFFFFF";
+  const r = parseInt(hexColor.substr(1, 2), 16);
+  const g = parseInt(hexColor.substr(3, 2), 16);
+  const b = parseInt(hexColor.substr(5, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#17171B" : "#FFFFFF";
+}
+
 export default function StationDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { stationName, stationCode, line } = route.params || {};
+  const { stationName, stationCode, lines = [] } = route.params || {}; // ✅ 다중호선
   const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
 
@@ -66,13 +91,13 @@ export default function StationDetailScreen() {
     }
   };
 
-  // ✅ BarrierFreeMap으로 이동 (좌표는 안 넘김)
+  // ✅ BarrierFreeMap으로 이동
   const goToFacilityMap = (type) => {
     navigation.push("BarrierFreeMap", {
       stationName,
       stationCode,
-      line,
-      type, // EV | ES | TO | DT | NU ...
+      lines, // ✅ 다중호선 전달
+      type,
     });
   };
 
@@ -84,16 +109,40 @@ export default function StationDetailScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} />
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
-          <View style={styles.badge}>
-            <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
-              {line || "?"}
-            </Text>
+          {/* ✅ 다중 호선 뱃지 2개씩 줄맞춤 */}
+          <View style={styles.lineContainer}>
+            {Array.from({ length: Math.ceil(lines.length / 2) }).map((_, rowIndex) => {
+              const pair = lines.slice(rowIndex * 2, rowIndex * 2 + 2);
+              return (
+                <View key={`row-${rowIndex}`} style={styles.lineRow}>
+                  {pair.map((line) => {
+                    const color = getLineColor(line);
+                    const textColor = getTextColorForBackground(color);
+                    return (
+                      <View key={line} style={[styles.lineBadge, { backgroundColor: color }]}>
+                        <Text style={[styles.lineBadgeText, { color: textColor }]}>
+                          {line.replace("호선", "")}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
           </View>
-          <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: responsiveFontSize(18) + fontOffset },
+            ]}
+          >
             {stationName || "역명"}
           </Text>
         </View>
+
         <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
           <Ionicons
             name={isFavorite ? "star" : "star-outline"}
@@ -103,19 +152,23 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
       </View>
     ),
-    [navigation, stationName, line, fontOffset, insets.top, isFavorite]
+    [navigation, stationName, lines, fontOffset, insets.top, isFavorite]
   );
 
   return (
     <SafeAreaView style={styles.container}>
       {Header}
 
-      {/* 역 기본정보 */}
+      {/* ✅ 역 기본정보 */}
       <View style={styles.infoBox}>
-        <Text style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-          {line}
+        <Text
+          style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}
+        >
+          {lines.join(" / ")}
         </Text>
-        <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+        <Text
+          style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}
+        >
           코드: {stationCode}
         </Text>
       </View>
@@ -164,7 +217,6 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("NU")}>
-          {/* Expo Ionicons에 baby-outline 없음 → 대체 */}
           <Ionicons name="body-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>수유실</Text>
         </TouchableOpacity>
@@ -184,9 +236,28 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   headerBtn: { width: 36, alignItems: "center" },
-  headerCenter: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" },
-  badge: { backgroundColor: "#AEEFED", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { color: INK, fontWeight: "bold" },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    justifyContent: "center",
+  },
+  // ✅ 다중호선용 줄맞춤
+  lineContainer: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    marginRight: 6,
+    gap: 4,
+  },
+  lineRow: { flexDirection: "row", gap: 4 },
+  lineBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lineBadgeText: { fontWeight: "bold", fontSize: 12 },
   headerTitle: { color: INK, fontWeight: "bold" },
   starBtn: { padding: 6 },
   infoBox: { alignItems: "center", marginTop: 16, marginBottom: 30 },
