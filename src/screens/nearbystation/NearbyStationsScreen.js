@@ -1,3 +1,4 @@
+// 📍 NearbyStationsScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -71,11 +72,33 @@ const NearbyStationsScreen = () => {
       try {
         const currentLocation = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = currentLocation.coords;
+
+        // 1️⃣ 거리 계산
         const stationsWithDistance = stationData.map((station) => ({
           ...station,
           distance: getDistance(latitude, longitude, station.lat, station.lng),
         }));
-        const sortedStations = stationsWithDistance.sort(
+
+        // 2️⃣ 역 이름으로 그룹화 (다중호선 통합)
+        const grouped = {};
+        stationsWithDistance.forEach((s) => {
+          if (!grouped[s.name]) {
+            grouped[s.name] = {
+              name: s.name,
+              lat: s.lat,
+              lng: s.lng,
+              lines: s.line ? [s.line] : [],
+              distance: s.distance,
+            };
+          } else {
+            if (s.line && !grouped[s.name].lines.includes(s.line)) {
+              grouped[s.name].lines.push(s.line);
+            }
+            if (s.distance < grouped[s.name].distance) grouped[s.name].distance = s.distance;
+          }
+        });
+
+        const sortedStations = Object.values(grouped).sort(
           (a, b) => a.distance - b.distance
         );
         setNearbyStations(sortedStations.slice(0, 10));
@@ -91,7 +114,9 @@ const NearbyStationsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" />
-        <Text style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+        <Text
+          style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}
+        >
           주변 역을 찾고 있습니다...
         </Text>
       </View>
@@ -101,7 +126,9 @@ const NearbyStationsScreen = () => {
   if (errorMsg) {
     return (
       <View style={styles.centered}>
-        <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+        <Text
+          style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}
+        >
           {errorMsg}
         </Text>
       </View>
@@ -109,10 +136,7 @@ const NearbyStationsScreen = () => {
   }
 
   const renderStationItem = ({ item }) => {
-    const lineColor = getLineColor(item.line);
-    const textColor = getTextColorForBackground(lineColor);
     const distanceKm = Number(item.distance || 0).toFixed(1);
-    const stationCode = String(item.station_cd ?? item.STN_CD ?? item.code ?? item.stationCode ?? '').trim();
     const stationName = item.name;
 
     return (
@@ -122,19 +146,40 @@ const NearbyStationsScreen = () => {
         onPress={() =>
           navigation.navigate('MainStack', {
             screen: 'StationDetail',
-            params: { stationCode, stationName, line: item.line, distanceKm },
+            params: { stationName, line: item.lines[0] }, // 기본 첫 호선 전달
           })
         }
       >
         <View style={styles.leftContent}>
-          <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            <Text style={[styles.lineBadgeText, { color: textColor }]}>
-              {item.line}
-            </Text>
+          {/* 여러 호선 뱃지 표시 */}
+          <View style={styles.lineContainer}>
+            {(item.lines || []).map((line) => {
+              const lineColor = getLineColor(line);
+              const textColor = getTextColorForBackground(lineColor);
+              return (
+                <View
+                  key={line}
+                  style={[styles.lineBadge, { backgroundColor: lineColor }]}
+                >
+                  <Text style={[styles.lineBadgeText, { color: textColor }]}>
+                    {line.replace('호선', '')}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
+
           <View>
-            <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>{stationName}</Text>
-            <Text style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}>{distanceKm} km</Text>
+            <Text
+              style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}
+            >
+              {stationName}
+            </Text>
+            <Text
+              style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}
+            >
+              {distanceKm} km
+            </Text>
           </View>
         </View>
 
@@ -143,7 +188,7 @@ const NearbyStationsScreen = () => {
             onPress={() =>
               navigation.navigate('MainStack', {
                 screen: 'BarrierFreeMap',
-                params: { stationName, line: item.line, lat: item.lat, lng: item.lng },
+                params: { stationName, line: item.lines[0], lat: item.lat, lng: item.lng },
               })
             }
             style={styles.mapIconButton}
@@ -160,7 +205,7 @@ const NearbyStationsScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={nearbyStations}
-        keyExtractor={(item) => `${item.station_cd}-${item.line}`}
+        keyExtractor={(item) => `${item.name}`}
         contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
         renderItem={renderStationItem}
       />
@@ -187,13 +232,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   leftContent: { flexDirection: 'row', alignItems: 'center' },
+  lineContainer: {  flexDirection: 'row',
+    flexWrap: 'wrap',
+    rowGap: 6,
+    columnGap: 6,
+    marginRight: 12,
+    maxWidth: responsiveWidth(120),
+  },
   lineBadge: {
     borderRadius: 40,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     paddingVertical: 5,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   lineBadgeText: { fontWeight: '700' },
   stationName: { fontWeight: '700', color: '#17171B' },
