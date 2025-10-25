@@ -1,7 +1,3 @@
-// 🏙️ StationDetailScreen.js
-// - DB/테이블 일절 사용 안 함
-// - 시설 버튼 탭 시 BarrierFreeMapScreen으로 역이름/노선/코드 + type만 전달
-
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -15,39 +11,65 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { doc, onSnapshot, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  updateDoc,
+  arrayUnion,
+  arrayRemove,
+} from "firebase/firestore";
 import { auth, db } from "../../config/firebaseConfig";
-import { responsiveFontSize } from "../../utils/responsive";
+import { responsiveFontSize, responsiveWidth } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
+import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.json";
 
+const lineData = lineJson.DATA;
 const MINT = "#21C9C6";
 const INK = "#003F40";
 const BG = "#F9F9F9";
 
+function getLineColor(lineNum) {
+  const lineInfo = lineData.find((l) => l.line === lineNum);
+  return lineInfo ? lineInfo.color : "#666666";
+}
+
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return "#FFFFFF";
+  const r = parseInt(hexColor.substr(1, 2), 16);
+  const g = parseInt(hexColor.substr(3, 2), 16);
+  const b = parseInt(hexColor.substr(5, 2), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.5 ? "#17171B" : "#FFFFFF";
+}
+
 export default function StationDetailScreen() {
   const navigation = useNavigation();
   const route = useRoute();
-  const { stationName, stationCode, line } = route.params || {};
+  const { stationName, stationCode, lines = [] } = route.params || {};
   const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
-
   const currentUser = auth.currentUser;
   const [isFavorite, setIsFavorite] = useState(false);
 
-  // ✅ 즐겨찾기 실시간 반영
+  // ✅ 즐겨찾기 실시간 반영 (새 구조 & 기존 구조 모두 지원)
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const favs = docSnap.data().favorites || [];
-        setIsFavorite(favs.includes(stationCode));
+        const found = favs.some((f) =>
+          typeof f === "string"
+            ? f === stationCode
+            : f.stationCode === stationCode
+        );
+        setIsFavorite(found);
       }
     });
     return () => unsubscribe();
   }, [currentUser, stationCode]);
 
-  // ✅ 즐겨찾기 추가/제거
+  // ✅ 즐겨찾기 추가/제거 (다중호선 구조)
   const handleFavoriteToggle = async () => {
     if (!currentUser || !stationCode) {
       Alert.alert("로그인 필요", "즐겨찾기 기능은 로그인 후 이용할 수 있습니다.");
@@ -55,10 +77,23 @@ export default function StationDetailScreen() {
     }
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
+      const favObj = { stationCode, stationName, lines };
+
       if (isFavorite) {
-        await updateDoc(userDocRef, { favorites: arrayRemove(stationCode) });
+        // 삭제 시는 stationCode 기준 필터링
+        const docSnap = await userDocRef.get?.();
+        if (!docSnap) {
+          await updateDoc(userDocRef, { favorites: arrayRemove(favObj) });
+        } else {
+          const currentFavs = docSnap.data().favorites || [];
+          const updated = currentFavs.filter(
+            (f) =>
+              !(f.stationCode === stationCode || f === stationCode)
+          );
+          await updateDoc(userDocRef, { favorites: updated });
+        }
       } else {
-        await updateDoc(userDocRef, { favorites: arrayUnion(stationCode) });
+        await updateDoc(userDocRef, { favorites: arrayUnion(favObj) });
       }
     } catch (err) {
       console.error("즐겨찾기 오류:", err);
@@ -66,17 +101,15 @@ export default function StationDetailScreen() {
     }
   };
 
-  // ✅ BarrierFreeMap으로 이동 (좌표는 안 넘김)
   const goToFacilityMap = (type) => {
     navigation.push("BarrierFreeMap", {
       stationName,
       stationCode,
-      line,
-      type, // EV | ES | TO | DT | NU ...
+      lines,
+      type,
     });
   };
 
-  // ✅ 헤더
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -84,16 +117,39 @@ export default function StationDetailScreen() {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} />
         </TouchableOpacity>
+
         <View style={styles.headerCenter}>
-          <View style={styles.badge}>
-            <Text style={[styles.badgeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
-              {line || "?"}
-            </Text>
+          <View style={styles.lineContainer}>
+            {Array.from({ length: Math.ceil(lines.length / 2) }).map((_, rowIndex) => {
+              const pair = lines.slice(rowIndex * 2, rowIndex * 2 + 2);
+              return (
+                <View key={`row-${rowIndex}`} style={styles.lineRow}>
+                  {pair.map((line) => {
+                    const color = getLineColor(line);
+                    const textColor = getTextColorForBackground(color);
+                    return (
+                      <View key={line} style={[styles.lineBadge, { backgroundColor: color }]}>
+                        <Text style={[styles.lineBadgeText, { color: textColor }]}>
+                          {line.replace("호선", "")}
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              );
+            })}
           </View>
-          <Text style={[styles.headerTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+
+          <Text
+            style={[
+              styles.headerTitle,
+              { fontSize: responsiveFontSize(18) + fontOffset },
+            ]}
+          >
             {stationName || "역명"}
           </Text>
         </View>
+
         <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
           <Ionicons
             name={isFavorite ? "star" : "star-outline"}
@@ -103,24 +159,27 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
       </View>
     ),
-    [navigation, stationName, line, fontOffset, insets.top, isFavorite]
+    [navigation, stationName, lines, fontOffset, insets.top, isFavorite]
   );
 
   return (
     <SafeAreaView style={styles.container}>
       {Header}
 
-      {/* 역 기본정보 */}
       <View style={styles.infoBox}>
-        <Text style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-          {line}
+        <Text
+          style={[styles.lineText, { fontSize: responsiveFontSize(16) + fontOffset }]}
+        >
+          {lines.join(" / ")}
         </Text>
-        <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
+        <Text
+          style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}
+        >
           코드: {stationCode}
         </Text>
       </View>
 
-      {/* 1행: 엘리베이터 / 에스컬레이터 */}
+      {/* ✅ 기존 아이콘 기능 유지 */}
       <View style={styles.iconRow}>
         <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("EV")}>
           <Ionicons name="cube-outline" size={42} color={MINT} />
@@ -133,7 +192,6 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 2행: 보관함 / 휠체어 리프트 / 음성유도기 */}
       <View style={styles.iconRow}>
         <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("LO")}>
           <Ionicons name="briefcase-outline" size={42} color={MINT} />
@@ -151,7 +209,6 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* 3행: 화장실 / 장애인 화장실 / 수유실 */}
       <View style={styles.iconRow}>
         <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("TO")}>
           <Ionicons name="water-outline" size={42} color={MINT} />
@@ -164,7 +221,6 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("NU")}>
-          {/* Expo Ionicons에 baby-outline 없음 → 대체 */}
           <Ionicons name="body-outline" size={42} color={MINT} />
           <Text style={styles.iconLabel}>수유실</Text>
         </TouchableOpacity>
@@ -184,9 +240,27 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   headerBtn: { width: 36, alignItems: "center" },
-  headerCenter: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" },
-  badge: { backgroundColor: "#AEEFED", borderRadius: 8, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { color: INK, fontWeight: "bold" },
+  headerCenter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    justifyContent: "center",
+  },
+  lineContainer: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    marginRight: 6,
+    gap: 4,
+  },
+  lineRow: { flexDirection: "row", gap: 4 },
+  lineBadge: {
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  lineBadgeText: { fontWeight: "bold", fontSize: 12 },
   headerTitle: { color: INK, fontWeight: "bold" },
   starBtn: { padding: 6 },
   infoBox: { alignItems: "center", marginTop: 16, marginBottom: 30 },

@@ -13,7 +13,11 @@ import { useNavigation } from '@react-navigation/native';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import { responsiveFontSize, responsiveHeight, responsiveWidth } from '../../utils/responsive';
+import {
+  responsiveFontSize,
+  responsiveHeight,
+  responsiveWidth,
+} from '../../utils/responsive';
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
@@ -82,41 +86,76 @@ const SearchStationScreen = () => {
               onPress={() =>
                 navigation.navigate('MainStack', {
                   screen: 'StationDetail',
-                  params: { stationCode, stationName: item.name, line: firstLine },
+                  params: {
+                    stationCode,
+                    stationName: item.name,
+                    lines: item.lines, // ✅ 다중호선 배열 전달
+                  },
                 })
               }
               onLongPress={() =>
                 navigation.navigate('MainStack', {
                   screen: 'BarrierFreeMap',
-                  params: { stationName: item.name, line: firstLine },
+                  params: {
+                    stationName: item.name,
+                    lines: item.lines, // ✅ 지도에도 다중호선 전달
+                  },
                 })
               }
               delayLongPress={250}
-              accessibilityLabel={`${firstLine} ${item.name}`}
+              accessibilityLabel={`${item.lines.join(', ')} ${item.name}`}
             >
-              <Ionicons name="location-outline" size={24} color="black" style={styles.locationIcon} />
-              <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+              <Ionicons
+                name="location-outline"
+                size={24}
+                color="black"
+                style={styles.locationIcon}
+              />
+              <Text
+                style={[
+                  styles.stationName,
+                  { fontSize: responsiveFontSize(18) + fontOffset },
+                ]}
+              >
                 {item.name}
               </Text>
+
+              {/* ✅ 호선 뱃지 2개씩 줄맞춤 */}
               <View style={styles.lineContainer}>
-                {item.lines.map((line) => (
-                  <View
-                    key={line}
-                    style={[
-                      styles.lineCircle,
-                      { backgroundColor: getLineColor(line) },
-                    ]}
-                  >
-                    <Text style={styles.lineText}>{line.replace('호선', '')}</Text>
-                  </View>
-                ))}
+                {Array.from({ length: Math.ceil(item.lines.length / 2) }).map(
+                  (_, rowIndex) => {
+                    const pair = item.lines.slice(rowIndex * 2, rowIndex * 2 + 2);
+                    return (
+                      <View key={`row-${rowIndex}`} style={styles.lineRow}>
+                        {pair.map((line) => (
+                          <View
+                            key={line}
+                            style={[
+                              styles.lineCircle,
+                              { backgroundColor: getLineColor(line) },
+                            ]}
+                          >
+                            <Text style={styles.lineText}>
+                              {line.replace('호선', '')}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    );
+                  }
+                )}
               </View>
             </TouchableOpacity>
           );
         }}
         ListEmptyComponent={
           searchQuery.length > 0 ? (
-            <Text style={[styles.emptyText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            <Text
+              style={[
+                styles.emptyText,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+              ]}
+            >
               검색 결과가 없습니다.
             </Text>
           ) : null
@@ -148,7 +187,16 @@ const styles = StyleSheet.create({
   },
   locationIcon: { marginRight: 8 },
   stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
-  lineContainer: { flexDirection: 'row', gap: 6 },
+  // ✅ 줄맞춤 (2개씩)
+  lineContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 4,
+  },
+  lineRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
   lineCircle: {
     width: 28,
     height: 28,
