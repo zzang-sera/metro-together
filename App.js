@@ -1,13 +1,15 @@
 // App.js
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image } from 'react-native';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+// [수정] NavigationContainer, useNavigation, DefaultTheme 임포트
+import { NavigationContainer, useNavigation, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { StatusBar } from 'expo-status-bar'; // [추가] StatusBar 임포트
 
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { FontSizeProvider, useFontSize } from './src/contexts/FontSizeContext';
@@ -38,7 +40,7 @@ const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
 
 /* ──────────────────────────────
-   공통 옵션
+    공통 옵션
 ────────────────────────────── */
 const commonTabOptions = {
   headerShown: true,
@@ -57,7 +59,7 @@ const mintHeaderOptions = {
 };
 
 /* ──────────────────────────────
-   MainStack (BarrierFreeMapScreen 등록)
+    MainStack (BarrierFreeMapScreen 등록)
 ────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
@@ -68,7 +70,7 @@ const MainStackNavigator = () => (
 );
 
 /* ──────────────────────────────
-   MyPage Stack
+    MyPage Stack
 ────────────────────────────── */
 const MyPageStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -89,7 +91,7 @@ const MyPageStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-   Nearby Stack
+    Nearby Stack
 ────────────────────────────── */
 const NearbyStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -107,7 +109,7 @@ const NearbyStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-   Search Stack
+    Search Stack
 ────────────────────────────── */
 const SearchStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -125,7 +127,7 @@ const SearchStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-   Guest Tabs (비로그인)
+    Guest Tabs (비로그인)
 ────────────────────────────── */
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
@@ -198,7 +200,7 @@ const GuestTabs = () => {
 };
 
 /* ──────────────────────────────
-   User Tabs (로그인)
+    User Tabs (로그인)
 ────────────────────────────── */
 const UserTabs = () => {
   const insets = useSafeAreaInsets();
@@ -261,7 +263,7 @@ const UserTabs = () => {
 };
 
 /* ──────────────────────────────
-   Auth Stack
+    Auth Stack
 ────────────────────────────── */
 const AuthStack = () => {
   const { fontOffset } = useFontSize();
@@ -284,8 +286,18 @@ const AuthStack = () => {
 };
 
 /* ──────────────────────────────
-   Root Component
+    Root Component
 ────────────────────────────── */
+
+// [추가] 네비게이션 컨테이너 기본 테마 설정
+const navTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: '#F9F9F9', // 앱의 기본 배경색을 헤더색과 맞춤
+  },
+};
+
 const AppContent = () => {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [fontsLoaded] = useFonts({
@@ -299,8 +311,9 @@ const AppContent = () => {
       </View>
     );
   }
-
-  return <NavigationContainer>{user ? <UserTabs /> : <AuthStack />}</NavigationContainer>;
+ 
+  // [수정] NavigationContainer에 theme prop 추가
+  return <NavigationContainer theme={navTheme}>{user ? <UserTabs /> : <AuthStack />}</NavigationContainer>;
 };
 
 export default function App() {
@@ -310,7 +323,10 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider>
+    // [수정] SafeAreaProvider에 스타일 추가
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#F9F9F9' }}>
+      {/* [추가] StatusBar 컴포넌트로 배경색 및 아이콘 색상 지정 */}
+      <StatusBar style="dark" backgroundColor="#F9F9F9" />
       <AuthProvider>
         <FontSizeProvider>
           <AppContent />
