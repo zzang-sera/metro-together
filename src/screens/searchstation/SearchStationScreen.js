@@ -166,7 +166,7 @@ const SearchStationScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#f9f9f9' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -182,12 +182,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#C9CDD1',
   },
   locationIcon: { marginRight: 8 },
   stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
-  // ✅ 줄맞춤 (2개씩)
   lineContainer: {
     flexDirection: 'column',
     alignItems: 'flex-start',
