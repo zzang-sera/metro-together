@@ -185,7 +185,6 @@ const NearbyStationsScreen = () => {
                             styles.lineBadge, // ⚠️ 이제 lineCircle이 아님!
                             {
                               backgroundColor: lineColor,
-                              // ✅ 원형 및 크기 적용
                               width: dynamicIconSize,
                               height: dynamicIconSize,
                               borderRadius: dynamicIconSize / 2,
@@ -197,7 +196,7 @@ const NearbyStationsScreen = () => {
                               styles.lineBadgeText,
                               {
                                 color: textColor,
-                                fontSize: 12 + fontOffset, // ✅ 폰트 크기 적용
+                                fontSize: 12 + fontOffset, 
                               }
                             ]}
                           >
@@ -286,7 +285,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
-    borderRadius: 15,
+    borderRadius: 40,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,

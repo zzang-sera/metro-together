@@ -346,7 +346,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F1FAFA",
     paddingVertical: 18,
     paddingHorizontal: 20,
-    borderRadius: 18, // 카드형에 어울리게 18로 복원
+    borderRadius: 40, // 카드형에 어울리게 18로 복원
     elevation: 3, // 그림자 추가
     marginBottom: 16, // 카드형에 어울리게 16으로 복원
   },
