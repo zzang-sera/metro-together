@@ -1,36 +1,42 @@
-// src/screens/station/BarrierFreeMapScreen.js
 import React, { useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
   StatusBar,
-  Alert,
+  useWindowDimensions,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 
-// ✅ 서울 전체역 엘리베이터 좌표 (DESCRIPTION + DATA)
 import elevatorSeoulStation from "../../assets/metro-data/metro/elevator/elevator_seoulstation.json";
-const elevatorAll = elevatorSeoulStation;
+import escalatorData from "../../assets/metro-data/metro/escalator/서울시 지하철 출입구 리프트 위치정보.json";
 
-const NAVER_MAP_KEY = "1stxzdmhn9"; // 네이버 지도 Client ID
+const NAVER_MAP_KEY = "1stxzdmhn9";
 const BASE_URL = "http://192.168.219.107:8081";
 const MINT = "#21C9C6";
 const INK = "#003F40";
 
-/** POINT(126.x 37.x) → {lat, lng} */
+// ✅ 괄호 제거 포함 정규화 함수
+const norm = (t) =>
+  String(t || "")
+    .replace(/\(.+?\)/g, "") // 괄호 속 숫자 제거 ex) 서울역(1) → 서울역
+    .replace(/\s|역/g, "")   // 공백·'역' 제거
+    .toLowerCase();
+
+const inKorea = (lat, lng) =>
+  lat >= 33 && lat <= 39 && lng >= 124 && lng <= 132;
+
 function parseWKT(pointString) {
   if (!pointString) return null;
-  const match = pointString.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
-  if (!match) return null;
-  const lng = parseFloat(match[1]);
-  const lat = parseFloat(match[2]);
-  if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+  const m = pointString.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
+  if (!m) return null;
+  const lng = parseFloat(m[1]);
+  const lat = parseFloat(m[2]);
+  if (!inKorea(lat, lng)) return null;
   return { lat, lng };
 }
 
@@ -38,103 +44,103 @@ export default function BarrierFreeMapScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const webRef = useRef(null);
+  const { width } = useWindowDimensions();
 
-  const { stationName = "서울", line = "1호선", type = "EV" } = route.params || {};
-  console.log("🧭 [BarrierFreeMapScreen] route.params =", route.params);
+  const { stationName = "서울", line = "1호선", type = "ALL" } = route.params || {};
 
-  // ✅ JSON 데이터 구조 (DESCRIPTION + DATA)
-  const allNodes = elevatorAll?.DATA || [];
+  // ─────────────── 엘리베이터 ───────────────
+  const allEV = elevatorSeoulStation?.DATA || [];
+  const filteredEV = allEV.filter(
+    (n) => norm(n.sbwy_stn_nm || n.SBWY_STN_NM) === norm(stationName)
+  );
+  const pointsEV = filteredEV
+    .map((n) => {
+      const p = parseWKT(n.node_wkt || n.NODE_WKT);
+      return p ? { ...p, type: "EV", title: "엘리베이터" } : null;
+    })
+    .filter(Boolean);
 
-  // ✅ 역 이름 필터링 (대소문자/공백 무시)
-  const filteredNodes = allNodes.filter((n) => {
-    const name = (n.sbwy_stn_nm || n.SBWY_STN_NM || "").replace(/\s+/g, "").toLowerCase();
-    const target = stationName.replace(/\s+/g, "").toLowerCase();
-    return name === target;
-  });
+  // ─────────────── 에스컬레이터 ───────────────
+  const allES = escalatorData?.DATA || [];
+  const filteredES = allES.filter(
+    (n) => norm(n.sbwy_stn_nm || n.SBWY_STN_NM) === norm(stationName)
+  );
+  const pointsES = filteredES
+    .map((n) => {
+      const p = parseWKT(n.node_wkt || n.NODE_WKT);
+      return p ? { ...p, type: "ES", title: "에스컬레이터/리프트" } : null;
+    })
+    .filter(Boolean);
 
-  // ✅ 해당 역의 좌표 리스트
-  const points = filteredNodes.map((n) => parseWKT(n.node_wkt || n.NODE_WKT)).filter(Boolean);
+  // ─────────────── 지도 표시 대상 ───────────────
+  let allPoints = [];
+  if (type === "EV") allPoints = pointsEV;
+  else if (type === "ES") allPoints = pointsES;
+  else allPoints = [...pointsEV, ...pointsES];
 
-  // ✅ 중심 계산 (없으면 서울시청 fallback)
-  const centerLat =
-    points.length > 0 ? points.reduce((s, p) => s + p.lat, 0) / points.length : 37.5665;
-  const centerLng =
-    points.length > 0 ? points.reduce((s, p) => s + p.lng, 0) / points.length : 126.9780;
+  const baseLat =
+    allPoints.length > 0
+      ? allPoints.reduce((s, p) => s + p.lat, 0) / allPoints.length
+      : 37.5665;
+  const baseLng =
+    allPoints.length > 0
+      ? allPoints.reduce((s, p) => s + p.lng, 0) / allPoints.length
+      : 126.9780;
 
-  console.log(`📍 ${stationName} matched points:`, points.length);
+  console.log(`📍 [${stationName}] EV=${pointsEV.length}, ES=${pointsES.length}`);
 
-  // ✅ WebView에 주입할 HTML
+  // ─────────────── HTML 지도 코드 ───────────────
   const html = useMemo(
     () => `
       <!DOCTYPE html>
       <html lang="ko">
       <head>
         <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no" />
         <style>
-          html, body, #map { height: 100%; margin: 0; padding: 0; background: #e8fdfc; }
-          #status {
-            position: absolute; top: 6px; left: 6px; z-index: 9999;
-            background: rgba(0,0,0,0.65); color: #0f0;
-            padding: 4px 8px; font: 12px monospace; border-radius: 4px;
-          }
-          .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; }
+          html, body { margin:0; padding:0; height:100%; background:#e8fdfc; }
+          #map { width:100vw; height:100vh; }
+          .dot { width:12px; height:12px; border-radius:50%; border:2px solid #fff; }
+          .label { background:rgba(0,0,0,0.6); color:#fff; padding:2px 6px; border-radius:6px; font-size:11px; white-space:nowrap; }
         </style>
       </head>
       <body>
-        <div id="status">📡 지도 로드 중...</div>
         <div id="map"></div>
         <script src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${NAVER_MAP_KEY}"></script>
         <script>
-          const statusBox = document.getElementById('status');
-          const nodes = ${JSON.stringify(points)};
-          const stationName = ${JSON.stringify(stationName)};
-          const center = { lat: ${centerLat}, lng: ${centerLng} };
-
-          function makeMarkerIcon(color) {
-            return {
-              content: '<div class="dot" style="background:'+color+';"></div>',
-              anchor: new naver.maps.Point(6,6),
-            };
-          }
-
           try {
+            const nodes = ${JSON.stringify(allPoints)};
+            if (!nodes || nodes.length === 0) throw new Error("표시할 마커 없음");
+
             const map = new naver.maps.Map('map', {
-              center: new naver.maps.LatLng(center.lat, center.lng),
-              zoom: 17,
-              zoomControl: true,
-              zoomControlOptions: { position: naver.maps.Position.TOP_RIGHT },
+              center: new naver.maps.LatLng(${baseLat}, ${baseLng}),
+              zoom: 18.2
             });
 
-            // 중심(역) 마커
-            new naver.maps.Marker({
-              position: new naver.maps.LatLng(center.lat, center.lng),
-              map,
-              title: stationName + " 중심",
-              icon: makeMarkerIcon('#003F40'),
-            });
-
-            // 노드별 마커 (엘리베이터)
-            nodes.forEach((p, i) => {
+            nodes.forEach(p => {
+              const color = p.type === "ES" ? "#FACC15" : "#21C9C6"; // 노랑=에스컬레이터, 민트=엘리베이터
+              const marker = new naver.maps.Marker({
+                position: new naver.maps.LatLng(p.lat, p.lng),
+                map,
+                title: p.title,
+                icon: { content: '<div class="dot" style="background:'+color+';"></div>', anchor: new naver.maps.Point(6,6) }
+              });
               new naver.maps.Marker({
                 position: new naver.maps.LatLng(p.lat, p.lng),
                 map,
-                title: stationName + ' 엘리베이터 ' + (i + 1),
-                icon: makeMarkerIcon('#9CA3AF'),
+                icon: { content: '<div class="label">'+p.title+'</div>', anchor: new naver.maps.Point(0,20) },
+                clickable: false
               });
             });
-
-            statusBox.textContent = '✅ ' + stationName + ' 지도 로드 완료 (' + nodes.length + '개 마커)';
-            window.ReactNativeWebView && window.ReactNativeWebView.postMessage('__MAP_READY__');
           } catch (e) {
-            statusBox.textContent = '❌ 오류: ' + e.message;
-            window.ReactNativeWebView && window.ReactNativeWebView.postMessage('__MAP_ERROR__:' + e.message);
+            document.body.innerHTML = "<pre style='color:red;font-size:14px;padding:10px;'>"+e.message+"</pre>";
+            window.ReactNativeWebView && window.ReactNativeWebView.postMessage("MAP_ERROR:"+e.message);
           }
         </script>
       </body>
       </html>
     `,
-    [stationName, centerLat, centerLng, points]
+    [allPoints, baseLat, baseLng]
   );
 
   const [webLoading, setWebLoading] = useState(true);
@@ -151,11 +157,10 @@ export default function BarrierFreeMapScreen() {
         <Ionicons name="star-outline" size={24} color={INK} />
       </View>
 
-      <View style={styles.mapBox}>
+      <View style={[styles.mapBox, { width, height: width }]}>
         {webLoading && (
           <View style={styles.loadingOverlay}>
             <ActivityIndicator size="large" color={MINT} />
-            <Text style={{ marginTop: 10, color: "#555" }}>지도를 불러오는 중...</Text>
           </View>
         )}
         <WebView
@@ -164,13 +169,7 @@ export default function BarrierFreeMapScreen() {
           javaScriptEnabled
           domStorageEnabled
           source={{ html, baseUrl: BASE_URL }}
-          onMessage={(e) => {
-            const msg = e.nativeEvent.data;
-            if (msg === "__MAP_READY__") setWebLoading(false);
-            else if (msg.startsWith("__MAP_ERROR__")) {
-              Alert.alert("지도 오류", msg.replace("__MAP_ERROR__:", ""));
-            }
-          }}
+          onLoadEnd={() => setWebLoading(false)}
           style={{ flex: 1, backgroundColor: "#fff" }}
         />
       </View>
@@ -197,12 +196,11 @@ const styles = StyleSheet.create({
   badgeText: { color: INK, fontWeight: "bold", fontSize: 12 },
   title: { color: INK, fontWeight: "bold", fontSize: 18 },
   mapBox: {
+    alignSelf: "center",
     backgroundColor: "#E5F9F8",
-    marginHorizontal: 20,
     marginTop: 20,
     borderRadius: 16,
     overflow: "hidden",
-    height: 280,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
