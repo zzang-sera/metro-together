@@ -1,12 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+} from 'react-native';
 import { useNavigation, useIsFocused } from '@react-navigation/native';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import { responsiveFontSize, responsiveWidth, responsiveHeight } from '../../utils/responsive';
-import allStationsData from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
+import {
+  responsiveFontSize,
+  responsiveWidth,
+  responsiveHeight,
+} from '../../utils/responsive';
 import lineData from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
 function getLineColor(lineNum) {
@@ -42,38 +52,43 @@ const FavoritesScreen = () => {
       return;
     }
     const userDocRef = doc(db, 'users', currentUser.uid);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      setIsLoading(true);
-      if (docSnap.exists()) {
-        const favoriteCodes = docSnap.data().favorites || [];
-        const stationDetails = allStationsData.DATA
-          .filter(station => favoriteCodes.includes(String(station.station_cd ?? station.code)))
-          .map(station => ({
-            stationCode: String(station.station_cd ?? station.code),
-            stationName: station.name,
-            line: station.line,
-            lineColor: getLineColor(station.line),
-          }));
-        setFavoriteStations(stationDetails);
-      } else {
-        setFavoriteStations([]);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        setIsLoading(true);
+        if (docSnap.exists()) {
+          const favorites = docSnap.data().favorites || [];
+          setFavoriteStations(favorites);
+        } else {
+          setFavoriteStations([]);
+        }
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('즐겨찾기 로딩 실패:', error);
+        setIsLoading(false);
       }
-      setIsLoading(false);
-    }, (error) => {
-      console.error('즐겨찾기 로딩 실패:', error);
-      setIsLoading(false);
-    });
+    );
     return () => unsubscribe();
   }, [currentUser, isFocused]);
 
   if (isLoading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color="#003F40" /></View>;
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#003F40" />
+      </View>
+    );
   }
 
   if (!currentUser) {
     return (
       <View style={styles.centered}>
-        <Text style={[styles.infoText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+        <Text
+          style={[
+            styles.infoText,
+            { fontSize: responsiveFontSize(16) + fontOffset },
+          ]}
+        >
           로그인 후 자주 가는 역을 추가해보세요.
         </Text>
       </View>
@@ -83,35 +98,80 @@ const FavoritesScreen = () => {
   if (favoriteStations.length === 0) {
     return (
       <View style={styles.centered}>
-        <Text style={[styles.infoText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+        <Text
+          style={[
+            styles.infoText,
+            { fontSize: responsiveFontSize(16) + fontOffset },
+          ]}
+        >
           역 상세 화면에서 {'\n'}★ 아이콘을 눌러 즐겨찾기를 추가할 수 있습니다.
         </Text>
       </View>
     );
   }
 
+  // ✅ 다중 호선 구조로 변경된 렌더링
   const renderFavoriteItem = ({ item }) => {
-    const lineColor = item.lineColor;
-    const textColor = getTextColorForBackground(lineColor);
     const stationCode = item.stationCode;
     const stationName = item.stationName;
+    const lines = Array.isArray(item.lines)
+      ? item.lines
+      : item.line
+      ? [item.line]
+      : [];
 
     return (
       <TouchableOpacity
-        activeOpacity={0.8}
+        activeOpacity={0.85}
         style={styles.stationCard}
         onPress={() =>
           navigation.navigate('MainStack', {
             screen: 'StationDetail',
-            params: { stationCode, stationName, line: item.line },
+            params: {
+              stationCode,
+              stationName,
+              lines,
+            },
           })
         }
       >
         <View style={styles.leftContent}>
-          <View style={[styles.lineBadge, { backgroundColor: lineColor }]}>
-            <Text style={[styles.lineBadgeText, { color: textColor }]}>{item.line}</Text>
+          {/* ✅ 호선 뱃지 2개씩 줄맞춤 */}
+          <View style={styles.lineContainer}>
+            {Array.from({ length: Math.ceil(lines.length / 2) }).map(
+              (_, rowIndex) => {
+                const pair = lines.slice(rowIndex * 2, rowIndex * 2 + 2);
+                return (
+                  <View key={`row-${rowIndex}`} style={styles.lineRow}>
+                    {pair.map((line) => {
+                      const color = getLineColor(line);
+                      const textColor = getTextColorForBackground(color);
+                      return (
+                        <View
+                          key={line}
+                          style={[
+                            styles.lineCircle,
+                            { backgroundColor: color },
+                          ]}
+                        >
+                          <Text style={[styles.lineText, { color: textColor }]}>
+                            {line.replace('호선', '')}
+                          </Text>
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              }
+            )}
           </View>
-          <Text style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+
+          <Text
+            style={[
+              styles.stationName,
+              { fontSize: responsiveFontSize(18) + fontOffset },
+            ]}
+          >
             {stationName}
           </Text>
         </View>
@@ -124,7 +184,7 @@ const FavoritesScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={favoriteStations}
-        keyExtractor={(item) => item.stationCode + item.line}
+        keyExtractor={(item, idx) => item.stationCode + idx}
         contentContainerStyle={{
           paddingHorizontal: responsiveWidth(16),
           paddingTop: responsiveHeight(10),
@@ -153,15 +213,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   leftContent: { flexDirection: 'row', alignItems: 'center' },
-  lineBadge: {
-    borderRadius: 40,
-    paddingHorizontal: responsiveWidth(12),
-    paddingVertical: responsiveHeight(8),
+  lineContainer: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    marginRight: responsiveWidth(9),
+    gap: 4,
+  },
+  lineRow: { flexDirection: 'row', gap: 6 },
+  lineCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: responsiveWidth(9),
   },
-  lineBadgeText: { fontWeight: '700' },
+  lineText: { fontWeight: '700' },
   stationName: { fontWeight: '700', color: '#17171B' },
 });
 
