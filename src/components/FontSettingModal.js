@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   // [수정] 선택된 텍스트 색상을 흰색으로 명확하게 변경
   optionButtonTextSelected: {
-    color: '#FFFFFF', 
+    color: '#17171B', 
   },
 });
 
