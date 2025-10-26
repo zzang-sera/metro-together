@@ -22,6 +22,7 @@ import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
+const BASE_NEARBY_ICON_SIZE = 22; // ✅ 원형 아이콘 기본 크기
 
 // 📍 두 좌표 거리 계산 함수
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -46,11 +47,16 @@ function getLineColor(lineNum) {
 // ⚪ 배경 대비 텍스트 색상
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
-  const r = parseInt(hexColor.substr(1, 2), 16);
-  const g = parseInt(hexColor.substr(3, 2), 16);
-  const b = parseInt(hexColor.substr(5, 2), 16);
-  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.5 ? '#17171B' : '#FFFFFF';
+   try {
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#17171B' : '#FFFFFF';
+  } catch (e) {
+    console.error("Error parsing hex color:", hexColor, e);
+    return "#FFFFFF";
+  }
 }
 
 const NearbyStationsScreen = () => {
@@ -73,13 +79,11 @@ const NearbyStationsScreen = () => {
         const currentLocation = await Location.getCurrentPositionAsync({});
         const { latitude, longitude } = currentLocation.coords;
 
-        // 1️⃣ 거리 계산
         const stationsWithDistance = stationData.map((station) => ({
           ...station,
           distance: getDistance(latitude, longitude, station.lat, station.lng),
         }));
 
-        // 2️⃣ 역 이름으로 그룹화 (다중호선 통합)
         const grouped = {};
         stationsWithDistance.forEach((s) => {
           if (!grouped[s.name]) {
@@ -89,13 +93,17 @@ const NearbyStationsScreen = () => {
               lng: s.lng,
               lines: s.line ? [s.line] : [],
               distance: s.distance,
+              stationCode: String(s.station_cd || s.STN_CD || s.code || s.stationCode || '').trim()
             };
           } else {
             if (s.line && !grouped[s.name].lines.includes(s.line)) {
               grouped[s.name].lines.push(s.line);
             }
-            if (s.distance < grouped[s.name].distance)
-              grouped[s.name].distance = s.distance;
+            if (s.distance < grouped[s.name].distance) {
+                grouped[s.name].distance = s.distance;
+                grouped[s.name].lat = s.lat;
+                grouped[s.name].lng = s.lng;
+            }
           }
         });
 
@@ -104,6 +112,7 @@ const NearbyStationsScreen = () => {
         );
         setNearbyStations(sortedStations.slice(0, 10));
       } catch (error) {
+        console.error("Error fetching location or processing stations:", error);
         setErrorMsg('현재 위치를 가져오는 데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -139,6 +148,10 @@ const NearbyStationsScreen = () => {
   const renderStationItem = ({ item }) => {
     const distanceKm = Number(item.distance || 0).toFixed(1);
     const stationName = item.name;
+    const stationCode = item.stationCode;
+
+    // ✅ 동적 아이콘 크기 계산
+    const dynamicIconSize = BASE_NEARBY_ICON_SIZE + fontOffset;
 
     return (
       <TouchableOpacity
@@ -149,13 +162,13 @@ const NearbyStationsScreen = () => {
             screen: 'StationDetail',
             params: {
               stationName,
-              lines: item.lines, // ✅ 다중호선 배열 전달
+              lines: item.lines,
+              stationCode: stationCode,
             },
           })
         }
       >
         <View style={styles.leftContent}>
-          {/* ✅ 호선 뱃지 2개씩 줄맞춤 */}
           <View style={styles.lineContainer}>
             {Array.from({ length: Math.ceil(item.lines.length / 2) }).map(
               (_, rowIndex) => {
@@ -168,10 +181,24 @@ const NearbyStationsScreen = () => {
                       return (
                         <View
                           key={line}
-                          style={[styles.lineBadge, { backgroundColor: lineColor }]}
+                          style={[
+                            styles.lineBadge, // ⚠️ 이제 lineCircle이 아님!
+                            {
+                              backgroundColor: lineColor,
+                              width: dynamicIconSize,
+                              height: dynamicIconSize,
+                              borderRadius: dynamicIconSize / 2,
+                            }
+                          ]}
                         >
                           <Text
-                            style={[styles.lineBadgeText, { color: textColor }]}
+                            style={[
+                              styles.lineBadgeText,
+                              {
+                                color: textColor,
+                                fontSize: 12 + fontOffset, 
+                              }
+                            ]}
                           >
                             {line.replace('호선', '')}
                           </Text>
@@ -219,9 +246,9 @@ const NearbyStationsScreen = () => {
             }
             style={styles.mapIconButton}
           >
-            <Ionicons name="navigate-circle-outline" size={28} color="#14CAC9" />
+            <Ionicons name="navigate-circle-outline" size={28 + fontOffset} color="#14CAC9" />
           </TouchableOpacity>
-          <Ionicons name="chevron-forward" size={28} color="#595959" />
+          <Ionicons name="chevron-forward" size={28 + fontOffset} color="#595959" />
         </View>
       </TouchableOpacity>
     );
@@ -231,9 +258,16 @@ const NearbyStationsScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={nearbyStations}
-        keyExtractor={(item) => `${item.name}`}
-        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16) }}
+        keyExtractor={(item) => `${item.name}-${item.lines.join('-')}`}
+        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16), paddingTop: responsiveHeight(10) }}
         renderItem={renderStationItem}
+        ListEmptyComponent={
+            <View style={styles.centered}>
+                <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+                    주변에 지하철역 정보가 없습니다.
+                </Text>
+            </View>
+        }
       />
     </View>
   );
@@ -241,9 +275,9 @@ const NearbyStationsScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9F9F9' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   loadingText: { marginTop: 10, fontWeight: '700', color: '#333' },
-  errorText: { fontWeight: '700', color: '#D32F2F', textAlign: 'center' },
+  errorText: { fontWeight: '700', color: '#595959', textAlign: 'center' },
   stationCard: {
     backgroundColor: '#fff',
     flexDirection: 'row',
@@ -251,33 +285,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
-    borderRadius: responsiveWidth(40),
+    borderRadius: 40,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   leftContent: { flexDirection: 'row', alignItems: 'center' },
   lineContainer: {
     flexDirection: 'column',
     marginRight: 12,
     gap: 6,
-    maxWidth: responsiveWidth(120),
+    alignItems: 'flex-start',
   },
   lineRow: {
     flexDirection: 'row',
     gap: 6,
   },
+  // ✅ lineBadge 스타일 수정 (크기 관련 속성 제거)
   lineBadge: {
-    borderRadius: 40,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    // borderRadius, paddingHorizontal, paddingVertical 제거
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lineBadgeText: { fontWeight: '700' },
+  lineBadgeText: {
+    fontWeight: '700',
+    // color, fontSize 는 JSX에서 동적으로 설정
+  },
   stationName: { fontWeight: '700', color: '#17171B' },
-  distanceText: { fontWeight: '700', color: '#595959' },
+  distanceText: { fontWeight: '700', color: '#595959', marginTop: 2 },
   mapIconButton: { backgroundColor: '#E6FAF9', padding: 6, borderRadius: 50 },
 });
 

@@ -21,11 +21,28 @@ import {
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
+const BASE_SEARCH_ICON_SIZE = 22; // [추가] 검색 결과용 아이콘 기본 크기
 
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
+
+// [추가] 배경색 대비 텍스트 색상 결정 함수
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return "#FFFFFF"; // 기본값 흰색
+  try {
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? "#17171B" : "#FFFFFF"; // 밝으면 검은색, 어두우면 흰색
+  } catch (e) {
+    console.error("Error parsing hex color:", hexColor, e);
+    return "#FFFFFF"; // 오류 시 흰색 반환
+  }
+}
+
 
 function findStationCodeBy(name, line) {
   const hit = allStations.find((s) => s?.name === name && s?.line === line);
@@ -60,7 +77,7 @@ const SearchStationScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color="#17171B" style={styles.searchIcon} />
+        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" style={styles.searchIcon} /> 
         <TextInput
           style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
           placeholder="역 이름을 입력하세요"
@@ -78,6 +95,9 @@ const SearchStationScreen = () => {
         renderItem={({ item }) => {
           const firstLine = item.lines[0];
           const stationCode = findStationCodeBy(item.name, firstLine);
+          
+          // [추가] 동적 아이콘 크기 계산
+          const dynamicIconSize = BASE_SEARCH_ICON_SIZE + fontOffset;
 
           return (
             <TouchableOpacity
@@ -89,7 +109,7 @@ const SearchStationScreen = () => {
                   params: {
                     stationCode,
                     stationName: item.name,
-                    lines: item.lines, // ✅ 다중호선 배열 전달
+                    lines: item.lines, 
                   },
                 })
               }
@@ -98,7 +118,7 @@ const SearchStationScreen = () => {
                   screen: 'BarrierFreeMap',
                   params: {
                     stationName: item.name,
-                    lines: item.lines, // ✅ 지도에도 다중호선 전달
+                    lines: item.lines, 
                   },
                 })
               }
@@ -107,8 +127,8 @@ const SearchStationScreen = () => {
             >
               <Ionicons
                 name="location-outline"
-                size={24}
-                color="black"
+                size={24 + fontOffset / 2} // 아이콘 크기도 fontOffset 반영
+                color="#17171B"
                 style={styles.locationIcon}
               />
               <Text
@@ -120,26 +140,42 @@ const SearchStationScreen = () => {
                 {item.name}
               </Text>
 
-              {/* ✅ 호선 뱃지 2개씩 줄맞춤 */}
               <View style={styles.lineContainer}>
                 {Array.from({ length: Math.ceil(item.lines.length / 2) }).map(
                   (_, rowIndex) => {
                     const pair = item.lines.slice(rowIndex * 2, rowIndex * 2 + 2);
                     return (
                       <View key={`row-${rowIndex}`} style={styles.lineRow}>
-                        {pair.map((line) => (
-                          <View
-                            key={line}
-                            style={[
-                              styles.lineCircle,
-                              { backgroundColor: getLineColor(line) },
-                            ]}
-                          >
-                            <Text style={styles.lineText}>
-                              {line.replace('호선', '')}
-                            </Text>
-                          </View>
-                        ))}
+                        {pair.map((line) => {
+                          const lineColor = getLineColor(line);
+                          const textColor = getTextColorForBackground(lineColor); // [수정] 동적 텍스트 색상
+                          
+                          return (
+                            <View
+                              key={line}
+                              style={[
+                                styles.lineCircle,
+                                { 
+                                  backgroundColor: lineColor,
+                                  // [수정] 동적 크기 적용
+                                  width: dynamicIconSize,
+                                  height: dynamicIconSize,
+                                  borderRadius: dynamicIconSize / 2,
+                                },
+                              ]}
+                            >
+                              <Text style={[
+                                styles.lineText,
+                                { 
+                                  color: textColor, // [수정] 동적 색상 적용
+                                  fontSize: 12 + fontOffset, // [수정] 동적 폰트 크기
+                                }
+                              ]}>
+                                {line.replace('호선', '')}
+                              </Text>
+                            </View>
+                          );
+                        })}
                       </View>
                     );
                   }
@@ -166,7 +202,7 @@ const SearchStationScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#f9f9f9' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -174,6 +210,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 16,
     paddingHorizontal: 12,
+    // [추가] TextInput 높이가 커질 수 있으므로 최소 높이 지정
+    minHeight: responsiveHeight(5.5),
   },
   searchIcon: { marginRight: 8 },
   input: { flex: 1, fontWeight: 'bold' },
@@ -182,29 +220,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 2,
-    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#C9CDD1',
   },
   locationIcon: { marginRight: 8 },
   stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
-  // ✅ 줄맞춤 (2개씩)
   lineContainer: {
     flexDirection: 'column',
-    alignItems: 'flex-start',
+    alignItems: 'flex-start', // 오른쪽 정렬 유지
     gap: 4,
   },
   lineRow: {
     flexDirection: 'row',
     gap: 6,
+    justifyContent: 'flex-end', // 오른쪽 정렬 유지
   },
   lineCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    // [수정] width, height, borderRadius는 JSX에서 동적으로 설정되므로 제거
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lineText: { color: 'white', fontWeight: 'bold' },
+  lineText: { 
+    // [수정] color, fontSize는 JSX에서 동적으로 설정되므로 제거
+    fontWeight: 'bold', 
+  },
   emptyText: { textAlign: 'center', color: 'gray', marginTop: 20 },
 });
 

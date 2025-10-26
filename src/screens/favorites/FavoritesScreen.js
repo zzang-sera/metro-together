@@ -19,6 +19,8 @@ import {
 } from '../../utils/responsive';
 import lineData from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
+const BASE_FAVORITE_ICON_SIZE = 22;
+
 function getLineColor(lineNum) {
   const lineInfo = lineData.DATA.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#A8A8A8';
@@ -33,6 +35,7 @@ function getTextColorForBackground(hexColor) {
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.5 ? '#17171B' : '#FFFFFF';
   } catch (e) {
+    console.error("Error parsing hex color:", hexColor, e);
     return '#FFFFFF';
   }
 }
@@ -52,21 +55,27 @@ const FavoritesScreen = () => {
       return;
     }
     const userDocRef = doc(db, 'users', currentUser.uid);
+    let initialLoad = true;
     const unsubscribe = onSnapshot(
       userDocRef,
       (docSnap) => {
-        setIsLoading(true);
+        if (initialLoad) {
+            setIsLoading(true);
+        }
         if (docSnap.exists()) {
           const favorites = docSnap.data().favorites || [];
-          setFavoriteStations(favorites);
+          const validFavorites = favorites.filter(fav => fav.stationName && fav.stationCode);
+          setFavoriteStations(validFavorites);
         } else {
           setFavoriteStations([]);
         }
         setIsLoading(false);
+        initialLoad = false;
       },
       (error) => {
         console.error('즐겨찾기 로딩 실패:', error);
         setIsLoading(false);
+        initialLoad = false;
       }
     );
     return () => unsubscribe();
@@ -75,7 +84,7 @@ const FavoritesScreen = () => {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#003F40" />
+        <ActivityIndicator size="large" color="#17171B" />
       </View>
     );
   }
@@ -110,15 +119,15 @@ const FavoritesScreen = () => {
     );
   }
 
-  // ✅ 다중 호선 구조로 변경된 렌더링
   const renderFavoriteItem = ({ item }) => {
-    const stationCode = item.stationCode;
-    const stationName = item.stationName;
-    const lines = Array.isArray(item.lines)
+    const stationCode = item?.stationCode || '';
+    const stationName = item?.stationName || '알 수 없는 역';
+    const lines = Array.isArray(item?.lines)
       ? item.lines
-      : item.line
+      : item?.line
       ? [item.line]
       : [];
+    const dynamicIconSize = BASE_FAVORITE_ICON_SIZE + fontOffset;
 
     return (
       <TouchableOpacity
@@ -134,9 +143,9 @@ const FavoritesScreen = () => {
             },
           })
         }
+        accessibilityLabel={`${stationName}역 ${lines.join(', ')}`}
       >
         <View style={styles.leftContent}>
-          {/* ✅ 호선 뱃지 2개씩 줄맞춤 */}
           <View style={styles.lineContainer}>
             {Array.from({ length: Math.ceil(lines.length / 2) }).map(
               (_, rowIndex) => {
@@ -151,10 +160,21 @@ const FavoritesScreen = () => {
                           key={line}
                           style={[
                             styles.lineCircle,
-                            { backgroundColor: color },
+                            {
+                              backgroundColor: color,
+                              width: dynamicIconSize,
+                              height: dynamicIconSize,
+                              borderRadius: dynamicIconSize / 2,
+                            },
                           ]}
                         >
-                          <Text style={[styles.lineText, { color: textColor }]}>
+                          <Text style={[
+                            styles.lineText,
+                            {
+                              color: textColor,
+                              fontSize: 12 + fontOffset,
+                            }
+                          ]}>
                             {line.replace('호선', '')}
                           </Text>
                         </View>
@@ -166,6 +186,7 @@ const FavoritesScreen = () => {
             )}
           </View>
 
+          {/* ✅ numberOfLines, ellipsizeMode 제거 */}
           <Text
             style={[
               styles.stationName,
@@ -175,7 +196,7 @@ const FavoritesScreen = () => {
             {stationName}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={30} color="#595959" />
+        <Ionicons name="chevron-forward" size={30 + fontOffset} color="#595959" />
       </TouchableOpacity>
     );
   };
@@ -184,7 +205,7 @@ const FavoritesScreen = () => {
     <View style={styles.container}>
       <FlatList
         data={favoriteStations}
-        keyExtractor={(item, idx) => item.stationCode + idx}
+        keyExtractor={(item) => item.stationCode || Math.random().toString()}
         contentContainerStyle={{
           paddingHorizontal: responsiveWidth(16),
           paddingTop: responsiveHeight(10),
@@ -197,38 +218,47 @@ const FavoritesScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F9F9F9' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  infoText: { color: '#888', textAlign: 'center', lineHeight: 24 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+  infoText: { color: '#595959', textAlign: 'center', lineHeight: 24, fontWeight: '500' },
   stationCard: {
     backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center', // 세로 중앙 정렬
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
-    borderRadius: responsiveWidth(40),
+    borderRadius: 40,
     elevation: 2,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
-  leftContent: { flexDirection: 'row', alignItems: 'center' },
+  leftContent: {
+      flexDirection: 'row',
+      alignItems: 'center', // 세로 중앙 정렬
+      flexShrink: 1, // 역 이름이 길 때 전체 영역이 밀리지 않도록 함
+      marginRight: responsiveWidth(15), 
+   },
   lineContainer: {
     flexDirection: 'column',
     alignItems: 'flex-start',
-    marginRight: responsiveWidth(9),
+    marginRight: responsiveWidth(12),
     gap: 4,
   },
   lineRow: { flexDirection: 'row', gap: 6 },
   lineCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lineText: { fontWeight: '700' },
-  stationName: { fontWeight: '700', color: '#17171B' },
+  lineText: {
+    fontWeight: '700',
+   },
+  stationName: {
+      fontWeight: '700',
+      color: '#17171B',
+      flexShrink: 1, 
+  },
 });
 
 export default FavoritesScreen;
