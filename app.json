@@ -27,7 +27,6 @@
         "backgroundColor": "#ffffff"
       },
       "softwareKeyboardLayoutMode": "resize",
-      "edgeToEdge": true,
       "googleServicesFile": "./google-services.json",
       "package": "com.hamkkenuri.metrotogether"
     },
