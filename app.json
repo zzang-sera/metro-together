@@ -16,7 +16,15 @@
     "plugins": [
       "@react-native-google-signin/google-signin",
       "expo-font",
-      ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
+      ],
+      "expo-asset"
     ],
     "ios": {
       "supportsTablet": true
