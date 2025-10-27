@@ -19,6 +19,7 @@
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.3",
     "expo": "~53.0.23",
+    "expo-asset": "~11.1.7",
     "expo-build-properties": "~0.14.8",
     "expo-dev-client": "~5.2.4",
     "expo-font": "~13.3.2",
