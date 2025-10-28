@@ -4,7 +4,6 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   TextInput,
   FlatList,
@@ -14,16 +13,14 @@ import {
   Platform,
   StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Ionicons 사용 유지
+import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize, responsiveHeight } from '../../utils/responsive';
 import PathResultView from './PathResultView';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
-// [수정] MaterialCommunityIcons import 추가 (교환 버튼용)
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-
 
 const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder';
 const allStations = stationJson.DATA;
@@ -61,8 +58,6 @@ const PathFinderScreen = () => {
 
   const depInputRef = useRef(null);
   const arrInputRef = useRef(null);
-  const depRowRef = useRef(null);
-  const arrRowRef = useRef(null);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
@@ -119,12 +114,9 @@ const PathFinderScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* 1. 고정 헤더 */}
       <View style={styles.fixedHeader}>
-        <Text style={[styles.title, { fontSize: responsiveFontSize(18) + fontOffset }]}>
-          지하철 길찾기
-        </Text>
 
         {pathData === null && (
           <Text style={[styles.subtitle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
@@ -135,16 +127,18 @@ const PathFinderScreen = () => {
         <View style={styles.searchBoxContainer}>
           <View style={styles.inputWrapper}>
             {/* 출발역 행(Row) */}
-            <View ref={depRowRef} style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>출발</Text>
               <TextInput
                 ref={depInputRef}
                 placeholder="출발역 검색"
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={dep}
+                multiline={true}
                 onFocus={() => {
-                  depRowRef.current.measure((fx, fy, width, height, px, py) => {
-                    setListTopPosition(py + height - 1);
+                  depInputRef.current.measure((fx, fy, width, height, px, py) => {
+                    const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+                    setListTopPosition(py + height - statusBarHeight);
                     setFocusedField('dep');
                     setSearchQuery(dep);
                   });
@@ -161,16 +155,18 @@ const PathFinderScreen = () => {
             <View style={styles.divider} />
 
             {/* 도착역 행(Row) */}
-            <View ref={arrRowRef} style={styles.inputContainer}>
+            <View style={styles.inputContainer}>
               <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>도착</Text>
               <TextInput
                 ref={arrInputRef}
                 placeholder="도착역 검색"
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={arr}
+                multiline={true}
                 onFocus={() => {
-                  arrRowRef.current.measure((fx, fy, width, height, px, py) => {
-                    setListTopPosition(py + height - 1);
+                   arrInputRef.current.measure((fx, fy, width, height, px, py) => {
+                     const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+                    setListTopPosition(py + height - statusBarHeight);
                     setFocusedField('arr');
                     setSearchQuery(arr);
                   });
@@ -185,14 +181,13 @@ const PathFinderScreen = () => {
             </View>
           </View>
 
-          {/* [수정] 교환 버튼 아이콘 및 스타일 변경 */}
           <TouchableOpacity
             onPress={swapStations}
-            style={styles.swapButton} // 스타일 이름은 유지
+            style={styles.swapButton}
             accessibilityLabel="출발역과 도착역 교환"
             accessibilityRole="button"
           >
-            <MaterialCommunityIcons name="swap-vertical" size={40 + fontOffset} color="#17171B" />
+            <MaterialCommunityIcons name="swap-vertical" size={24 + fontOffset / 2} color="#17171B" />
           </TouchableOpacity>
         </View>
 
@@ -208,7 +203,7 @@ const PathFinderScreen = () => {
           accessibilityRole="checkbox"
           accessibilityState={{ checked: wheelchair }}
         >
-          <Ionicons
+         <Ionicons
             name={wheelchair ? 'checkbox-outline' : 'square-outline'}
             size={26 + fontOffset / 2}
             color={wheelchair ? '#14CAC9' : '#999'}
@@ -247,13 +242,19 @@ const PathFinderScreen = () => {
             { top: listTopPosition }
           ]}
           renderItem={({ item }) => (
-            <TouchableOpacity
+             <TouchableOpacity
               style={styles.resultItem}
               onPress={() => handleSelectStation(item)}
               accessibilityLabel={`${item.name}역. ${item.lines.join(', ')}.`}
               accessibilityRole="button"
             >
-              <Ionicons name="location-outline" size={20} color="#17171B" style={{ marginRight: 8 }} />
+              {/* [수정] 아이콘 크기 증가 */}
+              <Ionicons
+                name="location-outline"
+                size={24 + fontOffset / 1.5} // 기본 크기 및 증가폭 조정
+                color="#17171B"
+                style={{ marginRight: 10 }} // 간격 조정
+              />
               <Text style={[styles.stationName, { fontSize: responsiveFontSize(16) + fontOffset }]}>
                 {item.name}
               </Text>
@@ -261,9 +262,23 @@ const PathFinderScreen = () => {
                 {item.lines.map((line) => {
                   const color = getLineColor(line);
                   const textColor = getTextColorForBackground(color);
+                  // [수정] 호선 아이콘 크기 증가
+                  const lineCircleSize = 26 + fontOffset / 1.5; // 기본 크기 및 증가폭 조정
                   return (
-                    <View key={line} style={[styles.lineCircle, { backgroundColor: color }]}>
-                      <Text style={[styles.lineText, { color: textColor }]}>
+                    <View
+                      key={line}
+                      style={[
+                        styles.lineCircle,
+                        {
+                          backgroundColor: color,
+                          width: lineCircleSize,
+                          height: lineCircleSize,
+                          borderRadius: lineCircleSize / 2,
+                        }
+                      ]}
+                    >
+                      {/* [수정] 호선 텍스트 크기 증가 및 정렬 확인 */}
+                      <Text style={[styles.lineText, { color: textColor, fontSize: 12 + fontOffset / 2.5 }]}>
                         {line.replace('호선', '')}
                       </Text>
                     </View>
@@ -274,7 +289,7 @@ const PathFinderScreen = () => {
           )}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -282,27 +297,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
   },
   fixedHeader: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
     backgroundColor: '#F9F9F9',
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
     zIndex: 10,
   },
-  title: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: '#17171B',
-    textAlign: 'center', 
-    marginBottom: 30, 
-  },
   subtitle: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: 'red',
-    textAlign: 'center', 
+    textAlign: 'center',
     marginBottom: 8
   },
   searchBoxContainer: {
@@ -321,23 +330,28 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // [수정] 2. 레이블과 input 수직 중앙 정렬 유지
+    // ✅ [수정] 이 부분을 'center'로 변경하여 레이블과 TextInput의 세로 정렬을 맞춥니다.
+    alignItems: 'center', // 'flex-start' 또는 'baseline' 대신 'center'로 변경
     paddingHorizontal: 16,
-    paddingVertical: 12, // 필요시 이 값을 미세 조정하여 높이 맞춤
+    paddingVertical: 10,
+    minHeight: 50,
   },
   inputLabel: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#17171B', 
+    color: '#17171B',
     marginRight: 10,
-    transform: [{ translateY: -3 }],
+    // ✅ [수정] 이 부분을 0으로 하거나 제거해 보세요. (inputContainer의 alignItems: 'center'가 처리)
+    paddingTop: 0, // Platform.OS === 'ios' ? 2 : 1;
   },
   input: {
     flex: 1,
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
-    // backgroundColor: 'lightblue', // 레이아웃 확인용 임시 배경색
+    paddingTop: Platform.OS === 'ios' ? 0 : 0, 
+    paddingBottom: 0, // 명시적으로 0
+    textAlignVertical: 'center', 
   },
   divider: {
     height: 1,
@@ -345,7 +359,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   swapButton: {
-    padding: 16, // 버튼 영역 확보
+    padding: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -361,6 +375,7 @@ const styles = StyleSheet.create({
   scrollArea: {
     flex: 1,
     paddingHorizontal: 20,
+    marginTop: 10,
   },
 
   dropdown: {
@@ -378,6 +393,10 @@ const styles = StyleSheet.create({
     zIndex: 20,
     borderWidth: 1,
     borderColor: '#EEE',
+    marginTop: -55, // 요청하신 값 적용
+    borderTopWidth: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
   },
   resultItem: {
     flexDirection: 'row',
@@ -387,16 +406,23 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEE',
     borderBottomWidth: 1,
   },
-  stationName: { flex: 1, fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  lineContainer: { flexDirection: 'row', gap: 6 },
-  lineCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    justifyContent: 'center',
-    alignItems: 'center',
+  stationName: {
+      flex: 1,
+      fontFamily: 'NotoSansKR',
+      fontWeight: '700',
+      color: '#17171B'
   },
-  lineText: { fontWeight: '700', fontSize: 11 },
+  lineContainer: { flexDirection: 'row', gap: 6, alignItems: 'center' },
+  lineCircle: {
+    // 기본 크기 제거 (renderItem에서 동적으로 설정)
+    justifyContent: 'center', // 세로 중앙 정렬
+    alignItems: 'center', // 가로 중앙 정렬
+  },
+  lineText: {
+      fontWeight: '700',
+      // 기본 크기 제거 (renderItem에서 동적으로 설정)
+      textAlign: 'center', // 텍스트 중앙 정렬 추가
+  },
 });
 
 export default PathFinderScreen;
