@@ -43,14 +43,13 @@ async function safeFetch<T>(url: string): Promise<T | null> {
   }
 }
 
-// ✅ TalkBack-friendly 문장 정리 + 줄바꿈 처리
+// ✅ TalkBack-friendly 문장 정리 + 줄바꿈
 function normalizeForTalkBack(text: string): string {
   if (!text) return "";
   let t = text.replace(/\s+/g, " ").trim();
   if (!t.endsWith(".") && !t.endsWith("!")) t += ".";
   t = t.replace(/(\s*\.){2,}/g, ".");
   if (t.includes("⚠️")) t = t.replace("⚠️", "⚠️ 주의. ");
-  // ✅ 마침표 뒤 줄바꿈 추가
   t = t.replace(/\. /g, ".\n");
   return t;
 }
@@ -87,6 +86,20 @@ function findNearestFacility(facilities: Facility[] = [], preferElevator: boolea
   return available[0];
 }
 
+// ✅ 소요 시간 포맷 함수 (1시간 n분)
+function formatTime(seconds: number): string {
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}분`;
+  const hours = Math.floor(minutes / 60);
+  const remain = minutes % 60;
+  return remain > 0 ? `${hours}시간 ${remain}분` : `${hours}시간`;
+}
+
+// ✅ "역" 중복 방지 함수
+function cleanStationName(name: string): string {
+  return name.endsWith("역") ? name : `${name}역`;
+}
+
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -103,7 +116,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // ✅ 병렬 호출
     const [routeData, depFacilitiesRaw, arrFacilitiesRaw] = await Promise.all([
       safeFetch<RouteData>(
         `${SUPABASE_URL}/functions/v1/shortest-route?dep=${encodeURIComponent(dep)}&arr=${encodeURIComponent(arr)}&dateTime=${encodeURIComponent(dateTime)}`
@@ -131,7 +143,7 @@ Deno.serve(async (req) => {
     const lastLine = paths[paths.length - 1]?.line ?? "";
     const transfers = routeData.transfers ?? 0;
 
-    // ✅ 환승 정보 (문장 구조 + 줄바꿈 적용)
+    // ✅ 환승 정보
     const transferInfo: {
       index: number;
       station: string;
@@ -151,7 +163,9 @@ Deno.serve(async (req) => {
         const toLine = next?.line ?? "";
         const toDirection = `${toLine} ${next?.to ?? "다음 역"} 방면`;
 
-        const stationLabel = `${current.to}역 (${fromLine} → ${toLine})`;
+        const cleanName = cleanStationName(current.to);
+        const stationLabel = `${cleanName} (${fromLine} → ${toLine})`;
+
         const detailText = `${toDirection}으로 환승하세요.`;
 
         transferInfo.push({
@@ -161,13 +175,12 @@ Deno.serve(async (req) => {
           toLine,
           transferDoor: `${(transferInfo.length + 1) * 2}-1`,
           direction: { from: `${fromLine} ${current.to} 방면`, to: toDirection },
-          text: normalizeForTalkBack(detailText),
-          displayLines: [detailText],
+          text: normalizeForTalkBack(`${detailText}`),
+          displayLines: [`${detailText}`],
         });
       }
     }
 
-    // ✅ 출발역 안내
     const depFacility = findNearestFacility(depFacilities, wheelchair);
     const depClosedNotice = getClosedExitNotice(depFacilities, dep);
     const firstTransfer = transferInfo?.[0];
@@ -184,7 +197,6 @@ Deno.serve(async (req) => {
     const depLine2 = `${depDirection} 방면 ${depDoor}칸에 탑승하세요.`;
     const depText = normalizeForTalkBack(`${depLine1} ${depLine2} ${depClosedNotice ?? ""}`);
 
-    // ✅ 도착역 안내
     const arrFacility = findNearestFacility(arrFacilities, wheelchair);
     const arrClosedNotice = getClosedExitNotice(arrFacilities, arr);
     const arrLine = `${
@@ -206,26 +218,29 @@ Deno.serve(async (req) => {
         brokenElevators.length === allElevators.length ? "UNAVAILABLE" : "PARTIAL";
     }
 
-    // ✅ 최종 응답
+    // ✅ "역" 중복 없이 역명 + 호선 표시
+    const cleanDep = cleanStationName(dep);
+    const cleanArr = cleanStationName(arr);
+
     const responseData = {
       totalTime,
       totalDistance: routeData.totalDistance ?? 0,
       transfers,
       routeSummary: {
-        departure: `${dep}역 (${firstLine})`,
-        arrival: `${arr}역 (${lastLine})`,
+        departure: `${cleanDep} (${firstLine})`,
+        arrival: `${cleanArr} (${lastLine})`,
         transfers,
-        estimatedTime: `${Math.round(totalTime / 60)}분 `,
+        estimatedTime: `${formatTime(totalTime)}`,
       },
       transferInfo,
       stationFacilities: {
         departure: {
-          station: dep,
+          station: `${cleanDep} (${firstLine})`,
           text: depText,
           displayLines: depText.split("\n").filter(Boolean),
         },
         arrival: {
-          station: arr,
+          station: `${cleanArr} (${lastLine})`,
           text: arrText,
           displayLines: arrText.split("\n").filter(Boolean),
         },
