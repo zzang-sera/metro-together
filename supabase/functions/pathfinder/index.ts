@@ -1,3 +1,4 @@
+// supabase/functions/pathfinder/index.ts
 /// <reference lib="deno.ns" />
 
 const SUPABASE_URL = "https://utqfwkhxacqhgjjalpby.supabase.co";

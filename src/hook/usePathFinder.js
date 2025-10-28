@@ -1,6 +1,6 @@
 // src/hook/usePathFinder.js
 import { useState, useEffect } from "react";
-import { findAccessiblePath } from "../api/metro/pathFinderAPI";
+import { findAccessiblePath } from "../api/metro/pathfinderAPI";
 
 export function usePathFinder(start, end, isWheelchair = false) {
   const [result, setResult] = useState(null);
