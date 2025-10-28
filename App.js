@@ -123,7 +123,7 @@ const NearbyStackNavigator = () => {
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
       }}
     >
-      <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: "주변 역 목록" }} />
+      <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
       <NearbyStack.Screen name="MainStack" component={MainStackNavigator} options={{ headerShown: false }} />
     </NearbyStack.Navigator>
   );

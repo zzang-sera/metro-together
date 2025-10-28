@@ -1,21 +1,44 @@
 // src/screens/pathfinder/PathResultView.js
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+// [수정] MaterialCommunityIcons만 추가
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { responsiveFontSize } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import CustomButton from '../../components/CustomButton';
+import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
-// InfoItem 헬퍼 컴포넌트 (변경 없음)
-const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
+const lineData = lineJson.DATA;
+
+function getLineColor(lineNum) {
+  const lineInfo = lineData.find((l) => l.line === lineNum);
+  return lineInfo ? lineInfo.color : null;
+}
+
+function getTextColorForBackground(hexColor) {
+  if (!hexColor) return '#FFFFFF';
+  try {
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance > 0.5 ? '#17171B' : '#FFFFFF';
+  } catch {
+    return '#FFFFFF';
+  }
+}
+
+// [수정] InfoItem: 기본 IconComponent를 Ionicons로 다시 설정
+const InfoItem = ({ iconComponent: IconComponent = Ionicons, icon, label, value, iconColor = '#14CAC9', ...props }) => {
   const { fontOffset } = useFontSize();
+  const baseIconSize = 22;
   return (
     <View
       style={styles.infoItem}
       accessibilityLabel={`${label}: ${value}`}
       {...props}
     >
-      <Ionicons name={icon} size={20 + fontOffset / 2} color={iconColor} />
+      <IconComponent name={icon} size={baseIconSize + fontOffset / 2} color={iconColor} />
       <Text style={[styles.infoLabel, { fontSize: responsiveFontSize(15) + fontOffset }]}>{label}:</Text>
       <Text style={[styles.infoValue, { fontSize: responsiveFontSize(15) + fontOffset }]}>{value}</Text>
     </View>
@@ -23,17 +46,38 @@ const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
 };
 
 // JourneyStep 헬퍼 컴포넌트 (변경 없음)
-const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false }) => {
+const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFirst = false, isLast = false }) => {
   const { fontOffset } = useFontSize();
   const isDescriptionArray = Array.isArray(description);
+
+  const renderIcon = () => {
+    const lineNumberMatch = lineNum ? String(lineNum).match(/^(\d+)호선$/) : null;
+    const lineNumber = lineNumberMatch ? parseInt(lineNumberMatch[1]) : null;
+    const color = lineNumber ? getLineColor(lineNum) : null;
+
+    if (lineNumber && lineNumber >= 1 && lineNumber <= 9 && color) {
+      const textColor = getTextColorForBackground(color);
+      return (
+        <View style={[styles.timelineIconLine, { backgroundColor: color }]}>
+          <Text style={[styles.timelineIconLineText, { color: textColor, fontSize: 18 + fontOffset / 2 }]}>
+            {lineNumber}
+          </Text>
+        </View>
+      );
+    } else {
+      return (
+        <View style={styles.timelineIcon}>
+           <Ionicons name={defaultIconName} size={24 + fontOffset / 2} color="#FFFFFF" />
+        </View>
+      );
+    }
+  };
 
   return (
     <View style={styles.stepContainer}>
       <View style={styles.stepIconContainer}>
         {!isFirst && <View style={styles.timelineTrackTop} />}
-        <View style={styles.timelineIcon}>
-          <Ionicons name={icon} size={24 + fontOffset / 2} color="#FFFFFF" />
-        </View>
+        {renderIcon()}
         {!isLast && <View style={styles.timelineTrackBottom} />}
       </View>
       <View style={styles.stepContent}>
@@ -62,6 +106,12 @@ const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false
   );
 };
 
+const extractLineFromSummary = (summaryText) => {
+    if (!summaryText) return null;
+    const match = summaryText.match(/\(([^)]+)\)$/);
+    return match ? match[1] : null;
+};
+
 const PathResultView = ({ data }) => {
   const { fontOffset } = useFontSize();
 
@@ -79,26 +129,32 @@ const PathResultView = ({ data }) => {
     stationFacilities,
   } = data;
 
+  const departureLine = extractLineFromSummary(routeSummary?.departure);
+  const arrivalLine = extractLineFromSummary(routeSummary?.arrival);
+
   return (
     <View style={styles.scrollContainer}>
 
-      {/* 1. 요약 카드 (변경 없음) */}
+      {/* 1. 요약 카드 */}
       <View style={styles.summaryCard}>
-        <Text
+         <Text
           style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}
           accessibilityLabel={`${routeSummary?.departure}에서 ${routeSummary?.arrival}까지 경로`}
           accessibilityRole="header"
         >
           {routeSummary?.departure} → {routeSummary?.arrival}
         </Text>
-
+        {/* [수정] 소요 시간 아이콘: Ionicons 'time' (굵은 버전) */}
         <InfoItem
-          icon="time-outline"
+          iconComponent={Ionicons} // 기본값 Ionicons 사용
+          icon="time" // 'time-outline' 대신 'time' 사용
           label="소요 시간"
           value={routeSummary?.estimatedTime || '정보 없음'}
         />
+        {/* [수정] 환승 아이콘: MaterialCommunityIcons 'swap-horizontal-bold' */}
         <InfoItem
-          icon="swap-horizontal-outline"
+          iconComponent={MaterialCommunityIcons}
+          icon="swap-horizontal-bold"
           label="환승"
           value={`${routeSummary?.transfers || 0}회`}
         />
@@ -110,6 +166,7 @@ const PathResultView = ({ data }) => {
           icon="train-outline"
           title={`출발: ${stationFacilities.departure.station}역`}
           description={stationFacilities.departure.displayLines || stationFacilities.departure.text}
+          lineNum={departureLine}
           isFirst
         />
       )}
@@ -121,6 +178,7 @@ const PathResultView = ({ data }) => {
           icon="swap-horizontal-outline"
           title={`${info.index}회 환승: ${info.station}`}
           description={info.displayLines || info.text}
+          lineNum={info.toLine}
         />
       ))}
 
@@ -130,6 +188,7 @@ const PathResultView = ({ data }) => {
           icon="flag-outline"
           title={`도착: ${stationFacilities.arrival.station}역`}
           description={stationFacilities.arrival.displayLines || stationFacilities.arrival.text}
+          lineNum={arrivalLine}
           isLast
         />
       )}
@@ -149,6 +208,7 @@ const PathResultView = ({ data }) => {
 };
 
 const styles = StyleSheet.create({
+  // ... (다른 스타일은 모두 동일) ...
   scrollContainer: { paddingBottom: 50 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
   errorText: {
@@ -205,6 +265,19 @@ const styles = StyleSheet.create({
     marginRight: 12,
     paddingTop: 4,
   },
+  timelineIconLine: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1,
+      borderWidth: 1,
+      borderColor: '#DDD',
+  },
+  timelineIconLineText: {
+      fontWeight: '700',
+  },
   timelineIcon: {
     width: 40,
     height: 40,
@@ -240,8 +313,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#17171B',
     marginBottom: 4,
-    // [수정] 고정 lineHeight 제거 (제목 짤림 방지)
-    // lineHeight: responsiveFontSize(24),
   },
   stepDescription: {
     fontFamily: 'NotoSansKR',
