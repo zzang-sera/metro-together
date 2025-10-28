@@ -1,5 +1,5 @@
-//src/screens/pathfinder/PathFinderScreen.js
-import React, { useState, useMemo } from 'react';
+// src/screens/pathfinder/PathFinderScreen.js
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,8 @@ import {
   ActivityIndicator,
   Keyboard,
   ScrollView,
+  Platform, // [수정] 1. 헤더 짤림 방지용 import
+  StatusBar, // [수정] 2. 헤더 짤림 방지용 import
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
@@ -52,11 +54,17 @@ const PathFinderScreen = () => {
   const [pathData, setPathData] = useState(null);
   const [focusedField, setFocusedField] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [listTopPosition, setListTopPosition] = useState(0);
+
+  const depInputRef = useRef(null);
+  const arrInputRef = useRef(null);
+  const depRowRef = useRef(null);
+  const arrRowRef = useRef(null);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
-    const matches = allStations.filter((s) => s.name.includes(q));
+    const matches = allStations.filter((s) => s && s.name && s.name.includes(q));
     const stationMap = new Map();
     matches.forEach((s) => {
       if (stationMap.has(s.name)) stationMap.get(s.name).lines.push(s.line);
@@ -66,11 +74,23 @@ const PathFinderScreen = () => {
   }, [searchQuery]);
 
   const handleSelectStation = (station) => {
-    if (focusedField === 'dep') setDep(station.name);
-    else if (focusedField === 'arr') setArr(station.name);
+    if (focusedField === 'dep') {
+      setDep(station.name);
+      arrInputRef.current?.focus();
+    } else if (focusedField === 'arr') {
+      setArr(station.name);
+      Keyboard.dismiss();
+    }
     setFocusedField(null);
     setSearchQuery('');
-    Keyboard.dismiss();
+    setPathData(null); // [수정] 3. 역 선택 시 결과 리셋 (버튼 재활성화)
+  };
+
+  const swapStations = () => {
+    const tempDep = dep;
+    setDep(arr);
+    setArr(tempDep);
+    setPathData(null); // [수정] 3. 역 교환 시 결과 리셋 (버튼 재활성화)
   };
 
   const handleFindPath = async () => {
@@ -78,7 +98,8 @@ const PathFinderScreen = () => {
       alert('출발역과 도착역을 모두 입력해주세요.');
       return;
     }
-
+    Keyboard.dismiss();
+    setPathData(null);
     setIsLoading(true);
     try {
       const url = `${SUPABASE_URL}?dep=${encodeURIComponent(dep)}&arr=${encodeURIComponent(arr)}&wheelchair=${wheelchair}`;
@@ -96,56 +117,95 @@ const PathFinderScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* 고정 헤더 */}
+      {/* 1. 고정 헤더 */}
       <View style={styles.fixedHeader}>
         <Text style={[styles.title, { fontSize: responsiveFontSize(22) + fontOffset }]}>
           교통약자용 이동경로 찾기
         </Text>
-        <Text style={[styles.subtitle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-          출발역과 도착역을 검색 후 선택하세요.
-        </Text>
+        
+        {/* [수정] 4. 결과가 없을 때(pathData가 null)만 부제목 표시 */}
+        {pathData === null && (
+          <Text style={[styles.subtitle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            출발역과 도착역을 검색 후 선택하세요.
+          </Text>
+        )}
 
-        {/* 출발역 */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="train-outline" size={22 + fontOffset / 2} color="#14CAC9" />
-          <TextInput
-            placeholder="출발역 검색"
-            style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
-            value={dep}
-            onFocus={() => {
-              setFocusedField('dep');
-              setSearchQuery(dep);
-            }}
-            onChangeText={(text) => {
-              setDep(text);
-              setSearchQuery(text);
-            }}
-          />
+        <View style={styles.searchBoxContainer}>
+          <View style={styles.inputWrapper}>
+            {/* 출발역 행(Row) */}
+            <View ref={depRowRef} style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>출발</Text>
+              <TextInput
+                ref={depInputRef}
+                placeholder="출발역 검색"
+                style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
+                value={dep}
+                onFocus={() => {
+                  // [수정] 2. measure 콜백 안에서 state 변경
+                  depRowRef.current.measure((fx, fy, width, height, px, py) => {
+                    setListTopPosition(py + height - 1);
+                    setFocusedField('dep'); // 위치 측정이 끝난 후 실행
+                    setSearchQuery(dep);
+                  });
+                }}
+                onChangeText={(text) => {
+                  setDep(text);
+                  setSearchQuery(text);
+                }}
+                accessibilityLabel="출발역"
+                accessibilityHint="검색할 출발역을 입력하세요"
+              />
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* 도착역 행(Row) */}
+            <View ref={arrRowRef} style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>도착</Text>
+              <TextInput
+                ref={arrInputRef}
+                placeholder="도착역 검색"
+                style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
+                value={arr}
+                onFocus={() => {
+                  // [수정] 2. measure 콜백 안에서 state 변경
+                  arrRowRef.current.measure((fx, fy, width, height, px, py) => {
+                    setListTopPosition(py + height - 1);
+                    setFocusedField('arr'); // 위치 측정이 끝난 후 실행
+                    setSearchQuery(arr);
+                  });
+                }}
+                onChangeText={(text) => {
+                  setArr(text);
+                  setSearchQuery(text);
+                }}
+                accessibilityLabel="도착역"
+                accessibilityHint="검색할 도착역을 입력하세요"
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity
+            onPress={swapStations}
+            style={styles.swapButton}
+            accessibilityLabel="출발역과 도착역 교환"
+            accessibilityRole="button"
+          >
+            <Ionicons name="swap-vertical" size={24} color="#14CAC9" />
+          </TouchableOpacity>
         </View>
 
-        {/* 도착역 */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="flag-outline" size={22 + fontOffset / 2} color="#14CAC9" />
-          <TextInput
-            placeholder="도착역 검색"
-            style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
-            value={arr}
-            onFocus={() => {
-              setFocusedField('arr');
-              setSearchQuery(arr);
-            }}
-            onChangeText={(text) => {
-              setArr(text);
-              setSearchQuery(text);
-            }}
-          />
-        </View>
-
-        {/* 휠체어 체크 */}
+        {/* 휠체어 체크박스 */}
         <TouchableOpacity
           activeOpacity={0.8}
-          style={[styles.checkboxContainer, wheelchair && styles.checkboxChecked]}
-          onPress={() => setWheelchair(!wheelchair)}
+          style={styles.checkboxContainer}
+          onPress={() => {
+            setWheelchair(!wheelchair);
+            setPathData(null); // [수정] 3. 휠체어 체크 시 결과 리셋 (버튼 재활성화)
+          }}
+          accessibilityLabel="휠체어 이용자입니다"
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: wheelchair }}
         >
           <Ionicons
             name={wheelchair ? 'checkbox-outline' : 'square-outline'}
@@ -156,25 +216,42 @@ const PathFinderScreen = () => {
             휠체어 이용자입니다
           </Text>
         </TouchableOpacity>
-
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#14CAC9" style={{ marginTop: 20 }} />
-        ) : (
+        
+        {/* [수정] 4. 로딩중이 아니고, 결과가 없을 때(pathData가 null)만 버튼 표시 */}
+        {!isLoading && pathData === null && (
           <CustomButton type="feature" title="길찾기 시작" onPress={handleFindPath} />
         )}
       </View>
+      
+      {/* 2. 경로 결과 (스크롤뷰) */}
+      <ScrollView
+        style={styles.scrollArea}
+        keyboardShouldPersistTaps="handled"
+        scrollEnabled={!focusedField}
+      >
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#14CAC9" style={{ marginTop: 40 }} />
+        ) : (
+          pathData && <PathResultView data={pathData} />
+        )}
+      </ScrollView>
 
-      {/* 검색 결과 (FlatList, ScrollView 바깥) */}
-      {focusedField && searchResults.length > 0 && (
+      {/* 3. 검색 리스트 (오버레이) */}
+      {focusedField && searchResults.length > 0 && listTopPosition > 0 && (
         <FlatList
           data={searchResults}
           keyExtractor={(item) => item.name}
           keyboardShouldPersistTaps="handled"
-          style={styles.dropdown}
+          style={[
+            styles.dropdown, 
+            { top: listTopPosition }
+          ]}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.resultItem}
               onPress={() => handleSelectStation(item)}
+              accessibilityLabel={`${item.name}역. ${item.lines.join(', ')}.`}
+              accessibilityRole="button"
             >
               <Ionicons name="location-outline" size={20} color="#17171B" style={{ marginRight: 8 }} />
               <Text style={[styles.stationName, { fontSize: responsiveFontSize(16) + fontOffset }]}>
@@ -197,58 +274,102 @@ const PathFinderScreen = () => {
           )}
         />
       )}
-
-      {/* 스크롤 영역 (결과) */}
-      <ScrollView style={styles.scrollArea}>
-        {pathData && <PathResultView data={pathData} />}
-      </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9F9F9' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#F9F9F9',
+    // [수정] 1. 헤더 짤림 방지용 스타일
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 
+  },
   fixedHeader: {
     padding: 20,
     backgroundColor: '#F9F9F9',
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
+    zIndex: 10,
   },
   title: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  subtitle: { fontFamily: 'NotoSansKR', fontWeight: '500', color: '#595959', marginBottom: 8 },
-  inputContainer: {
+  subtitle: { 
+    fontFamily: 'NotoSansKR', 
+    fontWeight: '700',
+    color: '#595959', 
+    marginBottom: 8 
+  },
+  searchBoxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 40,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
     marginTop: 10,
   },
+  inputWrapper: {
+    flex: 1,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  inputLabel: {
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#14CAC9',
+    marginRight: 10,
+  },
   input: {
     flex: 1,
-    marginLeft: 10,
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
   },
-  checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginTop: responsiveHeight(1.5) },
+  divider: {
+    height: 1,
+    backgroundColor: '#EEE',
+    marginHorizontal: 16,
+  },
+  swapButton: {
+    padding: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: responsiveHeight(1.5),
+    marginBottom: responsiveHeight(1.5),
+    paddingVertical: 8,
+  },
   checkboxText: { marginLeft: 8, color: '#17171B', fontFamily: 'NotoSansKR', fontWeight: '700' },
-  scrollArea: { flex: 1, paddingHorizontal: 20, marginTop: 10 },
+  
+  scrollArea: { 
+    flex: 1, 
+    paddingHorizontal: 20, 
+  }, 
+  
   dropdown: {
+    position: 'absolute',
+    left: 20, 
+    right: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    maxHeight: 260,
-    marginHorizontal: 20,
     shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 5,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
+    maxHeight: 260,
     paddingVertical: 6,
+    zIndex: 20,
+    borderWidth: 1,
+    borderColor: '#EEE',
   },
   resultItem: {
     flexDirection: 'row',
@@ -258,7 +379,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEE',
     borderBottomWidth: 1,
   },
-  stationName: { flex: 1, fontFamily: 'NotoSansKR', fontWeight: '700' },
+  stationName: { flex: 1, fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
   lineContainer: { flexDirection: 'row', gap: 6 },
   lineCircle: {
     width: 22,
