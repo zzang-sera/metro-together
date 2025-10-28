@@ -30,7 +30,9 @@ import MyPageScreen from './src/screens/auth/MyPageScreen';
 import AccountManagementScreen from './src/screens/auth/AccountManagementScreen';
 import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
-import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen'; // ✅ 교체 완료
+import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
+import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -38,9 +40,10 @@ const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
+const HomeStack = createStackNavigator(); // [추가] 홈 탭을 위한 스택
 
 /* ──────────────────────────────
-    공통 옵션
+   공통 옵션
 ────────────────────────────── */
 const commonTabOptions = {
   headerShown: true,
@@ -59,18 +62,36 @@ const mintHeaderOptions = {
 };
 
 /* ──────────────────────────────
-    MainStack (BarrierFreeMapScreen 등록)
+   MainStack (BarrierFreeMapScreen 등록)
 ────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
     <MainStack.Screen name="StationDetail" component={StationDetailScreen} />
-    {/* ✅ StationFacilitiesScreen 제거 후 BarrierFreeMapScreen 대체 */}
     <MainStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} />
+    <MainStack.Screen name="PathFinder" component={PathFinderScreen} />
   </MainStack.Navigator>
 );
 
 /* ──────────────────────────────
-    MyPage Stack
+   Home Stack [추가]
+────────────────────────────── */
+const HomeStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+      }}
+    >
+      <HomeStack.Screen name="HomeMain" component={MainScreen} options={{ title: '홈' }} />
+      <HomeStack.Screen name="MainStack" component={MainStackNavigator} options={{ headerShown: false }} />
+    </HomeStack.Navigator>
+  );
+};
+
+/* ──────────────────────────────
+   MyPage Stack
 ────────────────────────────── */
 const MyPageStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -91,7 +112,7 @@ const MyPageStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-    Nearby Stack
+   Nearby Stack
 ────────────────────────────── */
 const NearbyStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -109,7 +130,7 @@ const NearbyStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-    Search Stack
+   Search Stack
 ────────────────────────────── */
 const SearchStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -127,7 +148,7 @@ const SearchStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-    Guest Tabs (비로그인)
+   Guest Tabs (비로그인)
 ────────────────────────────── */
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
@@ -170,8 +191,8 @@ const GuestTabs = () => {
     >
       <Tab.Screen
         name="홈"
-        component={MainScreen}
-        options={{ title: '홈' }}
+        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
+        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -200,7 +221,7 @@ const GuestTabs = () => {
 };
 
 /* ──────────────────────────────
-    User Tabs (로그인)
+   User Tabs (로그인)
 ────────────────────────────── */
 const UserTabs = () => {
   const insets = useSafeAreaInsets();
@@ -253,7 +274,11 @@ const UserTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="홈" component={MainScreen} options={{ title: '홈' }} />
+      <Tab.Screen 
+        name="홈" 
+        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
+        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
+      />
       <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: '챗봇' }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
@@ -263,7 +288,7 @@ const UserTabs = () => {
 };
 
 /* ──────────────────────────────
-    Auth Stack
+   Auth Stack
 ────────────────────────────── */
 const AuthStack = () => {
   const { fontOffset } = useFontSize();
@@ -286,7 +311,7 @@ const AuthStack = () => {
 };
 
 /* ──────────────────────────────
-    Root Component
+   Root Component
 ────────────────────────────── */
 
 // [추가] 네비게이션 컨테이너 기본 테마 설정

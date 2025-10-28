@@ -1,3 +1,4 @@
+//src/styles/mainStyles.js
 import { StyleSheet } from 'react-native';
 import { widthPercentage, responsiveFontSize } from '../utils/responsive';
 
