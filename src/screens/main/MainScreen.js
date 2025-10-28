@@ -69,11 +69,10 @@ const MainScreen = () => {
           onPress={() => goTab('검색')}
         />
         
-        {/* [추가] 경로 찾기 버튼 */}
         <CustomButton
           type="feature"
-          title="경로 찾기"
-          onPress={handlePathFinderPress}
+          title="지하철 최단 경로"
+          onPress={() => navigation.navigate('PathFinderStack')}
         />
 
         <CustomButton

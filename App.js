@@ -31,15 +31,17 @@ import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
 import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
 import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
-import PathResultScreen from './src/screens/pathfinder/PathResultScreen'; // ✅ 결과화면 추가
 
-const Stack = createStackNavigator();
+// Navigators 정의
+const RootStack = createStackNavigator();
+const Stack = createStackNavigator(); // Auth 스택용
 const Tab = createBottomTabNavigator();
 const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
 const HomeStack = createStackNavigator();
+const PathFinderStack = createStackNavigator(); // PathFinder 스택
 
 /* ──────────────────────────────
    공통 옵션
@@ -61,19 +63,17 @@ const mintHeaderOptions = {
 };
 
 /* ──────────────────────────────
-   MainStack
+   MainStack (Detail, Map 등 공통 상세 화면)
 ────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
     <MainStack.Screen name="StationDetail" component={StationDetailScreen} />
     <MainStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} />
-    <MainStack.Screen name="PathFinder" component={PathFinderScreen} />
-    <MainStack.Screen name="PathResult" component={PathResultScreen} />
   </MainStack.Navigator>
 );
 
 /* ──────────────────────────────
-   Home Stack
+   각 탭별 스택 네비게이터들 (Home, MyPage, Nearby, Search)
 ────────────────────────────── */
 const HomeStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -90,9 +90,6 @@ const HomeStackNavigator = () => {
   );
 };
 
-/* ──────────────────────────────
-   MyPage Stack
-────────────────────────────── */
 const MyPageStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -111,9 +108,6 @@ const MyPageStackNavigator = () => {
   );
 };
 
-/* ──────────────────────────────
-   Nearby Stack
-────────────────────────────── */
 const NearbyStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -129,9 +123,6 @@ const NearbyStackNavigator = () => {
   );
 };
 
-/* ──────────────────────────────
-   Search Stack
-────────────────────────────── */
 const SearchStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -146,6 +137,29 @@ const SearchStackNavigator = () => {
     </SearchStack.Navigator>
   );
 };
+
+
+/* ──────────────────────────────
+   PathFinder Stack
+────────────────────────────── */
+const PathFinderStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <PathFinderStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+      }}
+    >
+      <PathFinderStack.Screen
+        name="PathFinderHome"
+        component={PathFinderScreen}
+        options={{ title: '지하철 최단 경로' }}
+      />
+    </PathFinderStack.Navigator>
+  );
+};
+
 
 /* ──────────────────────────────
    Guest Tabs (비로그인)
@@ -224,7 +238,7 @@ const GuestTabs = () => {
    User Tabs (로그인)
 ────────────────────────────── */
 const UserTabs = () => {
-  const insets = useSafeAreaInsets();
+   const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
 
   const tabBarStyle = {
@@ -284,9 +298,9 @@ const UserTabs = () => {
 };
 
 /* ──────────────────────────────
-   Auth Stack
+   Auth Stack (로그인/회원가입 관련 화면)
 ────────────────────────────── */
-const AuthStack = () => {
+const AuthStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
     <Stack.Navigator
@@ -307,7 +321,7 @@ const AuthStack = () => {
 };
 
 /* ──────────────────────────────
-   Root Component
+   Root Component & Navigation Logic
 ────────────────────────────── */
 const navTheme = {
   ...DefaultTheme,
@@ -331,8 +345,33 @@ const AppContent = () => {
     );
   }
 
-  return <NavigationContainer theme={navTheme}>{user ? <UserTabs /> : <AuthStack />}</NavigationContainer>;
+  return (
+    <NavigationContainer theme={navTheme}>
+      <RootStack.Navigator>
+        {user ? (
+          <RootStack.Screen
+            name="AppTabs"
+            component={UserTabs}
+            options={{ headerShown: false }}
+          />
+        ) : (
+          <RootStack.Screen
+            name="AuthScreens"
+            component={AuthStackNavigator}
+            options={{ headerShown: false }}
+          />
+        )}
+        {/* PathFinder 스택을 RootStack에 정의 */}
+        <RootStack.Screen
+          name="PathFinderStack" // 이 이름으로 navigate 호출
+          component={PathFinderStackNavigator}
+          options={{ headerShown: false }} // 스택 자체의 헤더는 숨김 (내부 화면 헤더 사용)
+        />
+      </RootStack.Navigator>
+    </NavigationContainer>
+  );
 };
+
 
 export default function App() {
   useEffect(() => {
