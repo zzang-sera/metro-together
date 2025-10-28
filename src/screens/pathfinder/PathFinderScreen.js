@@ -11,16 +11,19 @@ import {
   ActivityIndicator,
   Keyboard,
   ScrollView,
-  Platform, // [수정] 1. 헤더 짤림 방지용 import
-  StatusBar, // [수정] 2. 헤더 짤림 방지용 import
+  Platform,
+  StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; // Ionicons 사용 유지
 import CustomButton from '../../components/CustomButton';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize, responsiveHeight } from '../../utils/responsive';
 import PathResultView from './PathResultView';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
+// [수정] MaterialCommunityIcons import 추가 (교환 버튼용)
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 
 const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder';
 const allStations = stationJson.DATA;
@@ -83,14 +86,14 @@ const PathFinderScreen = () => {
     }
     setFocusedField(null);
     setSearchQuery('');
-    setPathData(null); // [수정] 3. 역 선택 시 결과 리셋 (버튼 재활성화)
+    setPathData(null);
   };
 
   const swapStations = () => {
     const tempDep = dep;
     setDep(arr);
     setArr(tempDep);
-    setPathData(null); // [수정] 3. 역 교환 시 결과 리셋 (버튼 재활성화)
+    setPathData(null);
   };
 
   const handleFindPath = async () => {
@@ -119,14 +122,13 @@ const PathFinderScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* 1. 고정 헤더 */}
       <View style={styles.fixedHeader}>
-        <Text style={[styles.title, { fontSize: responsiveFontSize(22) + fontOffset }]}>
-          교통약자용 이동경로 찾기
+        <Text style={[styles.title, { fontSize: responsiveFontSize(18) + fontOffset }]}>
+          지하철 길찾기
         </Text>
-        
-        {/* [수정] 4. 결과가 없을 때(pathData가 null)만 부제목 표시 */}
+
         {pathData === null && (
           <Text style={[styles.subtitle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-            출발역과 도착역을 검색 후 선택하세요.
+            출발역과 도착역을 선택하세요.
           </Text>
         )}
 
@@ -141,10 +143,9 @@ const PathFinderScreen = () => {
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={dep}
                 onFocus={() => {
-                  // [수정] 2. measure 콜백 안에서 state 변경
                   depRowRef.current.measure((fx, fy, width, height, px, py) => {
                     setListTopPosition(py + height - 1);
-                    setFocusedField('dep'); // 위치 측정이 끝난 후 실행
+                    setFocusedField('dep');
                     setSearchQuery(dep);
                   });
                 }}
@@ -168,10 +169,9 @@ const PathFinderScreen = () => {
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={arr}
                 onFocus={() => {
-                  // [수정] 2. measure 콜백 안에서 state 변경
                   arrRowRef.current.measure((fx, fy, width, height, px, py) => {
                     setListTopPosition(py + height - 1);
-                    setFocusedField('arr'); // 위치 측정이 끝난 후 실행
+                    setFocusedField('arr');
                     setSearchQuery(arr);
                   });
                 }}
@@ -185,13 +185,14 @@ const PathFinderScreen = () => {
             </View>
           </View>
 
+          {/* [수정] 교환 버튼 아이콘 및 스타일 변경 */}
           <TouchableOpacity
             onPress={swapStations}
-            style={styles.swapButton}
+            style={styles.swapButton} // 스타일 이름은 유지
             accessibilityLabel="출발역과 도착역 교환"
             accessibilityRole="button"
           >
-            <Ionicons name="swap-vertical" size={24} color="#14CAC9" />
+            <MaterialCommunityIcons name="swap-vertical" size={40 + fontOffset} color="#17171B" />
           </TouchableOpacity>
         </View>
 
@@ -201,7 +202,7 @@ const PathFinderScreen = () => {
           style={styles.checkboxContainer}
           onPress={() => {
             setWheelchair(!wheelchair);
-            setPathData(null); // [수정] 3. 휠체어 체크 시 결과 리셋 (버튼 재활성화)
+            setPathData(null);
           }}
           accessibilityLabel="휠체어 이용자입니다"
           accessibilityRole="checkbox"
@@ -216,13 +217,12 @@ const PathFinderScreen = () => {
             휠체어 이용자입니다
           </Text>
         </TouchableOpacity>
-        
-        {/* [수정] 4. 로딩중이 아니고, 결과가 없을 때(pathData가 null)만 버튼 표시 */}
+
         {!isLoading && pathData === null && (
           <CustomButton type="feature" title="길찾기 시작" onPress={handleFindPath} />
         )}
       </View>
-      
+
       {/* 2. 경로 결과 (스크롤뷰) */}
       <ScrollView
         style={styles.scrollArea}
@@ -243,7 +243,7 @@ const PathFinderScreen = () => {
           keyExtractor={(item) => item.name}
           keyboardShouldPersistTaps="handled"
           style={[
-            styles.dropdown, 
+            styles.dropdown,
             { top: listTopPosition }
           ]}
           renderItem={({ item }) => (
@@ -279,11 +279,10 @@ const PathFinderScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
+  container: {
+    flex: 1,
     backgroundColor: '#F9F9F9',
-    // [수정] 1. 헤더 짤림 방지용 스타일
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0 
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
   },
   fixedHeader: {
     padding: 20,
@@ -292,12 +291,19 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEE',
     zIndex: 10,
   },
-  title: { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B' },
-  subtitle: { 
-    fontFamily: 'NotoSansKR', 
+  title: {
+    fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#595959', 
-    marginBottom: 8 
+    color: '#17171B',
+    textAlign: 'center', 
+    marginBottom: 30, 
+  },
+  subtitle: {
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: 'red',
+    textAlign: 'center', 
+    marginBottom: 8
   },
   searchBoxContainer: {
     flexDirection: 'row',
@@ -315,21 +321,23 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'center', // [수정] 2. 레이블과 input 수직 중앙 정렬 유지
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 12, // 필요시 이 값을 미세 조정하여 높이 맞춤
   },
   inputLabel: {
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
-    color: '#14CAC9',
+    color: '#17171B', 
     marginRight: 10,
+    transform: [{ translateY: -3 }],
   },
   input: {
     flex: 1,
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
+    // backgroundColor: 'lightblue', // 레이아웃 확인용 임시 배경색
   },
   divider: {
     height: 1,
@@ -337,7 +345,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   swapButton: {
-    padding: 16,
+    padding: 16, // 버튼 영역 확보
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -349,15 +357,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   checkboxText: { marginLeft: 8, color: '#17171B', fontFamily: 'NotoSansKR', fontWeight: '700' },
-  
-  scrollArea: { 
-    flex: 1, 
-    paddingHorizontal: 20, 
-  }, 
-  
+
+  scrollArea: {
+    flex: 1,
+    paddingHorizontal: 20,
+  },
+
   dropdown: {
     position: 'absolute',
-    left: 20, 
+    left: 20,
     right: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
