@@ -1,20 +1,20 @@
 // App.js
-import React, { useEffect } from "react";
-import { View, ActivityIndicator, Alert, Image } from "react-native";
-import { NavigationContainer, DefaultTheme, useNavigation } from "@react-navigation/native";
-import { createStackNavigator } from "@react-navigation/stack";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { useFonts } from "expo-font";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-import { StatusBar } from "expo-status-bar";
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator, Alert, Image } from 'react-native';
+import { NavigationContainer, useNavigation, DefaultTheme } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import { useFonts } from 'expo-font';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { StatusBar } from 'expo-status-bar';
 
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { FontSizeProvider, useFontSize } from "./src/contexts/FontSizeContext";
 import { responsiveFontSize } from "./src/utils/responsive";
 
-// --- 화면들 ---
+// --- Screens ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
@@ -31,7 +31,7 @@ import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
 import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
 import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
-
+import PathResultScreen from './src/screens/pathfinder/PathResultScreen'; // ✅ 결과화면 추가
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -39,7 +39,7 @@ const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
-const HomeStack = createStackNavigator(); // [추가] 홈 탭을 위한 스택
+const HomeStack = createStackNavigator();
 
 /* ──────────────────────────────
    공통 옵션
@@ -61,18 +61,19 @@ const mintHeaderOptions = {
 };
 
 /* ──────────────────────────────
-   MainStack (BarrierFreeMapScreen 등록)
+   MainStack
 ────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
     <MainStack.Screen name="StationDetail" component={StationDetailScreen} />
     <MainStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} />
     <MainStack.Screen name="PathFinder" component={PathFinderScreen} />
+    <MainStack.Screen name="PathResult" component={PathResultScreen} />
   </MainStack.Navigator>
 );
 
 /* ──────────────────────────────
-   Home Stack [추가]
+   Home Stack
 ────────────────────────────── */
 const HomeStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -190,8 +191,8 @@ const GuestTabs = () => {
     >
       <Tab.Screen
         name="홈"
-        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
-        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
+        component={HomeStackNavigator}
+        options={{ headerShown: false }}
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -273,11 +274,7 @@ const UserTabs = () => {
         },
       })}
     >
-      <Tab.Screen 
-        name="홈" 
-        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
-        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
-      />
+      <Tab.Screen name="홈" component={HomeStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: "챗봇" }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
@@ -316,7 +313,7 @@ const navTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    background: "#F9F9F9",
+    background: '#F9F9F9',
   },
 };
 
@@ -334,6 +331,7 @@ const AppContent = () => {
     );
   }
 
+
   return <NavigationContainer theme={navTheme}>{user ? <UserTabs /> : <AuthStack />}</NavigationContainer>;
 };
 
@@ -344,7 +342,7 @@ export default function App() {
   }, []);
 
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor: "#F9F9F9" }}>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#F9F9F9' }}>
       <StatusBar style="dark" backgroundColor="#F9F9F9" />
       <AuthProvider>
         <FontSizeProvider>
@@ -354,3 +352,4 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { 
   getEscalatorStatusByName,
   getToiletStatusByName,
-  getDisabledToiletStatusByName
+  getDisabledToiletStatusByName 
 } from "../api/metro/metroAPI";
 
 export function useApiFacilities(stationName, stationCode, line, type) {
