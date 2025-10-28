@@ -14,22 +14,24 @@ import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { FontSizeProvider, useFontSize } from "./src/contexts/FontSizeContext";
 import { responsiveFontSize } from "./src/utils/responsive";
 
-// --- Screens ---
-import WelcomeScreen from "./src/screens/auth/WelcomeScreen";
-import LoginScreen from "./src/screens/auth/LoginScreen";
-import SignUpScreen from "./src/screens/auth/SignUpScreen";
-import FindEmailScreen from "./src/screens/auth/FindEmailScreen";
-import ForgotPasswordScreen from "./src/screens/auth/ForgotPasswordScreen";
-import MainScreen from "./src/screens/main/MainScreen";
-import NearbyStationsScreen from "./src/screens/nearbystation/NearbyStationsScreen";
-import SearchStationScreen from "./src/screens/searchstation/SearchStationScreen";
-import ChatBotScreen from "./src/screens/chatbot/ChatBotScreen";
-import StationDetailScreen from "./src/screens/station/StationDetailScreen";
-import MyPageScreen from "./src/screens/auth/MyPageScreen"; // ✅ 수정
-import AccountManagementScreen from "./src/screens/auth/AccountManagementScreen";
-import FavoritesScreen from "./src/screens/favorites/FavoritesScreen";
-import PolicyScreen from "./src/screens/policy/PolicyScreen";
-import BarrierFreeMapScreen from "./src/screens/station/BarrierFreeMapScreen"; // ✅ 교체 완료
+// --- 화면들 ---
+import WelcomeScreen from './src/screens/auth/WelcomeScreen';
+import LoginScreen from './src/screens/auth/LoginScreen';
+import SignUpScreen from './src/screens/auth/SignUpScreen';
+import FindEmailScreen from './src/screens/auth/FindEmailScreen';
+import ForgotPasswordScreen from './src/screens/auth/ForgotPasswordScreen';
+import MainScreen from './src/screens/main/MainScreen';
+import NearbyStationsScreen from './src/screens/nearbystation/NearbyStationsScreen';
+import SearchStationScreen from './src/screens/searchstation/SearchStationScreen';
+import ChatBotScreen from './src/screens/chatbot/ChatBotScreen';
+import StationDetailScreen from './src/screens/station/StationDetailScreen';
+import MyPageScreen from './src/screens/auth/MyPageScreen';
+import AccountManagementScreen from './src/screens/auth/AccountManagementScreen';
+import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
+import PolicyScreen from './src/screens/policy/PolicyScreen';
+import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
+import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -37,6 +39,7 @@ const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
+const HomeStack = createStackNavigator(); // [추가] 홈 탭을 위한 스택
 
 /* ──────────────────────────────
    공통 옵션
@@ -64,8 +67,27 @@ const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
     <MainStack.Screen name="StationDetail" component={StationDetailScreen} />
     <MainStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} />
+    <MainStack.Screen name="PathFinder" component={PathFinderScreen} />
   </MainStack.Navigator>
 );
+
+/* ──────────────────────────────
+   Home Stack [추가]
+────────────────────────────── */
+const HomeStackNavigator = () => {
+  const { fontOffset } = useFontSize();
+  return (
+    <HomeStack.Navigator
+      screenOptions={{
+        ...mintHeaderOptions,
+        headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+      }}
+    >
+      <HomeStack.Screen name="HomeMain" component={MainScreen} options={{ title: '홈' }} />
+      <HomeStack.Screen name="MainStack" component={MainStackNavigator} options={{ headerShown: false }} />
+    </HomeStack.Navigator>
+  );
+};
 
 /* ──────────────────────────────
    MyPage Stack
@@ -168,8 +190,8 @@ const GuestTabs = () => {
     >
       <Tab.Screen
         name="홈"
-        component={MainScreen}
-        options={{ title: "홈" }}
+        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
+        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
@@ -251,7 +273,11 @@ const UserTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="홈" component={MainScreen} options={{ title: "홈" }} />
+      <Tab.Screen 
+        name="홈" 
+        component={HomeStackNavigator} // [수정] MainScreen -> HomeStackNavigator
+        options={{ headerShown: false }} // [수정] 스택 네비게이터의 헤더를 사용하므로 탭 헤더는 숨김
+      />
       <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="챗봇" component={ChatBotScreen} options={{ title: "챗봇" }} />
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
