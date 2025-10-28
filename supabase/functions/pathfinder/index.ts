@@ -151,7 +151,7 @@ Deno.serve(async (req) => {
         const toLine = next?.line ?? "";
         const toDirection = `${toLine} ${next?.to ?? "다음 역"} 방면`;
 
-        const stationLabel = `${current.to} (${fromLine} → ${toLine})`;
+        const stationLabel = `${current.to}역 (${fromLine} → ${toLine})`;
         const detailText = `${toDirection}으로 환승하세요.`;
 
         transferInfo.push({

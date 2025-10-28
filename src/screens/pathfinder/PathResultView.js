@@ -6,6 +6,7 @@ import { responsiveFontSize } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import CustomButton from '../../components/CustomButton';
 
+// InfoItem 헬퍼 컴포넌트 (변경 없음)
 const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
   const { fontOffset } = useFontSize();
   return (
@@ -21,8 +22,13 @@ const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
   );
 };
 
+// [수정] JourneyStep 헬퍼 컴포넌트 (description을 string 또는 array로 받도록)
 const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false }) => {
   const { fontOffset } = useFontSize();
+
+  // description이 배열인지 확인
+  const isDescriptionArray = Array.isArray(description);
+
   return (
     <View style={styles.stepContainer}>
       <View style={styles.stepIconContainer}>
@@ -39,9 +45,21 @@ const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false
         >
           {title}
         </Text>
-        <Text style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>
-          {description}
-        </Text>
+        {/* [수정] 배열이면 map으로, 문자열이면 Text로 바로 렌더링 */}
+        {isDescriptionArray ? (
+          description.map((line, index) => (
+            <Text 
+              key={index}
+              style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}
+            >
+              {line}
+            </Text>
+          ))
+        ) : (
+          <Text style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>
+            {description}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -68,6 +86,7 @@ const PathResultView = ({ data }) => {
   return (
     <View style={styles.scrollContainer}>
       
+      {/* 1. 요약 카드 (변경 없음) */}
       <View style={styles.summaryCard}>
         <Text 
           style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}
@@ -96,33 +115,37 @@ const PathResultView = ({ data }) => {
         />
       </View>
 
+      {/* [수정] 2. 출발역 정보 (displayLines 사용) */}
       {stationFacilities?.departure && (
         <JourneyStep
           icon="train-outline"
           title={`출발: ${stationFacilities.departure.station}역`}
-          description={stationFacilities.departure.text}
+          description={stationFacilities.departure.displayLines || stationFacilities.departure.text}
           isFirst
         />
       )}
 
+      {/* [수정] 3. 환승 정보 (API 구조에 맞게 수정) */}
       {transferInfo?.map((info) => (
         <JourneyStep
           key={info.index}
           icon="swap-horizontal-outline"
-          title={`${info.index}회 환승: ${info.station}역`}
-          description={info.text}
+          title={`${info.index}회 환승: ${info.station}`}
+          description={info.displayLines || info.text}
         />
       ))}
 
+      {/* [수정] 4. 도착역 정보 (displayLines 사용) */}
       {stationFacilities?.arrival && (
         <JourneyStep
           icon="flag-outline"
           title={`도착: ${stationFacilities.arrival.station}역`}
-          description={stationFacilities.arrival.text}
+          description={stationFacilities.arrival.displayLines || stationFacilities.arrival.text}
           isLast
         />
       )}
 
+      {/* 5. 노선 안내 버튼 (변경 없음) */}
       <View style={{ marginBottom: 40, marginTop: 20 }}>
         <CustomButton
           type="feature"
@@ -137,6 +160,7 @@ const PathResultView = ({ data }) => {
 };
 
 const styles = StyleSheet.create({
+  // ... (다른 스타일은 모두 동일) ...
   scrollContainer: { paddingBottom: 50 }, 
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
   errorText: {
@@ -145,7 +169,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: responsiveFontSize(16),
   },
-  
   summaryCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -175,7 +198,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontFamily: 'NotoSansKR',
-    fontWeight: '700', // [수정] 600 -> 700
+    fontWeight: '700',
     color: '#595959',
     marginLeft: 8,
     marginRight: 4,
@@ -186,7 +209,6 @@ const styles = StyleSheet.create({
     color: '#17171B',
     flexShrink: 1,
   },
-
   stepContainer: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -240,7 +262,8 @@ const styles = StyleSheet.create({
     fontFamily: 'NotoSansKR',
     color: '#333',
     lineHeight: responsiveFontSize(20),
-    fontWeight: '700', // [수정] 700 추가
+    fontWeight: '700',
+    marginBottom: 4, 
   },
 });
 
