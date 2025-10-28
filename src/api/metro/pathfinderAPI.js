@@ -19,22 +19,6 @@ export async function findAccessiblePath(start, end, options = {}) {
 
     const data = await response.json();
 
-    // ✅ 예상되는 응답 형태 예시:
-    // {
-    //   duration: 4,
-    //   distance: "2정거장",
-    //   transferCount: 0,
-    //   fare: { card: 1550, cash: 1650 },
-    //   route: [
-    //     { station: "종로3가", line: "1호선", direction: "시청방면" },
-    //     { station: "시청", line: "1호선" }
-    //   ],
-    //   elevators: [
-    //     { station: "종로3가", detail: "2-1번 출입구 옆 엘리베이터 → 종각 방면 승강장" },
-    //     { station: "시청", detail: "2번 출입구 근처 엘리베이터 → 1호선 종각 방면" }
-    //   ]
-    // }
-
     return data;
   } catch (err) {
     console.error("🚨 PathFinder API Error:", err);
