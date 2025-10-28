@@ -215,7 +215,7 @@ Deno.serve(async (req) => {
         departure: `${dep}역 (${firstLine})`,
         arrival: `${arr}역 (${lastLine})`,
         transfers,
-        estimatedTime: `${Math.round(totalTime / 60)}분 (+5분 포함)`,
+        estimatedTime: `${Math.round(totalTime / 60)}분 `,
       },
       transferInfo,
       stationFacilities: {

@@ -10,7 +10,7 @@ import CustomButton from '../../components/CustomButton';
 const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
   const { fontOffset } = useFontSize();
   return (
-    <View 
+    <View
       style={styles.infoItem}
       accessibilityLabel={`${label}: ${value}`}
       {...props}
@@ -22,11 +22,9 @@ const InfoItem = ({ icon, label, value, iconColor = '#14CAC9', ...props }) => {
   );
 };
 
-// [수정] JourneyStep 헬퍼 컴포넌트 (description을 string 또는 array로 받도록)
+// JourneyStep 헬퍼 컴포넌트 (변경 없음)
 const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false }) => {
   const { fontOffset } = useFontSize();
-
-  // description이 배열인지 확인
   const isDescriptionArray = Array.isArray(description);
 
   return (
@@ -39,16 +37,15 @@ const JourneyStep = ({ icon, title, description, isFirst = false, isLast = false
         {!isLast && <View style={styles.timelineTrackBottom} />}
       </View>
       <View style={styles.stepContent}>
-        <Text 
+        <Text
           style={[styles.stepTitle, { fontSize: responsiveFontSize(17) + fontOffset }]}
           accessibilityRole="header"
         >
           {title}
         </Text>
-        {/* [수정] 배열이면 map으로, 문자열이면 Text로 바로 렌더링 */}
         {isDescriptionArray ? (
           description.map((line, index) => (
-            <Text 
+            <Text
               key={index}
               style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}
             >
@@ -80,42 +77,34 @@ const PathResultView = ({ data }) => {
     routeSummary,
     transferInfo,
     stationFacilities,
-    wheelchairStatus,
   } = data;
 
   return (
     <View style={styles.scrollContainer}>
-      
+
       {/* 1. 요약 카드 (변경 없음) */}
       <View style={styles.summaryCard}>
-        <Text 
+        <Text
           style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}
           accessibilityLabel={`${routeSummary?.departure}에서 ${routeSummary?.arrival}까지 경로`}
           accessibilityRole="header"
         >
           {routeSummary?.departure} → {routeSummary?.arrival}
         </Text>
-        <View style={styles.summaryRow}>
-          <InfoItem
-            icon="time-outline"
-            label="소요 시간"
-            value={routeSummary?.estimatedTime || '정보 없음'}
-          />
-          <InfoItem
-            icon="swap-horizontal-outline"
-            label="환승"
-            value={`${routeSummary?.transfers || 0}회`}
-          />
-        </View>
+
         <InfoItem
-          icon={wheelchairStatus === 'OK' ? 'checkmark-circle-outline' : 'close-circle-outline'}
-          label="교통약자 이동"
-          value={wheelchairStatus === 'OK' ? '이동 가능' : '이동 제한'}
-          iconColor={wheelchairStatus === 'OK' ? '#14CAC9' : '#D32F2F'}
+          icon="time-outline"
+          label="소요 시간"
+          value={routeSummary?.estimatedTime || '정보 없음'}
+        />
+        <InfoItem
+          icon="swap-horizontal-outline"
+          label="환승"
+          value={`${routeSummary?.transfers || 0}회`}
         />
       </View>
 
-      {/* [수정] 2. 출발역 정보 (displayLines 사용) */}
+      {/* 2. 출발역 정보 (변경 없음) */}
       {stationFacilities?.departure && (
         <JourneyStep
           icon="train-outline"
@@ -125,7 +114,7 @@ const PathResultView = ({ data }) => {
         />
       )}
 
-      {/* [수정] 3. 환승 정보 (API 구조에 맞게 수정) */}
+      {/* 3. 환승 정보 (변경 없음) */}
       {transferInfo?.map((info) => (
         <JourneyStep
           key={info.index}
@@ -135,7 +124,7 @@ const PathResultView = ({ data }) => {
         />
       ))}
 
-      {/* [수정] 4. 도착역 정보 (displayLines 사용) */}
+      {/* 4. 도착역 정보 (변경 없음) */}
       {stationFacilities?.arrival && (
         <JourneyStep
           icon="flag-outline"
@@ -160,8 +149,7 @@ const PathResultView = ({ data }) => {
 };
 
 const styles = StyleSheet.create({
-  // ... (다른 스타일은 모두 동일) ...
-  scrollContainer: { paddingBottom: 50 }, 
+  scrollContainer: { paddingBottom: 50 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
   errorText: {
     color: 'red',
@@ -185,11 +173,6 @@ const styles = StyleSheet.create({
     color: '#17171B',
     marginBottom: 16,
   },
-  summaryRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
   infoItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -208,6 +191,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#17171B',
     flexShrink: 1,
+    flex: 1,
   },
   stepContainer: {
     flexDirection: 'row',
@@ -256,14 +240,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#17171B',
     marginBottom: 4,
-    lineHeight: responsiveFontSize(24),
+    // [수정] 고정 lineHeight 제거 (제목 짤림 방지)
+    // lineHeight: responsiveFontSize(24),
   },
   stepDescription: {
     fontFamily: 'NotoSansKR',
     color: '#333',
-    lineHeight: responsiveFontSize(20),
     fontWeight: '700',
-    marginBottom: 4, 
+    marginBottom: 4,
   },
 });
 
