@@ -1,9 +1,8 @@
-import { initializeApp } from 'firebase/app';
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getFirestore } from 'firebase/firestore';
 
-// Firebase configuration using environment variables
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_API_KEY,
   authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
@@ -13,13 +12,17 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_APP_ID,
 };
 
-// Firebase 앱 초기화
-const app = initializeApp(firebaseConfig);
+// ✅ 이미 초기화된 Firebase 앱이 있다면 재활용
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-// auth 객체를 초기화할 때, AsyncStorage를 사용하여 로그인 상태를 저장하도록 설정합니다.
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(ReactNativeAsyncStorage)
-});
+// ✅ 이미 초기화된 auth가 있다면 그대로 사용
+const auth =
+  getApps().length === 0
+    ? initializeAuth(app, {
+        persistence: getReactNativePersistence(ReactNativeAsyncStorage),
+      })
+    : getAuth(app);
 
-//Firestore 객체를 초기화하고 내보냅니다.
+// ✅ Firestore 인스턴스 생성
 export const db = getFirestore(app);
+export { app, auth };
