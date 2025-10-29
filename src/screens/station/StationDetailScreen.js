@@ -263,7 +263,7 @@ export default function StationDetailScreen() {
           <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("VO")}>
             <View style={styles.buttonLeft}>
               <Ionicons name="volume-high" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>음성유도기</Text>
+              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>휠체어 급속충전기</Text>
             </View>
             <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
           </TouchableOpacity>
