@@ -156,6 +156,16 @@ const PathFinderStackNavigator = () => {
         component={PathFinderScreen}
         options={{ title: '지하철 최단 경로' }}
       />
+      <PathFinderStack.Screen
+        name="StationDetail"
+        component={StationDetailScreen}
+        options={{ title: '역 정보', headerShown: false }}
+      />
+      <PathFinderStack.Screen
+        name="BarrierFreeMap"
+        component={BarrierFreeMapScreen}
+        options={{ title: '배리어프리 지도', headerShown: false }}
+      />
     </PathFinderStack.Navigator>
   );
 };

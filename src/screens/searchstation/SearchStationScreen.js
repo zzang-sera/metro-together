@@ -42,7 +42,8 @@ function getTextColorForBackground(hexColor) {
 }
 
 function findStationCodeBy(name, line) {
-  const hit = allStations.find((s) => s?.name === name && s?.line === line);
+  const realName = name === "서울역" ? "서울" : name; // ✅ 데이터용은 ‘서울’
+  const hit = allStations.find((s) => s?.name === realName && s?.line === line);
   const code = String(
     hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ''
   ).trim();
@@ -55,6 +56,7 @@ const SearchStationScreen = () => {
   const route = useRoute();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ✅ “서울” → “서울역”으로 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
@@ -63,23 +65,26 @@ const SearchStationScreen = () => {
     );
     const stationMap = new Map();
     matchingStations.forEach((station) => {
-      if (stationMap.has(station.name)) {
-        stationMap.get(station.name).lines.push(station.line);
+      const displayName = station.name === "서울" ? "서울역" : station.name;
+      if (stationMap.has(displayName)) {
+        stationMap.get(displayName).lines.push(station.line);
       } else {
-        stationMap.set(station.name, { name: station.name, lines: [station.line] });
+        stationMap.set(displayName, { name: displayName, lines: [station.line] });
       }
     });
     return Array.from(stationMap.values());
   }, [searchQuery]);
 
   const handleSelectStation = (station) => {
+    // ✅ 실제 전달 시 “서울역”은 “서울”로 변환
+    const realName = station.name === "서울역" ? "서울" : station.name;
     const mode = route.params?.mode;
+
     if (mode === 'dep') {
-      navigation.navigate('PathFinder', { selectedDep: station.name });
+      navigation.navigate('PathFinder', { selectedDep: realName });
     } else if (mode === 'arr') {
-      navigation.navigate('PathFinder', { selectedArr: station.name });
+      navigation.navigate('PathFinder', { selectedArr: realName });
     } else {
-      // 기본 동작: 역 상세
       const firstLine = station.lines[0];
       const stationCode = findStationCodeBy(station.name, firstLine);
       navigation.navigate('MainStack', {

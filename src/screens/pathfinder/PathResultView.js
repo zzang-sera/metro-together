@@ -1,18 +1,17 @@
 // src/screens/pathfinder/PathResultView.js
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-// [수정] MaterialCommunityIcons만 추가
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { responsiveFontSize } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
-import CustomButton from '../../components/CustomButton';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 
 const lineData = lineJson.DATA;
 
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
-  return lineInfo ? lineInfo.color : null;
+  return lineInfo ? lineInfo.color : '#CCCCCC';
 }
 
 function getTextColorForBackground(hexColor) {
@@ -28,16 +27,17 @@ function getTextColorForBackground(hexColor) {
   }
 }
 
-// [수정] InfoItem: 기본 IconComponent를 Ionicons로 다시 설정
-const InfoItem = ({ iconComponent: IconComponent = Ionicons, icon, label, value, iconColor = '#14CAC9', ...props }) => {
+const InfoItem = ({
+  iconComponent: IconComponent = Ionicons,
+  icon,
+  label,
+  value,
+  iconColor = '#14CAC9',
+}) => {
   const { fontOffset } = useFontSize();
   const baseIconSize = 22;
   return (
-    <View
-      style={styles.infoItem}
-      accessibilityLabel={`${label}: ${value}`}
-      {...props}
-    >
+    <View style={styles.infoItem}>
       <IconComponent name={icon} size={baseIconSize + fontOffset / 2} color={iconColor} />
       <Text style={[styles.infoLabel, { fontSize: responsiveFontSize(15) + fontOffset }]}>{label}:</Text>
       <Text style={[styles.infoValue, { fontSize: responsiveFontSize(15) + fontOffset }]}>{value}</Text>
@@ -45,8 +45,14 @@ const InfoItem = ({ iconComponent: IconComponent = Ionicons, icon, label, value,
   );
 };
 
-// JourneyStep 헬퍼 컴포넌트 (변경 없음)
-const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFirst = false, isLast = false }) => {
+const JourneyStep = ({
+  icon: defaultIconName,
+  title,
+  description,
+  lineNum,
+  isFirst = false,
+  isLast = false,
+}) => {
   const { fontOffset } = useFontSize();
   const isDescriptionArray = Array.isArray(description);
 
@@ -55,7 +61,7 @@ const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFir
     const lineNumber = lineNumberMatch ? parseInt(lineNumberMatch[1]) : null;
     const color = lineNumber ? getLineColor(lineNum) : null;
 
-    if (lineNumber && lineNumber >= 1 && lineNumber <= 9 && color) {
+    if (lineNumber && color) {
       const textColor = getTextColorForBackground(color);
       return (
         <View style={[styles.timelineIconLine, { backgroundColor: color }]}>
@@ -67,7 +73,7 @@ const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFir
     } else {
       return (
         <View style={styles.timelineIcon}>
-           <Ionicons name={defaultIconName} size={24 + fontOffset / 2} color="#FFFFFF" />
+          <Ionicons name={defaultIconName} size={24 + fontOffset / 2} color="#FFFFFF" />
         </View>
       );
     }
@@ -81,25 +87,15 @@ const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFir
         {!isLast && <View style={styles.timelineTrackBottom} />}
       </View>
       <View style={styles.stepContent}>
-        <Text
-          style={[styles.stepTitle, { fontSize: responsiveFontSize(17) + fontOffset }]}
-          accessibilityRole="header"
-        >
-          {title}
-        </Text>
+        <Text style={[styles.stepTitle, { fontSize: responsiveFontSize(17) + fontOffset }]}>{title}</Text>
         {isDescriptionArray ? (
           description.map((line, index) => (
-            <Text
-              key={index}
-              style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}
-            >
+            <Text key={index} style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>
               {line}
             </Text>
           ))
         ) : (
-          <Text style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>
-            {description}
-          </Text>
+          <Text style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>{description}</Text>
         )}
       </View>
     </View>
@@ -107,12 +103,21 @@ const JourneyStep = ({ icon: defaultIconName, title, description, lineNum, isFir
 };
 
 const extractLineFromSummary = (summaryText) => {
-    if (!summaryText) return null;
-    const match = summaryText.match(/\(([^)]+)\)$/);
-    return match ? match[1] : null;
+  if (!summaryText) return null;
+  const match = summaryText.match(/\(([^)]+)\)$/);
+  return match ? match[1] : null;
+};
+
+const cleanStationName = (rawName) => {
+  if (!rawName) return '';
+  return rawName
+    .replace(/\(.*?\)/g, '')
+    .replace(/역\s*$/u, '')
+    .trim();
 };
 
 const PathResultView = ({ data }) => {
+  const navigation = useNavigation();
   const { fontOffset } = useFontSize();
 
   if (!data) {
@@ -123,55 +128,77 @@ const PathResultView = ({ data }) => {
     );
   }
 
-  const {
-    routeSummary,
-    transferInfo,
-    stationFacilities,
-  } = data;
-
+  const { routeSummary, transferInfo, stationFacilities } = data;
   const departureLine = extractLineFromSummary(routeSummary?.departure);
   const arrivalLine = extractLineFromSummary(routeSummary?.arrival);
+  const allStations = require('../../assets/metro-data/metro/station/data-metro-station-1.0.0.json').DATA;
+
+  const findStationCodeBy = (name, line) => {
+    const clean = (s) => s.replace(/역\s*$/u, '').trim();
+    const found = allStations.find((s) => clean(s.name) === clean(name) && s.line === line);
+    return found ? found.station_cd : null;
+  };
+
+  const renderStationButton = (title, stationName, lineNum) => {
+    const cleanName = cleanStationName(stationName);
+    const color = getLineColor(lineNum);
+    const textColor = getTextColorForBackground(color);
+    const iconSize = 24 + fontOffset / 2;
+
+    return (
+      <TouchableOpacity
+        key={cleanName}
+        style={[styles.stationButton, { borderColor: color }]}
+        onPress={() => {
+          const code = findStationCodeBy(cleanName, lineNum);
+          navigation.navigate('StationDetail', {
+            stationName: cleanName,
+            stationCode: code,
+            lines: lineNum ? [lineNum] : [],
+          });
+        }}
+      >
+        <View
+          style={[
+            styles.stationButtonIcon,
+            { backgroundColor: color, width: iconSize, height: iconSize, borderRadius: iconSize / 2 },
+          ]}
+        >
+          <Text style={[styles.stationButtonIconText, { color: textColor, fontSize: 13 + fontOffset / 3 }]}>
+            {lineNum?.replace('호선', '') || '?'}
+          </Text>
+        </View>
+        <Text style={[styles.stationButtonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          {title}
+        </Text>
+        <Ionicons name="chevron-forward" size={20 + fontOffset / 2} color="#888888" />
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.scrollContainer}>
-
-      {/* 1. 요약 카드 */}
+      {/* 요약 카드 */}
       <View style={styles.summaryCard}>
-         <Text
-          style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}
-          accessibilityLabel={`${routeSummary?.departure}에서 ${routeSummary?.arrival}까지 경로`}
-          accessibilityRole="header"
-        >
+        <Text style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}>
           {routeSummary?.departure} → {routeSummary?.arrival}
         </Text>
-        {/* [수정] 소요 시간 아이콘: Ionicons 'time' (굵은 버전) */}
-        <InfoItem
-          iconComponent={Ionicons} // 기본값 Ionicons 사용
-          icon="time" // 'time-outline' 대신 'time' 사용
-          label="소요 시간"
-          value={routeSummary?.estimatedTime || '정보 없음'}
-        />
-        {/* [수정] 환승 아이콘: MaterialCommunityIcons 'swap-horizontal-bold' */}
-        <InfoItem
-          iconComponent={MaterialCommunityIcons}
-          icon="swap-horizontal-bold"
-          label="환승"
-          value={`${routeSummary?.transfers || 0}회`}
-        />
+
+        <InfoItem iconComponent={Ionicons} icon="time" label="소요 시간" value={routeSummary?.estimatedTime || '정보 없음'} />
+        <InfoItem iconComponent={MaterialCommunityIcons} icon="swap-horizontal-bold" label="환승" value={`${routeSummary?.transfers || 0}회`} />
       </View>
 
-      {/* 2. 출발역 정보 (변경 없음) */}
+      {/* 출발역, 환승역, 도착역 */}
       {stationFacilities?.departure && (
         <JourneyStep
           icon="train-outline"
-          title={`출발: ${stationFacilities.departure.station}역`}
+          title={`출발: ${stationFacilities.departure.station}`}
           description={stationFacilities.departure.displayLines || stationFacilities.departure.text}
           lineNum={departureLine}
           isFirst
         />
       )}
 
-      {/* 3. 환승 정보 (변경 없음) */}
       {transferInfo?.map((info) => (
         <JourneyStep
           key={info.index}
@@ -182,38 +209,43 @@ const PathResultView = ({ data }) => {
         />
       ))}
 
-      {/* 4. 도착역 정보 (변경 없음) */}
       {stationFacilities?.arrival && (
         <JourneyStep
           icon="flag-outline"
-          title={`도착: ${stationFacilities.arrival.station}역`}
+          title={`도착: ${stationFacilities.arrival.station}`}
           description={stationFacilities.arrival.displayLines || stationFacilities.arrival.text}
           lineNum={arrivalLine}
           isLast
         />
       )}
 
-      {/* 5. 노선 안내 버튼 (변경 없음) */}
-      <View style={{ marginBottom: 40, marginTop: 20 }}>
-        <CustomButton
-          type="feature"
-          title="노선 안내 보기"
-          onPress={() => alert('노선 안내 기능은 곧 추가됩니다.')}
-          accessibilityLabel="노선 안내 보기"
-          accessibilityRole="button"
-        />
+      {/* 역 정보 보기 버튼 (새 디자인 적용) */}
+      <View style={styles.stationButtonContainer}>
+        {stationFacilities?.departure &&
+          renderStationButton(
+            `${cleanStationName(stationFacilities.departure.station)}역 정보 보기`,
+            stationFacilities.departure.station,
+            departureLine
+          )}
+        {transferInfo?.map((info, idx) =>
+          renderStationButton(`${cleanStationName(info.station)}역 정보 보기`, info.station, info.toLine)
+        )}
+        {stationFacilities?.arrival &&
+          renderStationButton(
+            `${cleanStationName(stationFacilities.arrival.station)}역 정보 보기`,
+            stationFacilities.arrival.station,
+            arrivalLine
+          )}
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  // ... (다른 스타일은 모두 동일) ...
   scrollContainer: { paddingBottom: 50 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
   errorText: {
     color: 'red',
-    fontFamily: 'NotoSansKR',
     fontWeight: '700',
     fontSize: responsiveFontSize(16),
   },
@@ -228,98 +260,45 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   summaryTitle: {
-    fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
     marginBottom: 16,
   },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    flexShrink: 1,
-  },
-  infoLabel: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: '#595959',
-    marginLeft: 8,
-    marginRight: 4,
-  },
-  infoValue: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: '#17171B',
-    flexShrink: 1,
-    flex: 1,
-  },
-  stepContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  stepIconContainer: {
-    width: 40,
-    alignItems: 'center',
-    position: 'relative',
-    marginRight: 12,
-    paddingTop: 4,
-  },
+  infoItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  infoLabel: { fontWeight: '700', color: '#595959', marginLeft: 8, marginRight: 4 },
+  infoValue: { fontWeight: '700', color: '#17171B', flex: 1 },
+  stepContainer: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
+  stepIconContainer: { width: 40, alignItems: 'center', marginRight: 12, paddingTop: 4 },
   timelineIconLine: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 1,
-      borderWidth: 1,
-      borderColor: '#DDD',
+    width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center',
+    borderWidth: 1, borderColor: '#DDD',
   },
-  timelineIconLineText: {
-      fontWeight: '700',
-  },
-  timelineIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#14CAC9',
-    justifyContent: 'center',
+  timelineIconLineText: { fontWeight: '700' },
+  timelineIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#14CAC9', justifyContent: 'center', alignItems: 'center' },
+  timelineTrackTop: { position: 'absolute', width: 3, backgroundColor: '#DDD', top: 0, height: 4 },
+  timelineTrackBottom: { position: 'absolute', width: 3, backgroundColor: '#DDD', top: 44, height: '100%' },
+  stepContent: { flex: 1, paddingVertical: 4, paddingBottom: 16 },
+  stepTitle: { fontWeight: '700', color: '#17171B', marginBottom: 4 },
+  stepDescription: { color: '#333', fontWeight: '700', marginBottom: 4 },
+  stationButtonContainer: { marginTop: 20, marginBottom: 40 },
+  stationButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    zIndex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 40,
+    borderWidth: 2,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  timelineTrackTop: {
-    position: 'absolute',
-    width: 3,
-    backgroundColor: '#DDD',
-    top: 0,
-    height: 4,
-    zIndex: 0,
-  },
-  timelineTrackBottom: {
-    position: 'absolute',
-    width: 3,
-    backgroundColor: '#DDD',
-    top: 44,
-    height: '100%',
-    zIndex: 0,
-  },
-  stepContent: {
-    flex: 1,
-    paddingVertical: 4,
-    paddingBottom: 16,
-  },
-  stepTitle: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: '#17171B',
-    marginBottom: 4,
-  },
-  stepDescription: {
-    fontFamily: 'NotoSansKR',
-    color: '#333',
-    fontWeight: '700',
-    marginBottom: 4,
-  },
+  stationButtonIcon: { justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  stationButtonIconText: { fontWeight: 'bold', textAlign: 'center' },
+  stationButtonText: { flex: 1, fontWeight: '700', color: '#17171B' },
 });
 
 export default PathResultView;

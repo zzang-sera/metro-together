@@ -1,4 +1,3 @@
-// 📍 NearbyStationsScreen.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -22,9 +21,9 @@ import { useFontSize } from '../../contexts/FontSizeContext';
 
 const stationData = stationJson.DATA;
 const lineData = lineJson.DATA;
-const BASE_NEARBY_ICON_SIZE = 22; // ✅ 원형 아이콘 기본 크기
+const BASE_NEARBY_ICON_SIZE = 22;
 
-// 📍 두 좌표 거리 계산 함수
+// 📍 두 좌표 거리 계산
 function getDistance(lat1, lon1, lat2, lon2) {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -38,24 +37,23 @@ function getDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// 🚇 노선별 색상 반환
+// 🚇 노선별 색상
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
-// ⚪ 배경 대비 텍스트 색상
+// ⚪ 대비 텍스트 색상
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
-   try {
+  try {
     const r = parseInt(hexColor.substr(1, 2), 16);
     const g = parseInt(hexColor.substr(3, 2), 16);
     const b = parseInt(hexColor.substr(5, 2), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.5 ? '#17171B' : '#FFFFFF';
-  } catch (e) {
-    console.error("Error parsing hex color:", hexColor, e);
-    return "#FFFFFF";
+  } catch {
+    return '#FFFFFF';
   }
 }
 
@@ -66,6 +64,7 @@ const NearbyStationsScreen = () => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // ✅ 현재 위치로부터 주변역 계산
   useEffect(() => {
     (async () => {
       setIsLoading(true);
@@ -84,6 +83,7 @@ const NearbyStationsScreen = () => {
           distance: getDistance(latitude, longitude, station.lat, station.lng),
         }));
 
+        // 중복 역 통합
         const grouped = {};
         stationsWithDistance.forEach((s) => {
           if (!grouped[s.name]) {
@@ -93,26 +93,28 @@ const NearbyStationsScreen = () => {
               lng: s.lng,
               lines: s.line ? [s.line] : [],
               distance: s.distance,
-              stationCode: String(s.station_cd || s.STN_CD || s.code || s.stationCode || '').trim()
+              stationCode: String(
+                s.station_cd || s.STN_CD || s.code || s.stationCode || ''
+              ).trim(),
             };
           } else {
             if (s.line && !grouped[s.name].lines.includes(s.line)) {
               grouped[s.name].lines.push(s.line);
             }
             if (s.distance < grouped[s.name].distance) {
-                grouped[s.name].distance = s.distance;
-                grouped[s.name].lat = s.lat;
-                grouped[s.name].lng = s.lng;
+              grouped[s.name].distance = s.distance;
+              grouped[s.name].lat = s.lat;
+              grouped[s.name].lng = s.lng;
             }
           }
         });
 
-        const sortedStations = Object.values(grouped).sort(
+        const sorted = Object.values(grouped).sort(
           (a, b) => a.distance - b.distance
         );
-        setNearbyStations(sortedStations.slice(0, 10));
+        setNearbyStations(sorted.slice(0, 10));
       } catch (error) {
-        console.error("Error fetching location or processing stations:", error);
+        console.error('Error fetching location or processing stations:', error);
         setErrorMsg('현재 위치를 가져오는 데 실패했습니다.');
       } finally {
         setIsLoading(false);
@@ -124,9 +126,7 @@ const NearbyStationsScreen = () => {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" />
-        <Text
-          style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}
-        >
+        <Text style={[styles.loadingText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           주변 역을 찾고 있습니다...
         </Text>
       </View>
@@ -136,9 +136,7 @@ const NearbyStationsScreen = () => {
   if (errorMsg) {
     return (
       <View style={styles.centered}>
-        <Text
-          style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}
-        >
+        <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           {errorMsg}
         </Text>
       </View>
@@ -147,10 +145,11 @@ const NearbyStationsScreen = () => {
 
   const renderStationItem = ({ item }) => {
     const distanceKm = Number(item.distance || 0).toFixed(1);
-    const stationName = item.name;
-    const stationCode = item.stationCode;
 
-    // ✅ 동적 아이콘 크기 계산
+    // ✅ “서울” 데이터 → 출력은 “서울역”
+    const realName = item.name;
+    const displayName = item.name === '서울' ? '서울역' : item.name;
+    const stationCode = item.stationCode;
     const dynamicIconSize = BASE_NEARBY_ICON_SIZE + fontOffset;
 
     return (
@@ -161,9 +160,9 @@ const NearbyStationsScreen = () => {
           navigation.navigate('MainStack', {
             screen: 'StationDetail',
             params: {
-              stationName,
+              stationName: realName, // ✅ 데이터는 “서울”
               lines: item.lines,
-              stationCode: stationCode,
+              stationCode,
             },
           })
         }
@@ -182,13 +181,13 @@ const NearbyStationsScreen = () => {
                         <View
                           key={line}
                           style={[
-                            styles.lineBadge, // ⚠️ 이제 lineCircle이 아님!
+                            styles.lineBadge,
                             {
                               backgroundColor: lineColor,
                               width: dynamicIconSize,
                               height: dynamicIconSize,
                               borderRadius: dynamicIconSize / 2,
-                            }
+                            },
                           ]}
                         >
                           <Text
@@ -196,8 +195,8 @@ const NearbyStationsScreen = () => {
                               styles.lineBadgeText,
                               {
                                 color: textColor,
-                                fontSize: 12 + fontOffset, 
-                              }
+                                fontSize: 12 + fontOffset,
+                              },
                             ]}
                           >
                             {line.replace('호선', '')}
@@ -218,7 +217,7 @@ const NearbyStationsScreen = () => {
                 { fontSize: responsiveFontSize(18) + fontOffset },
               ]}
             >
-              {stationName}
+              {displayName} {/* ✅ “서울역” 표시 */}
             </Text>
             <Text
               style={[
@@ -237,7 +236,7 @@ const NearbyStationsScreen = () => {
               navigation.navigate('MainStack', {
                 screen: 'BarrierFreeMap',
                 params: {
-                  stationName,
+                  stationName: realName, // ✅ 데이터는 “서울”
                   lines: item.lines,
                   lat: item.lat,
                   lng: item.lng,
@@ -259,14 +258,17 @@ const NearbyStationsScreen = () => {
       <FlatList
         data={nearbyStations}
         keyExtractor={(item) => `${item.name}-${item.lines.join('-')}`}
-        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16), paddingTop: responsiveHeight(10) }}
+        contentContainerStyle={{
+          paddingHorizontal: responsiveWidth(16),
+          paddingTop: responsiveHeight(10),
+        }}
         renderItem={renderStationItem}
         ListEmptyComponent={
-            <View style={styles.centered}>
-                <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-                    주변에 지하철역 정보가 없습니다.
-                </Text>
-            </View>
+          <View style={styles.centered}>
+            <Text style={[styles.errorText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              주변에 지하철역 정보가 없습니다.
+            </Text>
+          </View>
         }
       />
     </View>
@@ -290,29 +292,12 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
   },
   leftContent: { flexDirection: 'row', alignItems: 'center' },
-  lineContainer: {
-    flexDirection: 'column',
-    marginRight: 12,
-    gap: 6,
-    alignItems: 'flex-start',
-  },
-  lineRow: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  // ✅ lineBadge 스타일 수정 (크기 관련 속성 제거)
-  lineBadge: {
-    // borderRadius, paddingHorizontal, paddingVertical 제거
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lineBadgeText: {
-    fontWeight: '700',
-    // color, fontSize 는 JSX에서 동적으로 설정
-  },
+  lineContainer: { flexDirection: 'column', marginRight: 12, gap: 6, alignItems: 'flex-start' },
+  lineRow: { flexDirection: 'row', gap: 6 },
+  lineBadge: { justifyContent: 'center', alignItems: 'center' },
+  lineBadgeText: { fontWeight: '700' },
   stationName: { fontWeight: '700', color: '#17171B' },
   distanceText: { fontWeight: '700', color: '#595959', marginTop: 2 },
   mapIconButton: { backgroundColor: '#E6FAF9', padding: 6, borderRadius: 50 },
