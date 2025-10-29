@@ -18,7 +18,6 @@ const WelcomeScreen = ({ navigation }) => {
     }
   };
 
-  // --- 👇 [수정] 글자 크기에 따라 줄바꿈 텍스트를 다르게 설정 ---
   const footerTextContent = fontOffset >= 8
     ? "즐겨찾기, 챗봇 기능을\n사용할 수 있습니다."
     : "회원 가입 시\n즐겨찾기, 챗봇 기능을 사용할 수 있습니다.";
@@ -54,6 +53,11 @@ const WelcomeScreen = ({ navigation }) => {
           type="feature"
           title="원하는 역 검색"
           onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
+        />
+        <CustomButton
+          type="feature"
+          title="지하철 최단경로"
+          onPress={() => navigation.navigate('PathFinderStack')}
         />
         <CustomButton
           type="outline" 

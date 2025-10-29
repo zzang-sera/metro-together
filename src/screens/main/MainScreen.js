@@ -1,3 +1,4 @@
+// src/screens/main/MainScreen.js
 import React, { useState } from 'react';
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +16,13 @@ const MainScreen = () => {
 
   const goTab = (name) => {
     navigation.navigate(name);
+  };
+
+  // [추가] PathFinderScreen으로 이동하는 핸들러
+  const handlePathFinderPress = () => {
+    // HomeStackNavigator의 'MainStack' 스크린(MainStackNavigator)으로 이동 후,
+    // 그 안의 'PathFinder' 스크린으로 이동
+    navigation.navigate('MainStack', { screen: 'PathFinder' });
   };
 
   const handleFeaturePress = (featureName) => {
@@ -60,6 +68,13 @@ const MainScreen = () => {
           title="원하는 역 검색"
           onPress={() => goTab('검색')}
         />
+        
+        <CustomButton
+          type="feature"
+          title="지하철 최단 경로"
+          onPress={() => navigation.navigate('PathFinderStack')}
+        />
+
         <CustomButton
           type="outline"
           title="즐겨찾기"
@@ -81,4 +96,3 @@ const MainScreen = () => {
 };
 
 export default MainScreen;
-
