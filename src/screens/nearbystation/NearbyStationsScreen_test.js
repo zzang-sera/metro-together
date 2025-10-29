@@ -1,5 +1,5 @@
 // 📍 NearbyStationsScreen_test.js
-// ✅ 테스트용: GPS 비활성화 + 다중호선 포함 + 지도 버튼 유지 + 2개씩 줄맞춤 표시
+// ✅ 테스트용: GPS 비활성화 + 다중호선 포함 + 서울역 표시 + 데이터는 “서울”로 전달
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -42,7 +42,7 @@ function getTextColorForBackground(hexColor) {
 // ✅ 테스트용 더미 주변역 데이터
 const dummyStations = [
   {
-    name: '서울역',
+    name: '서울',
     lat: 37.554648,
     lng: 126.970607,
     lines: ['1호선', '4호선', '공항철도'],
@@ -107,8 +107,11 @@ const NearbyStationsScreen = () => {
   }
 
   const renderStationItem = ({ item }) => {
-    const stationName = item.name;
     const distanceKm = item.distance.toFixed(1);
+
+    // ✅ “서울” → 표시만 “서울역”
+    const displayName = item.name === '서울' ? '서울역' : item.name;
+    const realName = item.name === '서울역' ? '서울' : item.name;
 
     return (
       <TouchableOpacity
@@ -118,7 +121,7 @@ const NearbyStationsScreen = () => {
           navigation.navigate('MainStack', {
             screen: 'StationDetail',
             params: {
-              stationName,
+              stationName: realName, // ✅ 데이터는 “서울”
               lines: item.lines,
             },
           })
@@ -154,7 +157,7 @@ const NearbyStationsScreen = () => {
             <Text
               style={[styles.stationName, { fontSize: responsiveFontSize(18) + fontOffset }]}
             >
-              {stationName}
+              {displayName}
             </Text>
             <Text
               style={[styles.distanceText, { fontSize: responsiveFontSize(15) + fontOffset }]}
@@ -164,14 +167,14 @@ const NearbyStationsScreen = () => {
           </View>
         </View>
 
-        {/* ✅ 지도 버튼: 기존 BarrierFreeMap 연결 유지 */}
+        {/* ✅ 지도 버튼: BarrierFreeMap 연결 시 실제 데이터 “서울” 전달 */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('MainStack', {
                 screen: 'BarrierFreeMap',
                 params: {
-                  stationName,
+                  stationName: realName, // ✅ 데이터는 “서울”
                   lines: item.lines,
                   lat: item.lat,
                   lng: item.lng,
@@ -193,7 +196,10 @@ const NearbyStationsScreen = () => {
       <FlatList
         data={nearbyStations}
         keyExtractor={(item) => item.name}
-        contentContainerStyle={{ paddingHorizontal: responsiveWidth(16), paddingTop: 10 }}
+        contentContainerStyle={{
+          paddingHorizontal: responsiveWidth(16),
+          paddingTop: 10,
+        }}
         renderItem={renderStationItem}
         ListHeaderComponent={
           <Text
@@ -205,7 +211,7 @@ const NearbyStationsScreen = () => {
               marginBottom: 8,
             }}
           >
-            주변 역 목록
+            주변 역 목록 (테스트용)
           </Text>
         }
       />
@@ -231,7 +237,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   leftContent: { flexDirection: 'row', alignItems: 'center' },
-  // ✅ 2개씩 줄맞춤 (행 단위)
   lineContainer: {
     flexDirection: 'column',
     marginRight: 12,

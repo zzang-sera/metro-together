@@ -9,43 +9,41 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import {
   responsiveFontSize,
   responsiveHeight,
-  responsiveWidth,
 } from '../../utils/responsive';
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
-const BASE_SEARCH_ICON_SIZE = 22; // [추가] 검색 결과용 아이콘 기본 크기
+const BASE_SEARCH_ICON_SIZE = 22;
 
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
-// [추가] 배경색 대비 텍스트 색상 결정 함수
 function getTextColorForBackground(hexColor) {
-  if (!hexColor) return "#FFFFFF"; // 기본값 흰색
+  if (!hexColor) return "#FFFFFF";
   try {
     const r = parseInt(hexColor.substr(1, 2), 16);
     const g = parseInt(hexColor.substr(3, 2), 16);
     const b = parseInt(hexColor.substr(5, 2), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance > 0.5 ? "#17171B" : "#FFFFFF"; // 밝으면 검은색, 어두우면 흰색
+    return luminance > 0.5 ? "#17171B" : "#FFFFFF";
   } catch (e) {
     console.error("Error parsing hex color:", hexColor, e);
-    return "#FFFFFF"; // 오류 시 흰색 반환
+    return "#FFFFFF";
   }
 }
 
-
 function findStationCodeBy(name, line) {
-  const hit = allStations.find((s) => s?.name === name && s?.line === line);
+  const realName = name === "서울역" ? "서울" : name; // ✅ 데이터용은 ‘서울’
+  const hit = allStations.find((s) => s?.name === realName && s?.line === line);
   const code = String(
     hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ''
   ).trim();
@@ -55,8 +53,10 @@ function findStationCodeBy(name, line) {
 const SearchStationScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
+  const route = useRoute();
   const [searchQuery, setSearchQuery] = useState('');
 
+  // ✅ “서울” → “서울역”으로 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
@@ -65,19 +65,43 @@ const SearchStationScreen = () => {
     );
     const stationMap = new Map();
     matchingStations.forEach((station) => {
-      if (stationMap.has(station.name)) {
-        stationMap.get(station.name).lines.push(station.line);
+      const displayName = station.name === "서울" ? "서울역" : station.name;
+      if (stationMap.has(displayName)) {
+        stationMap.get(displayName).lines.push(station.line);
       } else {
-        stationMap.set(station.name, { name: station.name, lines: [station.line] });
+        stationMap.set(displayName, { name: displayName, lines: [station.line] });
       }
     });
     return Array.from(stationMap.values());
   }, [searchQuery]);
 
+  const handleSelectStation = (station) => {
+    // ✅ 실제 전달 시 “서울역”은 “서울”로 변환
+    const realName = station.name === "서울역" ? "서울" : station.name;
+    const mode = route.params?.mode;
+
+    if (mode === 'dep') {
+      navigation.navigate('PathFinder', { selectedDep: realName });
+    } else if (mode === 'arr') {
+      navigation.navigate('PathFinder', { selectedArr: realName });
+    } else {
+      const firstLine = station.lines[0];
+      const stationCode = findStationCodeBy(station.name, firstLine);
+      navigation.navigate('MainStack', {
+        screen: 'StationDetail',
+        params: {
+          stationCode,
+          stationName: station.name,
+          lines: station.lines,
+        },
+      });
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" style={styles.searchIcon} /> 
+        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" style={styles.searchIcon} />
         <TextInput
           style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
           placeholder="역 이름을 입력하세요"
@@ -95,39 +119,18 @@ const SearchStationScreen = () => {
         renderItem={({ item }) => {
           const firstLine = item.lines[0];
           const stationCode = findStationCodeBy(item.name, firstLine);
-          
-          // [추가] 동적 아이콘 크기 계산
           const dynamicIconSize = BASE_SEARCH_ICON_SIZE + fontOffset;
 
           return (
             <TouchableOpacity
               activeOpacity={0.85}
               style={styles.resultItem}
-              onPress={() =>
-                navigation.navigate('MainStack', {
-                  screen: 'StationDetail',
-                  params: {
-                    stationCode,
-                    stationName: item.name,
-                    lines: item.lines, 
-                  },
-                })
-              }
-              onLongPress={() =>
-                navigation.navigate('MainStack', {
-                  screen: 'BarrierFreeMap',
-                  params: {
-                    stationName: item.name,
-                    lines: item.lines, 
-                  },
-                })
-              }
-              delayLongPress={250}
+              onPress={() => handleSelectStation(item)}
               accessibilityLabel={`${item.lines.join(', ')} ${item.name}`}
             >
               <Ionicons
                 name="location-outline"
-                size={24 + fontOffset / 2} // 아이콘 크기도 fontOffset 반영
+                size={24 + fontOffset / 2}
                 color="#17171B"
                 style={styles.locationIcon}
               />
@@ -148,29 +151,29 @@ const SearchStationScreen = () => {
                       <View key={`row-${rowIndex}`} style={styles.lineRow}>
                         {pair.map((line) => {
                           const lineColor = getLineColor(line);
-                          const textColor = getTextColorForBackground(lineColor); // [수정] 동적 텍스트 색상
-                          
+                          const textColor = getTextColorForBackground(lineColor);
                           return (
                             <View
                               key={line}
                               style={[
                                 styles.lineCircle,
-                                { 
+                                {
                                   backgroundColor: lineColor,
-                                  // [수정] 동적 크기 적용
                                   width: dynamicIconSize,
                                   height: dynamicIconSize,
                                   borderRadius: dynamicIconSize / 2,
                                 },
                               ]}
                             >
-                              <Text style={[
-                                styles.lineText,
-                                { 
-                                  color: textColor, // [수정] 동적 색상 적용
-                                  fontSize: 12 + fontOffset, // [수정] 동적 폰트 크기
-                                }
-                              ]}>
+                              <Text
+                                style={[
+                                  styles.lineText,
+                                  {
+                                    color: textColor,
+                                    fontSize: 12 + fontOffset,
+                                  },
+                                ]}
+                              >
                                 {line.replace('호선', '')}
                               </Text>
                             </View>
@@ -210,7 +213,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     margin: 16,
     paddingHorizontal: 12,
-    // [추가] TextInput 높이가 커질 수 있으므로 최소 높이 지정
     minHeight: responsiveHeight(5.5),
   },
   searchIcon: { marginRight: 8 },
@@ -227,22 +229,20 @@ const styles = StyleSheet.create({
   stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
   lineContainer: {
     flexDirection: 'column',
-    alignItems: 'flex-start', // 오른쪽 정렬 유지
+    alignItems: 'flex-start',
     gap: 4,
   },
   lineRow: {
     flexDirection: 'row',
     gap: 6,
-    justifyContent: 'flex-end', // 오른쪽 정렬 유지
+    justifyContent: 'flex-end',
   },
   lineCircle: {
-    // [수정] width, height, borderRadius는 JSX에서 동적으로 설정되므로 제거
     justifyContent: 'center',
     alignItems: 'center',
   },
-  lineText: { 
-    // [수정] color, fontSize는 JSX에서 동적으로 설정되므로 제거
-    fontWeight: 'bold', 
+  lineText: {
+    fontWeight: 'bold',
   },
   emptyText: { textAlign: 'center', color: 'gray', marginTop: 20 },
 });

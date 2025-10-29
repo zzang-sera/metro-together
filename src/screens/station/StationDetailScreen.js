@@ -1,3 +1,4 @@
+// src/screens/station/StationDetailScreen.js
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -29,7 +30,7 @@ import { auth, db } from "../../config/firebaseConfig";
 import { responsiveFontSize } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.json";
-import { getStationImageByName } from "../../api/metro/metroAPI"; // ✅ 추가
+import { getStationImageByName } from "../../api/metro/metroAPI";
 
 const lineData = lineJson.DATA;
 const MINT = "#14CAC9";
@@ -61,17 +62,19 @@ export default function StationDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [stationImage, setStationImage] = useState(null);
 
-  // ✅ 역 이미지 불러오기 (BarrierFreeMap / Line1RouteScreen용)
+  const displayName = stationName === "서울" ? "서울역" : stationName;
+  const realStationName = stationName === "서울역" ? "서울" : stationName;
+
   useEffect(() => {
     async function loadImage() {
       try {
-        if (stationName) {
-          const res = await getStationImageByName(stationName);
+        if (realStationName) {
+          const res = await getStationImageByName(realStationName);
           if (res?.length) {
             setStationImage(res[0].image.uri);
             console.log("🖼️ stationImage loaded:", res[0].image.uri);
           } else {
-            console.warn("⚠️ No image found for", stationName);
+            console.warn("⚠️ No image found for", realStationName);
           }
         }
       } catch (e) {
@@ -79,9 +82,8 @@ export default function StationDetailScreen() {
       }
     }
     loadImage();
-  }, [stationName]);
+  }, [realStationName]);
 
-  // ✅ 즐겨찾기 확인
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -106,7 +108,7 @@ export default function StationDetailScreen() {
     }
     const userDocRef = doc(db, "users", currentUser.uid);
     try {
-      const favObj = { stationName, stationCode, lines };
+      const favObj = { stationName: realStationName, stationCode, lines };
       const docSnap = await getDoc(userDocRef);
       if (isFavorite) {
         if (docSnap.exists()) {
@@ -126,18 +128,17 @@ export default function StationDetailScreen() {
     }
   };
 
-  // ✅ 시설 버튼 클릭 시 → 지도 화면 이동 (이미지까지 전달)
   const goToFacilityMap = (type) => {
     if (!stationImage) {
       Alert.alert("잠시만요", "역 안내도가 아직 불러와지지 않았어요. 잠시 후 다시 시도해주세요.");
       return;
     }
     navigation.push("BarrierFreeMap", {
-      stationName,
+      stationName: realStationName,
       stationCode,
       lines,
       type,
-      imageUrl: stationImage, // ✅ 추가된 핵심 라인
+      imageUrl: stationImage,
     });
   };
 
@@ -172,10 +173,7 @@ export default function StationDetailScreen() {
                   <Text
                     style={[
                       styles.lineBadgeText,
-                      {
-                        color: textColor,
-                        fontSize: 12 + fontOffset,
-                      },
+                      { color: textColor, fontSize: 12 + fontOffset },
                     ]}
                   >
                     {line.replace("호선", "")}
@@ -191,7 +189,7 @@ export default function StationDetailScreen() {
               { fontSize: responsiveFontSize(18) + fontOffset },
             ]}
           >
-            {stationName || "역명"}
+            {displayName || "역명"}
           </Text>
         </View>
 
@@ -204,7 +202,7 @@ export default function StationDetailScreen() {
         </TouchableOpacity>
       </View>
     ),
-    [navigation, stationName, lines, fontOffset, insets.top, isFavorite]
+    [navigation, displayName, lines, fontOffset, insets.top, isFavorite]
   );
 
   return (
@@ -218,71 +216,45 @@ export default function StationDetailScreen() {
           </Text>
         </View>
 
-        {/* ✅ 시설 선택 버튼들 */}
+        {/* ✅ 최신 아이콘 버튼 목록 */}
         <View style={styles.buttonListContainer}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("EV")}>
-            <View style={styles.buttonLeft}>
-              <MaterialCommunityIcons name="elevator-passenger-outline" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>엘리베이터</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("ES")}>
-            <View style={styles.buttonLeft}>
-              <MaterialCommunityIcons name="escalator" size={responsiveFontSize(28) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>에스컬레이터</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("TO")}>
-            <View style={styles.buttonLeft}>
-              <FontAwesome5 name="restroom" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>화장실</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("DT")}>
-            <View style={styles.buttonLeft}>
-              <FontAwesome6 name="wheelchair" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>장애인 화장실</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("WL")}>
-            <View style={styles.buttonLeft}>
-              <MaterialCommunityIcons name="human-wheelchair" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>휠체어 리프트</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("VO")}>
-            <View style={styles.buttonLeft}>
-              <Ionicons name="volume-high" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>휠체어 급속충전기</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("NU")}>
-            <View style={styles.buttonLeft}>
-              <MaterialIcons name="baby-changing-station" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>수유실</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.iconButton} onPress={() => goToFacilityMap("LO")}>
-            <View style={styles.buttonLeft}>
-              <MaterialCommunityIcons name="locker-multiple" size={responsiveFontSize(26) + fontOffset} color={INK} />
-              <Text style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>보관함</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={responsiveFontSize(20) + fontOffset} color={INK} />
-          </TouchableOpacity>
+          {[
+            { icon: "elevator-passenger-outline", label: "엘리베이터", type: "EV" },
+            { icon: "escalator", label: "에스컬레이터", type: "ES" },
+            { icon: "restroom", label: "화장실", type: "TO", pack: FontAwesome5 },
+            { icon: "wheelchair", label: "장애인 화장실", type: "DT", pack: FontAwesome6 },
+            { icon: "human-wheelchair", label: "휠체어 리프트", type: "WL" },
+            { icon: "volume-high", label: "음성유도기", type: "VO", pack: Ionicons },
+            { icon: "baby-changing-station", label: "수유실", type: "NU", pack: MaterialIcons },
+            { icon: "locker-multiple", label: "보관함", type: "LO" },
+          ].map((btn) => {
+            const IconPack = btn.pack || MaterialCommunityIcons;
+            return (
+              <TouchableOpacity
+                key={btn.type}
+                style={styles.iconButton}
+                onPress={() => goToFacilityMap(btn.type)}
+              >
+                <View style={styles.buttonLeft}>
+                  <IconPack
+                    name={btn.icon}
+                    size={responsiveFontSize(26) + fontOffset}
+                    color={INK}
+                  />
+                  <Text
+                    style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}
+                  >
+                    {btn.label}
+                  </Text>
+                </View>
+                <Ionicons
+                  name="chevron-forward"
+                  size={responsiveFontSize(20) + fontOffset}
+                  color={INK}
+                />
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -302,8 +274,22 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   headerBtn: { width: 36, alignItems: "center" },
-  headerCenter: { flexDirection: "column", alignItems: "center", gap: 4, justifyContent: "center", flex: 1, marginHorizontal: 8 },
-  lineContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", alignItems: "center", gap: 4, width: "100%" },
+  headerCenter: {
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 4,
+    justifyContent: "center",
+    flex: 1,
+    marginHorizontal: 8,
+  },
+  lineContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 4,
+    width: "100%",
+  },
   lineBadge: { justifyContent: "center", alignItems: "center" },
   lineBadgeText: { fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold", textAlign: "center" },
