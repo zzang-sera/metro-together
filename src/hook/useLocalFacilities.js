@@ -57,7 +57,6 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
               // ✅ stationCode 매칭 안 될 경우 자동 fallback → 역명 검색
               const byName = await getAudioBeaconsForStation(cleanName, line);
               result = byName;
-              console.log(`🎧 [VO] ${cleanName} → 역명 기반 fallback (${byName.length}개)`);
             }
             break;
           }

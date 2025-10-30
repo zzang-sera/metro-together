@@ -18,8 +18,6 @@ import { useApiFacilities } from "../../hook/useApiFacilities";
 import { useLocalFacilities } from "../../hook/useLocalFacilities";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
-const IMG_ORIGINAL_WIDTH = 3376;
-const IMG_ORIGINAL_HEIGHT = 3375;
 
 // ✅ 아이콘
 const ICONS = {
@@ -31,7 +29,6 @@ const ICONS = {
   VO: require("../../assets/function-icon/Seats_for_patients.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
-  // WC 아이콘은 파트너가 추가 예정
 };
 
 const TYPE_LABEL = {
@@ -43,37 +40,36 @@ const TYPE_LABEL = {
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
-  WC: "휠체어 급속 충전",
+  WC: "휠체어 급속충전",
 };
 
 function BubbleMarker({ cx, cy, type }) {
   const BUBBLE_WIDTH = 10;
   const BUBBLE_HEIGHT = 10;
-  const BUBBLE_RADIUS = 2;
-  const TAIL_HEIGHT = 2;
   const ICON_SIZE = 9;
   const iconSrc = ICONS[type] || ICONS["EV"];
-  const halfW = BUBBLE_WIDTH / 2;
-  const rectY = -BUBBLE_HEIGHT - TAIL_HEIGHT;
-  const iconX = -ICON_SIZE / 2;
-  const iconY = rectY + (BUBBLE_HEIGHT - ICON_SIZE) / 2;
-  const tailPath = `M 0 0 L -6 ${-TAIL_HEIGHT} L 6 ${-TAIL_HEIGHT} Z`;
 
   return (
     <G x={cx} y={cy}>
       <Rect
-        x={-halfW}
-        y={rectY}
+        x={-BUBBLE_WIDTH / 2}
+        y={-BUBBLE_HEIGHT - 2}
         width={BUBBLE_WIDTH}
         height={BUBBLE_HEIGHT}
-        rx={BUBBLE_RADIUS}
-        ry={BUBBLE_RADIUS}
+        rx={2}
+        ry={2}
         fill="#fff"
         stroke="#fff"
-        strokeWidth={1.5}
+        strokeWidth={1.2}
       />
-      <Path d={tailPath} fill="#fff" stroke="#fff" strokeWidth={1.5} />
-      <SvgImage href={iconSrc} x={iconX} y={iconY} width={ICON_SIZE} height={ICON_SIZE} />
+      <Path d="M 0 0 L -5 -2 L 5 -2 Z" fill="#fff" stroke="#fff" strokeWidth={1.2} />
+      <SvgImage
+        href={iconSrc}
+        x={-ICON_SIZE / 2}
+        y={-BUBBLE_HEIGHT - 2 + (BUBBLE_HEIGHT - ICON_SIZE) / 2}
+        width={ICON_SIZE}
+        height={ICON_SIZE}
+      />
     </G>
   );
 }
@@ -87,12 +83,11 @@ export default function BarrierFreeMapScreen() {
   const cleanName = (() => {
     if (!stationName) return "";
     let name = stationName.replace(/\(.*\)/g, "").trim();
-    if (name === "서울") return "서울역"; // 예외 처리
-    name = name.replace(/역$/, ""); // “노원역” → “노원”
+    if (name === "서울") return "서울역";
+    name = name.replace(/역$/, "");
     return name;
   })();
 
-  const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [coords, setCoords] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,10 +98,6 @@ export default function BarrierFreeMapScreen() {
 
   // ✅ 좌표 로드
   useEffect(() => {
-    if (type === "WC") {
-      setCoords([]);
-      return;
-    }
     try {
       const filtered = stationCoords.filter(
         (p) =>
@@ -120,57 +111,35 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
-  // ✅ API → 로컬 fallback 로직
+  // ✅ API → 로컬 fallback
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
 
     if (apiSupported) {
       if (!api.loading && api.data.length > 0) {
         setFacilities(api.data);
-        setLoading(false);
       } else if (!api.loading && api.data.length === 0 && !local.loading) {
-        if (local.data.length > 0) {
-          console.log(`🌀 [Fallback] ${type} API 비어있음 → 로컬 JSON 사용`);
-          setFacilities(local.data);
-        } else {
-          console.log(`🚫 [Fallback] ${type} 로컬도 비어 있음`);
-          setFacilities([]);
-        }
-        setLoading(false);
+        setFacilities(local.data || []);
       } else if (!api.loading && api.error && !local.loading) {
         setFacilities(local.data || []);
-        setLoading(false);
       }
     } else {
       if (!local.loading) {
         setFacilities(local.data);
-        setLoading(false);
       }
     }
-  }, [
-    type,
-    api.data,
-    api.loading,
-    api.error,
-    local.data,
-    local.loading,
-    local.error,
-  ]);
+    setLoading(false);
+  }, [type, api, local]);
 
-  // ✅ 팬/줌 기능
+  // ✅ 팬/줌
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
   const initialDistance = useRef(null);
-  const panOffset = useRef({ x: 0, y: 0 }).current;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        pan.setOffset(panOffset);
-        pan.setValue({ x: 0, y: 0 });
-      },
       onPanResponderMove: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
         if (touches.length === 2) {
@@ -201,7 +170,7 @@ export default function BarrierFreeMapScreen() {
     })
   ).current;
 
-  if (!imageUrl)
+  if (!imageUrl && coords.length === 0)
     return (
       <View style={styles.center}>
         <ActivityIndicator color="#14CAC9" size="large" />
@@ -213,13 +182,14 @@ export default function BarrierFreeMapScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{cleanName} 무장애 지도</Text>
 
-      {type !== "WC" && (
+      {/* ✅ 좌표 있을 때만 지도 표시 */}
+      {coords.length > 0 && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
           <Animated.View
             style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
           >
             <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-            <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
+            <Svg style={[styles.overlay]}>
               {coords.map((p, i) => (
                 <BubbleMarker key={`${p.station}_${i}`} cx={p.x} cy={p.y} type={p.type} />
               ))}
@@ -259,7 +229,7 @@ const styles = StyleSheet.create({
   imageContainer: { width: screenW, height: screenH * 0.6, overflow: "hidden" },
   mapWrapper: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
   image: { width: "100%", height: "100%", position: "absolute" },
-  overlay: { position: "absolute", top: 0, left: 0 },
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0 },
   listContainer: { padding: 12, backgroundColor: "#f8f8f8" },
   card: {
     backgroundColor: "#fff",
