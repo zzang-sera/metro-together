@@ -23,7 +23,7 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder';
+export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; // ✅ export
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
 
@@ -43,6 +43,22 @@ function getTextColorForBackground(hexColor) {
   } catch {
     return '#FFFFFF';
   }
+}
+
+/** ----------------------------------------------------------------
+ *  ✅ 챗봇/화면 양쪽에서 재사용할 실제 요청 함수 (Named export)
+ *  동일 파일에서 export 하므로 별도 유틸 추출 불필요
+ * ----------------------------------------------------------------*/
+export async function fetchSubwayPath(dep, arr, wheelchair = false) {
+  if (!dep?.trim() || !arr?.trim()) {
+    throw new Error('출발역과 도착역이 필요합니다.');
+  }
+  const url = `${SUPABASE_URL}?dep=${encodeURIComponent(dep)}&arr=${encodeURIComponent(arr)}&wheelchair=${wheelchair}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  if (data?.error) throw new Error(data.error);
+  return data; // PathResultView에서 쓰는 구조 그대로 반환
 }
 
 const PathFinderScreen = () => {
@@ -97,24 +113,18 @@ const PathFinderScreen = () => {
     setPathData(null);
   };
 
+  /** ✅ 내부 버튼도 같은 fetch 함수를 재사용 */
   const handleFindPath = async () => {
     if (!dep.trim() || !arr.trim()) {
       alert('출발역과 도착역을 모두 입력해주세요.');
       return;
     }
-
-    const depForAPI = dep;
-    const arrForAPI = arr;
-
     Keyboard.dismiss();
     setPathData(null);
     setIsLoading(true);
     try {
-      const url = `${SUPABASE_URL}?dep=${encodeURIComponent(depForAPI)}&arr=${encodeURIComponent(arrForAPI)}&wheelchair=${wheelchair}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.error) alert(data.error);
-      else setPathData(data);
+      const data = await fetchSubwayPath(dep, arr, wheelchair); // ✅ 재사용
+      setPathData(data);
     } catch (e) {
       alert('경로를 불러오는 중 문제가 발생했습니다.');
       console.error(e);
@@ -186,10 +196,7 @@ const PathFinderScreen = () => {
             </View>
           </View>
 
-          <TouchableOpacity
-            onPress={swapStations}
-            style={styles.swapButton}
-          >
+          <TouchableOpacity onPress={swapStations} style={styles.swapButton}>
             <MaterialCommunityIcons name="swap-vertical" size={24 + fontOffset / 2} color="#17171B" />
           </TouchableOpacity>
         </View>
@@ -239,10 +246,7 @@ const PathFinderScreen = () => {
           keyboardShouldPersistTaps="handled"
           style={[styles.dropdown, { top: listTopPosition }]}
           renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.resultItem}
-              onPress={() => handleSelectStation(item)}
-            >
+            <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectStation(item)}>
               <Ionicons
                 name="location-outline"
                 size={24 + fontOffset / 1.5}
