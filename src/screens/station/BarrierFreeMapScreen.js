@@ -1,4 +1,3 @@
-// ✅ src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
@@ -84,12 +83,16 @@ export default function BarrierFreeMapScreen() {
   const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
     route.params || {};
 
-  // ✅ 역 이름 정제 (서울역은 예외 처리)
-  let cleanName = stationName.replace(/\(.*\)/g, "").trim();
-  if (cleanName === "서울") cleanName = "서울역"; // 🚀 예외 처리
+  // ✅ 역 이름 정제
+  const cleanName = (() => {
+    if (!stationName) return "";
+    let name = stationName.replace(/\(.*\)/g, "").trim();
+    if (name === "서울") return "서울역"; // 예외 처리
+    name = name.replace(/역$/, ""); // “노원역” → “노원”
+    return name;
+  })();
 
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [coords, setCoords] = useState([]);
   const [facilities, setFacilities] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,17 +120,15 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
-  // ✅ API → 로컬 fallback 로직 (엘리베이터 포함 안정화)
+  // ✅ API → 로컬 fallback 로직
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
 
     if (apiSupported) {
       if (!api.loading && api.data.length > 0) {
-        // ✅ API 성공
         setFacilities(api.data);
         setLoading(false);
       } else if (!api.loading && api.data.length === 0 && !local.loading) {
-        // ✅ API 비었거나 실패 → 로컬 폴백
         if (local.data.length > 0) {
           console.log(`🌀 [Fallback] ${type} API 비어있음 → 로컬 JSON 사용`);
           setFacilities(local.data);
@@ -137,12 +138,10 @@ export default function BarrierFreeMapScreen() {
         }
         setLoading(false);
       } else if (!api.loading && api.error && !local.loading) {
-        // ✅ API 오류 시 → 로컬 사용
         setFacilities(local.data || []);
         setLoading(false);
       }
     } else {
-      // ✅ API 없는 타입 → 로컬만 사용
       if (!local.loading) {
         setFacilities(local.data);
         setLoading(false);
