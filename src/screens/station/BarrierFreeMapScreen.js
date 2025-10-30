@@ -32,7 +32,7 @@ const ICONS = {
   VO: require("../../assets/function-icon/Seats_for_patients.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
-  // WC는 나중에 추가 예정
+  // WC 아이콘은 파트너가 추가 예정
 };
 
 const TYPE_LABEL = {
@@ -81,9 +81,13 @@ function BubbleMarker({ cx, cy, type }) {
 
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
-  const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } = route.params || {};
+  const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
+    route.params || {};
 
-  const cleanName = stationName.replace(/\(.*\)/g, "").trim();
+  // ✅ 역 이름 정제 (서울역은 예외 처리)
+  let cleanName = stationName.replace(/\(.*\)/g, "").trim();
+  if (cleanName === "서울") cleanName = "서울역"; // 🚀 예외 처리
+
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [coords, setCoords] = useState([]);
@@ -97,7 +101,7 @@ export default function BarrierFreeMapScreen() {
   // ✅ 좌표 로드
   useEffect(() => {
     if (type === "WC") {
-      setCoords([]); // 지도 마커 없음
+      setCoords([]);
       return;
     }
     try {
@@ -113,30 +117,46 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
-  // ✅ API → 로컬 fallback 로직
+  // ✅ API → 로컬 fallback 로직 (엘리베이터 포함 안정화)
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
 
     if (apiSupported) {
       if (!api.loading && api.data.length > 0) {
+        // ✅ API 성공
         setFacilities(api.data);
         setLoading(false);
-      } else if (!api.loading && api.data.length === 0 && !local.loading && local.data.length > 0) {
-        console.log(`🌀 ${type} API 비었음 → 로컬 fallback`);
-        setFacilities(local.data);
+      } else if (!api.loading && api.data.length === 0 && !local.loading) {
+        // ✅ API 비었거나 실패 → 로컬 폴백
+        if (local.data.length > 0) {
+          console.log(`🌀 [Fallback] ${type} API 비어있음 → 로컬 JSON 사용`);
+          setFacilities(local.data);
+        } else {
+          console.log(`🚫 [Fallback] ${type} 로컬도 비어 있음`);
+          setFacilities([]);
+        }
         setLoading(false);
-      } else if (!api.loading && !local.loading) {
-        setFacilities([]);
+      } else if (!api.loading && api.error && !local.loading) {
+        // ✅ API 오류 시 → 로컬 사용
+        setFacilities(local.data || []);
         setLoading(false);
       }
     } else {
-      // API 없는 타입 → 로컬 전용
+      // ✅ API 없는 타입 → 로컬만 사용
       if (!local.loading) {
         setFacilities(local.data);
         setLoading(false);
       }
     }
-  }, [type, api.data, api.loading, local.data, local.loading]);
+  }, [
+    type,
+    api.data,
+    api.loading,
+    api.error,
+    local.data,
+    local.loading,
+    local.error,
+  ]);
 
   // ✅ 팬/줌 기능
   const scale = useRef(new Animated.Value(1)).current;
@@ -194,7 +214,6 @@ export default function BarrierFreeMapScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{cleanName} 무장애 지도</Text>
 
-      {/* ✅ 지도 표시 (WC 제외) */}
       {type !== "WC" && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
           <Animated.View
@@ -210,7 +229,6 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
-      {/* ✅ 시설 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.center}>
