@@ -262,9 +262,11 @@ export default function StationDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.infoBox}>
+          {/* 역 코드 
           <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
             코드: {stationCode}
-          </Text>
+          </Text>*/}
+
         </View>
 
         <View style={styles.buttonListContainer}>
