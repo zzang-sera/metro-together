@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import { useRoute } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
-import * as FileSystem from "expo-file-system";
 
+import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import elevatorData from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 import escalatorData from "../../assets/metro-data/metro/escalator/서울교통공사_에스컬레이터 설치 정보_20250310.json";
 import toiletData from "../../assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json";
@@ -24,8 +24,8 @@ import lockerData from "../../assets/metro-data/metro/lostandFound/서울교통�
 import liftData from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
-const IMG_ORIGINAL_WIDTH = 3376;   // 절대 수정 금지
-const IMG_ORIGINAL_HEIGHT = 3375;  // 절대 수정 금지
+const IMG_ORIGINAL_WIDTH = 3376;
+const IMG_ORIGINAL_HEIGHT = 3375;
 
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
@@ -49,11 +49,11 @@ const TYPE_LABEL = {
   LO: "보관함",
 };
 
-const BUBBLE_WIDTH = 15;
-const BUBBLE_HEIGHT = 15;
-const BUBBLE_RADIUS = 3;
-const TAIL_HEIGHT = 3;
-const ICON_SIZE = 10;
+const BUBBLE_WIDTH = 10;
+const BUBBLE_HEIGHT = 10;
+const BUBBLE_RADIUS = 2;
+const TAIL_HEIGHT = 2;
+const ICON_SIZE = 9;
 
 function BubbleMarker({ cx, cy, type }) {
   const halfW = BUBBLE_WIDTH / 2;
@@ -83,29 +83,32 @@ function BubbleMarker({ cx, cy, type }) {
 
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
-  const { stationName = "서울역", type = "EV", imageUrl = null } = route.params || {};
+  let { stationName = "서울역", type = "EV", imageUrl = null } = route.params || {};
+
+  // ✅ 역 이름 정규화 (‘노원(4호선)’ → ‘노원’)
+  stationName = stationName.replace(/\(.*\)/g, "").trim();
 
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
-  const [offset, setOffset] = useState({ x: 0, y: 0 }); // ← contain 오프셋만 계산해서 넣음
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [tempPoints, setTempPoints] = useState([]);
   const [facilities, setFacilities] = useState([]);
 
-  const coordsFilePath = `${FileSystem.documentDirectory}${stationName}_coords.json`;
-
+  // ✅ 좌표 불러오기 (단일 station_coords.json)
   useEffect(() => {
-    (async () => {
-      try {
-        const info = await FileSystem.getInfoAsync(coordsFilePath);
-        if (!info.exists) return;
-        const content = await FileSystem.readAsStringAsync(coordsFilePath);
-        const data = JSON.parse(content || "[]");
-        setTempPoints(data.filter((p) => p.type === type));
-      } catch (e) {
-        console.error("🚨 loadCoords error:", e);
-      }
-    })();
-  }, [coordsFilePath, type]);
+    try {
+      const filtered = stationCoords.filter(
+        (p) =>
+          p.station.replace(/\(.*\)/g, "").trim() === stationName &&
+          p.type.toUpperCase() === type.toUpperCase()
+      );
+      setTempPoints(filtered);
+      console.log(`📍 ${stationName} ${type} 좌표 ${filtered.length}개 로드됨`);
+    } catch (e) {
+      console.error("🚨 station_coords load error:", e);
+    }
+  }, [stationName, type]);
 
+  // ✅ 시설 데이터 매칭
   useEffect(() => {
     let data = [];
     switch (type) {
@@ -113,7 +116,7 @@ export default function BarrierFreeMapScreen() {
         data = elevatorData.DATA.filter((d) => d.stn_nm.includes(stationName));
         break;
       case "ES":
-        data = escalatorData.filter((d) => d["역  명"].includes(stationName));
+        data = escalatorData.filter((d) => (d["역명"] || d["역  명"] || "").includes(stationName));
         break;
       case "TO":
         data = toiletData.filter((d) => d.역명.includes(stationName));
@@ -136,7 +139,7 @@ export default function BarrierFreeMapScreen() {
     setFacilities(data);
   }, [stationName, type]);
 
-  // 팬/줌 (그대로)
+  // ✅ 팬/줌 기능
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
@@ -202,10 +205,7 @@ export default function BarrierFreeMapScreen() {
 
       <View style={styles.imageContainer} {...panResponder.panHandlers}>
         <Animated.View
-          style={[
-            styles.mapWrapper,
-            { transform: [...pan.getTranslateTransform(), { scale }] },
-          ]}
+          style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
         >
           <Image
             source={{ uri: imageUrl }}
@@ -215,40 +215,32 @@ export default function BarrierFreeMapScreen() {
               const { width, height } = e.nativeEvent.layout;
               setImgLayout({ width, height });
 
-              // ★★★ contain 오프셋 재계산(이미지 비율은 원본 고정값 사용) ★★★
-              const imageAspect = IMG_ORIGINAL_WIDTH / IMG_ORIGINAL_HEIGHT; // ≈ 1.0003
-              const viewAspect = width / height;                            // 예: 360/423 ≈ 0.851
-
-              let offsetX = 0, offsetY = 0, drawW, drawH;
-              if (imageAspect > viewAspect) {
-                // 좌우가 먼저 맞춰져서 상하에 레터박스
+              // contain 비율 오프셋 계산
+              const imgAspect = IMG_ORIGINAL_WIDTH / IMG_ORIGINAL_HEIGHT;
+              const viewAspect = width / height;
+              let offsetX = 0,
+                offsetY = 0,
+                drawW,
+                drawH;
+              if (imgAspect > viewAspect) {
                 drawW = width;
-                drawH = width / imageAspect;
+                drawH = width / imgAspect;
                 offsetY = (height - drawH) / 2;
               } else {
-                // 상하가 먼저 맞춰져서 좌우에 레터박스
                 drawH = height;
-                drawW = height * imageAspect;
+                drawW = height * imgAspect;
                 offsetX = (width - drawW) / 2;
               }
               setOffset({ x: offsetX, y: offsetY });
 
-              // 디버그 로그
-              console.log("🧭 렌더링된 이미지 크기:", width, height);
-              console.log("📐 aspect img/view:", imageAspect.toFixed(4), viewAspect.toFixed(4));
-              console.log("🎯 contain offset:", offsetX.toFixed(2), offsetY.toFixed(2));
+              console.log("🧭 이미지:", width, height, "offset:", offsetX, offsetY);
             }}
           />
 
           <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
             {tempPoints.map((p, i) => {
-              // ✅ 좌표 공식은 그대로 (검증 완료)
               const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
               const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y;
-
-              // (옵션) 필요시 로그
-              // console.log(`pt(${p.x},${p.y}) -> (${cx.toFixed(2)},${cy.toFixed(2)}) offset=(${offset.x.toFixed(2)},${offset.y.toFixed(2)})`);
-
               return (
                 <BubbleMarker
                   key={`${p.station}_${p.type}_${p.x}_${p.y}_${i}`}
@@ -262,7 +254,6 @@ export default function BarrierFreeMapScreen() {
         </Animated.View>
       </View>
 
-      {/* 하단 리스트 */}
       <View style={styles.listContainer}>
         {facilities.length === 0 ? (
           <Text style={styles.empty}>해당 시설 정보가 없습니다.</Text>
@@ -291,7 +282,6 @@ function extractDetail(item, type) {
     case "WL":
       return `${item["시작층(상세위치)"]} ↔ ${item["종료층(상세위치)"]}`;
     case "NU":
-      return item["상세위치"] || "";
     case "LO":
       return item["상세위치"] || "";
     default:
