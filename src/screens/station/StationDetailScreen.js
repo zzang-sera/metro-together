@@ -1,3 +1,4 @@
+// src/screens/station/StationDetailScreen.js
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -61,13 +62,9 @@ export default function StationDetailScreen() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [stationImage, setStationImage] = useState(null);
 
-  // ✅ “서울”이면 화면엔 “서울역”으로 표시
   const displayName = stationName === "서울" ? "서울역" : stationName;
-
-  // ✅ 내부에서 barrier 등 전달용은 항상 “서울” 유지
   const realStationName = stationName === "서울역" ? "서울" : stationName;
 
-  // ✅ 역 이미지 불러오기
   useEffect(() => {
     async function loadImage() {
       try {
@@ -87,7 +84,6 @@ export default function StationDetailScreen() {
     loadImage();
   }, [realStationName]);
 
-  // ✅ 즐겨찾기 확인
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -132,14 +128,13 @@ export default function StationDetailScreen() {
     }
   };
 
-  // ✅ 시설 버튼 클릭 시 → BarrierFreeMap으로 이동 (데이터는 '서울')
   const goToFacilityMap = (type) => {
     if (!stationImage) {
       Alert.alert("잠시만요", "역 안내도가 아직 불러와지지 않았어요. 잠시 후 다시 시도해주세요.");
       return;
     }
     navigation.push("BarrierFreeMap", {
-      stationName: realStationName, // ✅ 서울로 전달
+      stationName: realStationName,
       stationCode,
       lines,
       type,
@@ -178,10 +173,7 @@ export default function StationDetailScreen() {
                   <Text
                     style={[
                       styles.lineBadgeText,
-                      {
-                        color: textColor,
-                        fontSize: 12 + fontOffset,
-                      },
+                      { color: textColor, fontSize: 12 + fontOffset },
                     ]}
                   >
                     {line.replace("호선", "")}
@@ -191,7 +183,6 @@ export default function StationDetailScreen() {
             })}
           </View>
 
-          {/* ✅ 서울 → 서울역으로 표시 */}
           <Text
             style={[
               styles.headerTitle,
@@ -225,7 +216,7 @@ export default function StationDetailScreen() {
           </Text>
         </View>
 
-        {/* ✅ 시설 버튼들 */}
+        {/* ✅ 최신 아이콘 버튼 목록 */}
         <View style={styles.buttonListContainer}>
           {[
             { icon: "elevator-passenger-outline", label: "엘리베이터", type: "EV" },
