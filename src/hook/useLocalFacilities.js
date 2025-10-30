@@ -10,8 +10,9 @@ import { getDisabledToiletsForStation } from "../api/metro/disabled_toiletLocal"
 import { getToiletsForStation } from "../api/metro/toiletLocal";
 
 /**
- * 로컬 지하철 시설 정보를 불러오는 훅
- * 실시간 API → 실패 시 로컬 JSON으로 폴백하도록 구성할 때 사용
+ * ✅ 로컬 지하철 시설 정보를 불러오는 훅
+ * - 실시간 API 실패 시 로컬 JSON으로 폴백하도록 구성
+ * - WC(휠체어 급속충전)는 API 전용 → 빈 배열 반환
  */
 export function useLocalFacilities(stationName, stationCode, line, type) {
   const [data, setData] = useState([]);
@@ -50,6 +51,9 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
             break;
           case "TO": // 일반 화장실
             result = await getToiletsForStation(stationName, line);
+            break;
+          case "WC": // ✅ 휠체어 급속충전 (로컬 데이터 없음)
+            result = [];
             break;
           default:
             console.warn("⚠️ 알 수 없는 시설 타입:", type);

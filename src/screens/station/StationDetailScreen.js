@@ -1,4 +1,4 @@
-// src/screens/station/StationDetailScreen.js
+// ✅ src/screens/station/StationDetailScreen.js
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -72,9 +72,6 @@ export default function StationDetailScreen() {
           const res = await getStationImageByName(realStationName);
           if (res?.length) {
             setStationImage(res[0].image.uri);
-            console.log("🖼️ stationImage loaded:", res[0].image.uri);
-          } else {
-            console.warn("⚠️ No image found for", realStationName);
           }
         }
       } catch (e) {
@@ -156,7 +153,6 @@ export default function StationDetailScreen() {
               const color = getLineColor(line);
               const textColor = getTextColorForBackground(color);
               const dynamicIconSize = BASE_ICON_SIZE + fontOffset;
-
               return (
                 <View
                   key={line}
@@ -216,7 +212,6 @@ export default function StationDetailScreen() {
           </Text>
         </View>
 
-        {/* ✅ 최신 아이콘 버튼 목록 */}
         <View style={styles.buttonListContainer}>
           {[
             { icon: "elevator-passenger-outline", label: "엘리베이터", type: "EV" },
@@ -224,6 +219,7 @@ export default function StationDetailScreen() {
             { icon: "restroom", label: "화장실", type: "TO", pack: FontAwesome5 },
             { icon: "wheelchair", label: "장애인 화장실", type: "DT", pack: FontAwesome6 },
             { icon: "human-wheelchair", label: "휠체어 리프트", type: "WL" },
+            { icon: "battery-charging", label: "휠체어 급속충전", type: "WC" }, // ✅ 추가된 버튼
             { icon: "volume-high", label: "음성유도기", type: "VO", pack: Ionicons },
             { icon: "baby-changing-station", label: "수유실", type: "NU", pack: MaterialIcons },
             { icon: "locker-multiple", label: "보관함", type: "LO" },
