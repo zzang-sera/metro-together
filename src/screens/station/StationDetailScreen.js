@@ -251,7 +251,7 @@ export default function StationDetailScreen() {
     { icon: "wheelchair", label: "장애인 화장실", type: "DT", pack: FontAwesome6 },
     { icon: "human-wheelchair", label: "휠체어 리프트", type: "WL" },
     { icon: "battery-charging", label: "휠체어 급속충전", type: "WC" },
-    { icon: "volume-high", label: "음성유도기", type: Ionicons },
+    { icon: "volume-high", label: "음성유도기", type: "VO", pack: Ionicons },
     { icon: "baby-changing-station", label: "수유실", type: "NU", pack: MaterialIcons },
     { icon: "locker-multiple", label: "보관함", type: "LO" },
   ];
