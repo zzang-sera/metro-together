@@ -111,13 +111,11 @@ export default StyleSheet.create({
     color: colors.text,
   },
 
-  // ... facilityDesc (변경 없음, lineHeight는 로직 파일에서 처리) ...
   facilityDesc: {
     color: colors.textSecondary,
     marginBottom: 12,
   },
 
-  // ... cardFooter (변경 없음) ...
   cardFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -142,7 +140,6 @@ export default StyleSheet.create({
   // statusBadge: { ... }
   // statusBadgeText: { ... }
 
-  // ... facilityContact (변경 없음) ...
   facilityContact: {
     color: colors.textSecondary,
     flexShrink: 1,
@@ -150,7 +147,6 @@ export default StyleSheet.create({
     marginLeft: 8,
   },
 
-  // ... empty, center (변경 없음) ...
   empty: {
     textAlign: 'center',
     color: colors.textSecondary,
