@@ -1,6 +1,6 @@
 // ✅ src/components/BarrierFreeMapMini.js
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Dimensions, Image } from "react-native";
+import { View, Text, StyleSheet, Dimensions, Image, ActivityIndicator } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";
 import stationCoords from "../assets/metro-data/metro/station/station_coords.json";
 
@@ -9,8 +9,8 @@ const MAX_CARD_HEIGHT = Math.min(260, screenH * 0.45);
 
 export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" }) {
   const [coords, setCoords] = useState([]);
-  const [imgSize, setImgSize] = useState({ width: 1000, height: 1000 });
-  const [validImage, setValidImage] = useState(false);
+  const [imgSize, setImgSize] = useState({ width: 1, height: 1 }); // 초기값 1:1 대신, 즉시 계산용
+  const [hasRealSize, setHasRealSize] = useState(false);
   const [parentW, setParentW] = useState(null);
 
   const normalizeName = (name) =>
@@ -24,6 +24,7 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     LO: "보관함",
   };
 
+  // ✅ 좌표 필터링
   useEffect(() => {
     const clean = normalizeName(stationName);
     const filtered = Array.isArray(stationCoords)
@@ -36,43 +37,60 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     setCoords(filtered);
   }, [stationName, type]);
 
+  // ✅ 이미지 크기 불러오기
   useEffect(() => {
-    if (
-      imageUrl &&
-      typeof imageUrl === "string" &&
-      (imageUrl.startsWith("http://") || imageUrl.startsWith("https://"))
-    ) {
-      Image.getSize(
-        imageUrl,
-        (w, h) => {
-          setImgSize({ width: w, height: h });
-          setValidImage(true);
-        },
-        () => setValidImage(false)
-      );
-    } else {
-      setValidImage(false);
+    if (typeof imageUrl !== "string" || !/^https?:\/\//.test(imageUrl)) {
+      setHasRealSize(false);
+      return;
     }
+    Image.getSize(
+      imageUrl,
+      (w, h) => {
+        setImgSize({ width: w, height: h });
+        setHasRealSize(true);
+      },
+      () => {
+        setHasRealSize(false);
+      }
+    );
   }, [imageUrl]);
 
-  const fallbackBubbleW = Math.round(screenW * 0.72);
-  const cardW = Math.max(140, Math.min(parentW || fallbackBubbleW, screenW * 0.85));
-  const aspect = imgSize.width / imgSize.height || 1;
-  const naturalH = cardW / aspect;
-  const cardH = Math.min(naturalH, MAX_CARD_HEIGHT);
+  // ✅ 카드 너비 계산
+  const fallbackW = Math.round(screenW * 0.72);
+  const cardW = Math.max(140, Math.min(parentW || fallbackW, screenW * 0.85));
 
-  if (!validImage) {
+  // ✅ 비율 계산 (실제 비율이 오기 전에는 임시 1.6 사용)
+  const aspect = hasRealSize ? imgSize.width / imgSize.height : 1.6;
+  const cardH = Math.min(cardW / aspect, MAX_CARD_HEIGHT);
+
+  // ✅ 실제 이미지 비율이 오기 전에는 로딩 뷰 표시
+  if (!hasRealSize) {
     return (
-      <View style={styles.errorBox} onLayout={(e) => setParentW(e.nativeEvent.layout.width)}>
-        <Text style={styles.errorText}>🗺 {stationName}역의 지도 이미지를 불러올 수 없습니다.</Text>
+      <View
+        style={styles.loadingBox}
+        onLayout={(e) => setParentW(e.nativeEvent.layout.width)}
+      >
+        <ActivityIndicator size="small" color="#14CAC9" />
+        <Text style={styles.loadingText}>{stationName}역 지도 불러오는 중...</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.card, { width: cardW }]} onLayout={(e) => setParentW(e.nativeEvent.layout.width)}>
-      <View style={[styles.imageBox, { height: cardH }]}>
-        <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="contain" />
+    <View
+      style={[styles.card, { width: cardW, maxHeight: MAX_CARD_HEIGHT }]}
+      onLayout={(e) => setParentW(e.nativeEvent.layout.width)}
+      key={imageUrl} // 이미지 교체시 리렌더 유도
+    >
+      {/* 이미지 비율 고정 */}
+      <View style={[styles.imageBox, { aspectRatio: aspect }]}>
+        {/* 지도 이미지 */}
+        <Image
+          source={{ uri: imageUrl }}
+          style={StyleSheet.absoluteFill}
+          resizeMode="contain"
+        />
+        {/* 마커 SVG */}
         <Svg
           pointerEvents="none"
           width="100%"
@@ -103,7 +121,11 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
           ))}
         </Svg>
       </View>
-      <Text style={styles.caption}>{stationName}역 {TYPE_LABEL[type] || "시설"} 위치</Text>
+
+      {/* 캡션 */}
+      <Text style={styles.caption}>
+        {stationName} {TYPE_LABEL[type] || "시설"} 위치
+      </Text>
     </View>
   );
 }
@@ -122,6 +144,7 @@ const styles = StyleSheet.create({
   imageBox: {
     width: "100%",
     backgroundColor: "#fff",
+    position: "relative",
   },
   caption: {
     textAlign: "center",
@@ -129,7 +152,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#17171B",
   },
-  errorBox: {
+  loadingBox: {
     alignSelf: "flex-start",
     maxWidth: screenW * 0.8,
     padding: 12,
@@ -137,9 +160,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "#e6e6e6",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  errorText: {
-    textAlign: "left",
+  loadingText: {
     color: "#666",
     fontWeight: "600",
   },

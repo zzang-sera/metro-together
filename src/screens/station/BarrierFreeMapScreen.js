@@ -31,7 +31,8 @@ const ICONS = {
   TO: require("../../assets/function-icon/Bathromm_for_all.png"),
   DT: require("../../assets/function-icon/Disablities_bathroom.png"),
   WL: require("../../assets/function-icon/Lift.png"),
-  VO: require("../../assets/function-icon/Seats_for_patients.png"),
+  WC: require("../../assets/function-icon/Wheelchair_Charging.png"),
+  VO: require("../../assets/function-icon/mic.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
 };
@@ -42,6 +43,7 @@ const TYPE_LABEL = {
   TO: "화장실",
   DT: "장애인 화장실",
   WL: "휠체어 리프트",
+  WC: "휠체어 급속충전",
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
