@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   noticeText: {
     flex: 1, // (CHECK) ADDED: 아이콘을 제외한 나머지 공간을 모두 차지하여 자연스럽게 줄바꿈
-    color: '#l7171B',
+    color: '#17171B',
     fontWeight: '700',
     fontFamily: 'NotoSansKR',
   },
