@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { useNavigation } from "@react-navigation/native";
+import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { useNavigation, useRoute } from "@react-navigation/native";
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; // (CHECK) export
+export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
 
@@ -44,9 +44,6 @@ function getTextColorForBackground(hexColor) {
   }
 }
 
-/** ----------------------------------------------------------------
- * (CHECK) 챗봇/화면 양쪽에서 재사용할 실제 요청 함수
- * ----------------------------------------------------------------*/
 export async function fetchSubwayPath(dep, arr, wheelchair = false) {
   if (!dep?.trim() || !arr?.trim()) {
     throw new Error('출발역과 도착역이 필요합니다.');
@@ -62,6 +59,8 @@ export async function fetchSubwayPath(dep, arr, wheelchair = false) {
 const PathFinderScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
+  const route = useRoute(); // ✅ 추가됨
+
   const [dep, setDep] = useState('');
   const [arr, setArr] = useState('');
   const [wheelchair, setWheelchair] = useState(false);
@@ -74,7 +73,17 @@ const PathFinderScreen = () => {
   const depInputRef = useRef(null);
   const arrInputRef = useRef(null);
 
-  // (CHECK) "서울"을 "서울역"으로 표시
+  // ✅ 추가: 다른 화면에서 넘어온 출발/도착역 자동 세팅
+  useEffect(() => {
+    if (route.params?.selectedDep) {
+      setDep(route.params.selectedDep);
+    }
+    if (route.params?.selectedArr) {
+      setArr(route.params.selectedArr);
+    }
+  }, [route.params]);
+
+  // ✅ “서울” → “서울역” 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
@@ -111,19 +120,15 @@ const PathFinderScreen = () => {
     setPathData(null);
   };
 
-  /** (CHECK) 길찾기 시작 버튼 동작 */
   const handleFindPath = async () => {
     if (!dep.trim() || !arr.trim()) {
       alert('출발역과 도착역을 모두 입력해주세요.');
       return;
     }
-
-    // (CHECK) 같은 역일 때 경고 후 중단
     if (dep.trim() === arr.trim()) {
       alert('출발역과 도착역이 같습니다. 다른 역을 선택해주세요.');
       return;
     }
-
     Keyboard.dismiss();
     setPathData(null);
     setIsLoading(true);
@@ -140,31 +145,52 @@ const PathFinderScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* 1. 고정 헤더 */}
+      {/* 안내 영역 */}
       <View style={styles.fixedHeader}>
         {pathData === null && (
           <View style={styles.noticeBox} accessibilityRole="alert">
-            <Ionicons name="information-circle-outline" size={responsiveFontSize(24)} color="#0B5FFF" style={{ marginRight: 8 }} />
-            <Text style={[styles.noticeText, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            <Ionicons
+              name="information-circle-outline"
+              size={responsiveFontSize(24)}
+              color="#0B5FFF"
+              style={{ marginRight: 8 }}
+            />
+            <Text
+              style={[
+                styles.noticeText,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
               출발역과 도착역을 선택해주세요.
             </Text>
           </View>
         )}
 
+        {/* 입력창 */}
         <View style={styles.searchBoxContainer}>
           <View style={styles.inputWrapper}>
             {/* 출발역 입력 */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>출발</Text>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { fontSize: responsiveFontSize(16) + fontOffset },
+                ]}
+              >
+                출발
+              </Text>
               <TextInput
                 ref={depInputRef}
                 placeholder="출발역 검색"
-                style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
+                style={[
+                  styles.input,
+                  { fontSize: responsiveFontSize(18) + fontOffset },
+                ]}
                 value={dep}
-                // multiline={true} // (CHECK) REMOVED: 높이 고정 및 레이아웃 안정성 확보
                 onFocus={() => {
                   depInputRef.current.measure((fx, fy, width, height, px, py) => {
-                    const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+                    const statusBarHeight =
+                      Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
                     setListTopPosition(py + height - statusBarHeight);
                     setFocusedField('dep');
                     setSearchQuery(dep);
@@ -181,16 +207,26 @@ const PathFinderScreen = () => {
 
             {/* 도착역 입력 */}
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}>도착</Text>
+              <Text
+                style={[
+                  styles.inputLabel,
+                  { fontSize: responsiveFontSize(16) + fontOffset },
+                ]}
+              >
+                도착
+              </Text>
               <TextInput
                 ref={arrInputRef}
                 placeholder="도착역 검색"
-                style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
+                style={[
+                  styles.input,
+                  { fontSize: responsiveFontSize(18) + fontOffset },
+                ]}
                 value={arr}
-                // multiline={true} // (CHECK) REMOVED: 높이 고정 및 레이아웃 안정성 확보
                 onFocus={() => {
                   arrInputRef.current.measure((fx, fy, width, height, px, py) => {
-                    const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
+                    const statusBarHeight =
+                      Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
                     setListTopPosition(py + height - statusBarHeight);
                     setFocusedField('arr');
                     setSearchQuery(arr);
@@ -205,7 +241,11 @@ const PathFinderScreen = () => {
           </View>
 
           <TouchableOpacity onPress={swapStations} style={styles.swapButton}>
-            <MaterialCommunityIcons name="swap-vertical" size={24 + fontOffset / 2} color="#17171B" />
+            <MaterialCommunityIcons
+              name="swap-vertical"
+              size={24 + fontOffset / 2}
+              color="#17171B"
+            />
           </TouchableOpacity>
         </View>
 
@@ -223,7 +263,12 @@ const PathFinderScreen = () => {
             size={26 + fontOffset / 2}
             color={wheelchair ? '#14CAC9' : '#999'}
           />
-          <Text style={[styles.checkboxText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          <Text
+            style={[
+              styles.checkboxText,
+              { fontSize: responsiveFontSize(16) + fontOffset },
+            ]}
+          >
             휠체어 이용자입니다
           </Text>
         </TouchableOpacity>
@@ -233,20 +278,24 @@ const PathFinderScreen = () => {
         )}
       </View>
 
-      {/* 2. 경로 결과 */}
+      {/* 결과 영역 */}
       <ScrollView
         style={styles.scrollArea}
         keyboardShouldPersistTaps="handled"
         scrollEnabled={!focusedField}
       >
         {isLoading ? (
-          <ActivityIndicator size="large" color="#14CAC9" style={{ marginTop: 40 }} />
+          <ActivityIndicator
+            size="large"
+            color="#14CAC9"
+            style={{ marginTop: 40 }}
+          />
         ) : (
           pathData && <PathResultView data={pathData} navigation={navigation} />
         )}
       </ScrollView>
 
-      {/* 3. 검색 결과 리스트 */}
+      {/* 검색결과 드롭다운 */}
       {focusedField && searchResults.length > 0 && listTopPosition > 0 && (
         <FlatList
           data={searchResults}
@@ -254,14 +303,22 @@ const PathFinderScreen = () => {
           keyboardShouldPersistTaps="handled"
           style={[styles.dropdown, { top: listTopPosition }]}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.resultItem} onPress={() => handleSelectStation(item)}>
+            <TouchableOpacity
+              style={styles.resultItem}
+              onPress={() => handleSelectStation(item)}
+            >
               <Ionicons
                 name="location-outline"
                 size={24 + fontOffset / 1.5}
                 color="#17171B"
                 style={{ marginRight: 10 }}
               />
-              <Text style={[styles.stationName, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              <Text
+                style={[
+                  styles.stationName,
+                  { fontSize: responsiveFontSize(16) + fontOffset },
+                ]}
+              >
                 {item.name}
               </Text>
               <View style={styles.lineContainer}>
@@ -279,10 +336,15 @@ const PathFinderScreen = () => {
                           width: lineCircleSize,
                           height: lineCircleSize,
                           borderRadius: lineCircleSize / 2,
-                        }
+                        },
                       ]}
                     >
-                      <Text style={[styles.lineText, { color: textColor, fontSize: 12 + fontOffset / 2.5 }]}>
+                      <Text
+                        style={[
+                          styles.lineText,
+                          { color: textColor, fontSize: 12 + fontOffset / 2.5 },
+                        ]}
+                      >
                         {line.replace('호선', '')}
                       </Text>
                     </View>
@@ -308,24 +370,21 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEE',
     zIndex: 10,
   },
-
-  /** (CHECK) 안내 문구 스타일 (WCAG 준수) */
   noticeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F0FE', // 파란 배경 (명도 대비 충분)
+    backgroundColor: '#E8F0FE',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
     marginBottom: 10,
   },
   noticeText: {
-    flex: 1, // (CHECK) ADDED: 아이콘을 제외한 나머지 공간을 모두 차지하여 자연스럽게 줄바꿈
+    flex: 1,
     color: '#17171B',
     fontWeight: '700',
     fontFamily: 'NotoSansKR',
   },
-
   searchBoxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -346,11 +405,11 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   inputLabel: {
-    width: responsiveFontSize(40), // (CHECK) ADDED: 라벨 너비 고정으로 정렬 맞춤
+    width: responsiveFontSize(40),
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
-    marginRight: 8, // (CHECK) MODIFIED: 간격 조정
+    marginRight: 8,
   },
   input: {
     flex: 1,
@@ -409,12 +468,8 @@ const styles = StyleSheet.create({
     color: '#17171B',
   },
   lineContainer: { flexDirection: 'row', gap: 6, alignItems: 'center' },
-  lineCircle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  lineCircle: { justifyContent: 'center', alignItems: 'center' },
   lineText: { fontWeight: '700', textAlign: 'center' },
 });
 
 export default PathFinderScreen;
-
