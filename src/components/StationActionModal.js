@@ -1,4 +1,3 @@
-// src/components/StationActionModal.js
 import React from "react";
 import {
   Modal,
@@ -54,39 +53,72 @@ export default function StationActionModal({
 
           {/* 버튼 목록 */}
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#14CAC9" }]}
+            style={[
+              styles.actionButton,
+              { borderColor: "#14CAC9", shadowColor: "#14CAC9" }, // (CHECK) 테두리/그림자색 (민트)
+            ]}
             onPress={onViewInfo}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`${stationName} 역 정보 보기 버튼`}
           >
-            <Ionicons name="information-circle-outline" size={24 + fontOffset} color="#FFF" />
-            <Text style={[styles.buttonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            <Ionicons
+              name="information-circle-outline"
+              size={24 + fontOffset}
+              color="#14CAC9" // (CHECK) 아이콘 색상 (민트)
+            />
+            <Text
+              style={[
+                styles.buttonText,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+                // (CHECK) 텍스트 색상은 styles.buttonText의 기본값(#17171B) 사용
+              ]}
+            >
               역 정보 보기
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#0B5FFF" }]}
+            style={[
+              styles.actionButton,
+              { borderColor: "#0B5FFF", shadowColor: "#0B5FFF" }, // (CHECK) 테두리/그림자색 (파랑)
+            ]}
             onPress={onSetAsDep}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`출발역으로 설정 버튼, ${stationName}을 출발역으로`}
           >
-            <Ionicons name="walk-outline" size={24 + fontOffset} color="#FFF" />
-            <Text style={[styles.buttonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            <Ionicons
+              name="walk-outline"
+              size={24 + fontOffset}
+              color="#0B5FFF" // (CHECK) 아이콘 색상 (파랑)
+            />
+            <Text
+              style={[
+                styles.buttonText,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+                // (CHECK) 텍스트 색상은 styles.buttonText의 기본값(#17171B) 사용
+              ]}
+            >
               출발역으로 길찾기
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.actionButton, { backgroundColor: "#17171B" }]}
+            style={[
+              styles.actionButton,
+              { borderColor: "#17171B", shadowColor: "#17171B" }, // (CHECK) 테두리/그림자색 (검정)
+            ]}
             onPress={onSetAsArr}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`도착역으로 설정 버튼, ${stationName}을 도착역으로`}
           >
-            <Ionicons name="flag-outline" size={24 + fontOffset} color="#FFF" />
+            <Ionicons
+              name="flag-outline"
+              size={24 + fontOffset}
+              color="#17171B" // (CHECK) 아이콘 색상 (검정)
+            />
             <Text style={[styles.buttonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
               도착역으로 길찾기
             </Text>
@@ -98,7 +130,7 @@ export default function StationActionModal({
             accessibilityRole="button"
             accessibilityLabel="모달 닫기"
           >
-            <Text style={styles.closeText}>닫기</Text>
+            <Text style={[styles.closeText, { fontSize: responsiveFontSize(16) + fontOffset }]}>닫기</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -133,13 +165,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 30,
-    width: "90%",
-    paddingVertical: responsiveHeight(2),
-    marginVertical: 6,
+    borderRadius: 16,
+    width: "100%",
+    paddingVertical: responsiveHeight(10),
+    marginVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2, // (CHECK) 테두리 두께 강조
+    // (CHECK) borderColor 및 shadowColor는 인라인 스타일로 이동
+    // (CHECK) iOS 유색 그림자 설정
+    shadowOffset: {
+      width: 0,
+      height: 4, // (CHECK) 그림자 강화
+    },
+    shadowOpacity: 0.25, // (CHECK) 유색 그림자를 위해 Opacity 강화
+    shadowRadius: 5,
+    // (CHECK) Android 그림자 설정 (유색 미지원)
+    elevation: 5,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: "#17171B", // (CHECK) 기본 텍스트 색상 (요청사항)
     fontWeight: "700",
     marginLeft: 8,
   },
@@ -148,7 +192,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   closeText: {
-    color: "#595959",
-    fontWeight: "600",
+    color: "#17171B",
+    fontWeight: "700",
   },
 });
+
