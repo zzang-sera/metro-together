@@ -1,3 +1,4 @@
+// ✅ src/screens/chatbot/ChatBotScreen.js
 import React, { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   View,
@@ -44,10 +45,7 @@ function getMapImageUrlFromJson(stationName, preferLine = null) {
     return norm === key || raw === stationName || raw === `${key}역`;
   });
 
-  if (candidates.length === 0) {
-    console.warn("⚠️ No map image found for:", stationName);
-    return null;
-  }
+  if (candidates.length === 0) return null;
 
   let picked = null;
   if (preferLine != null) {
@@ -64,18 +62,8 @@ function getMapImageUrlFromJson(stationName, preferLine = null) {
     picked = candidates[0];
   }
 
-  if (!picked || !picked.img_link) {
-    console.warn("🚨 Image data malformed:", stationName, picked);
-    return null;
-  }
-
   const link = picked?.img_link || picked?.IMG_LINK;
-  if (typeof link !== "string" || link.length === 0) {
-    console.warn("🚨 Invalid image URL:", stationName, link);
-    return null;
-  }
-
-  return link;
+  return typeof link === "string" && link.length > 0 ? link : null;
 }
 
 /* ---------------------- 시설 데이터 매칭 ---------------------- */
