@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,16 +7,17 @@ import {
   FlatList,
   SafeAreaView,
   TouchableOpacity,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
-import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
-import { useFontSize } from '../../contexts/FontSizeContext';
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import stationJson from "../../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
+import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.json";
+import { useFontSize } from "../../contexts/FontSizeContext";
 import {
   responsiveFontSize,
   responsiveHeight,
-} from '../../utils/responsive';
+} from "../../utils/responsive";
+import StationActionModal from "../../components/StationActionModal";
 
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
@@ -24,7 +25,7 @@ const BASE_SEARCH_ICON_SIZE = 22;
 
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
-  return lineInfo ? lineInfo.color : '#666666';
+  return lineInfo ? lineInfo.color : "#666666";
 }
 
 function getTextColorForBackground(hexColor) {
@@ -35,17 +36,16 @@ function getTextColorForBackground(hexColor) {
     const b = parseInt(hexColor.substr(5, 2), 16);
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance > 0.5 ? "#17171B" : "#FFFFFF";
-  } catch (e) {
-    console.error("Error parsing hex color:", hexColor, e);
+  } catch {
     return "#FFFFFF";
   }
 }
 
 function findStationCodeBy(name, line) {
-  const realName = name === "서울역" ? "서울" : name; // ✅ 데이터용은 ‘서울’
+  const realName = name === "서울역" ? "서울" : name;
   const hit = allStations.find((s) => s?.name === realName && s?.line === line);
   const code = String(
-    hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ''
+    hit?.station_cd ?? hit?.STN_CD ?? hit?.code ?? hit?.stationCode ?? ""
   ).trim();
   return code;
 }
@@ -53,198 +53,161 @@ function findStationCodeBy(name, line) {
 const SearchStationScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
-  const route = useRoute();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedStation, setSelectedStation] = useState(null);
 
-  // ✅ “서울” → “서울역”으로 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
     const matchingStations = allStations.filter((station) =>
       station.name.startsWith(q)
     );
-    const stationMap = new Map();
-    matchingStations.forEach((station) => {
-      const displayName = station.name === "서울" ? "서울역" : station.name;
-      if (stationMap.has(displayName)) {
-        stationMap.get(displayName).lines.push(station.line);
+    const map = new Map();
+    matchingStations.forEach((s) => {
+      const display = s.name === "서울" ? "서울역" : s.name;
+      if (map.has(display)) {
+        map.get(display).lines.push(s.line);
       } else {
-        stationMap.set(displayName, { name: displayName, lines: [station.line] });
+        map.set(display, { name: display, lines: [s.line] });
       }
     });
-    return Array.from(stationMap.values());
+    return Array.from(map.values());
   }, [searchQuery]);
-
-  const handleSelectStation = (station) => {
-    // ✅ 실제 전달 시 “서울역”은 “서울”로 변환
-    const realName = station.name === "서울역" ? "서울" : station.name;
-    const mode = route.params?.mode;
-
-    if (mode === 'dep') {
-      navigation.navigate('PathFinder', { selectedDep: realName });
-    } else if (mode === 'arr') {
-      navigation.navigate('PathFinder', { selectedArr: realName });
-    } else {
-      const firstLine = station.lines[0];
-      const stationCode = findStationCodeBy(station.name, firstLine);
-      navigation.navigate('MainStack', {
-        screen: 'StationDetail',
-        params: {
-          stationCode,
-          stationName: station.name,
-          lines: station.lines,
-        },
-      });
-    }
-  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" style={styles.searchIcon} />
+        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" />
         <TextInput
-          style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
+          style={[
+            styles.input,
+            { fontSize: responsiveFontSize(18) + fontOffset },
+          ]}
           placeholder="역 이름을 입력하세요"
           value={searchQuery}
           onChangeText={setSearchQuery}
-          autoFocus={true}
-          returnKeyType="search"
+          autoFocus
         />
       </View>
 
       <FlatList
         data={searchResults}
-        keyExtractor={(item) => item.name}
-        keyboardShouldPersistTaps="handled"
-        renderItem={({ item }) => {
-          const firstLine = item.lines[0];
-          const stationCode = findStationCodeBy(item.name, firstLine);
-          const dynamicIconSize = BASE_SEARCH_ICON_SIZE + fontOffset;
-
-          return (
-            <TouchableOpacity
-              activeOpacity={0.85}
-              style={styles.resultItem}
-              onPress={() => handleSelectStation(item)}
-              accessibilityLabel={`${item.lines.join(', ')} ${item.name}`}
-            >
-              <Ionicons
-                name="location-outline"
-                size={24 + fontOffset / 2}
-                color="#17171B"
-                style={styles.locationIcon}
-              />
-              <Text
-                style={[
-                  styles.stationName,
-                  { fontSize: responsiveFontSize(18) + fontOffset },
-                ]}
-              >
-                {item.name}
-              </Text>
-
-              <View style={styles.lineContainer}>
-                {Array.from({ length: Math.ceil(item.lines.length / 2) }).map(
-                  (_, rowIndex) => {
-                    const pair = item.lines.slice(rowIndex * 2, rowIndex * 2 + 2);
-                    return (
-                      <View key={`row-${rowIndex}`} style={styles.lineRow}>
-                        {pair.map((line) => {
-                          const lineColor = getLineColor(line);
-                          const textColor = getTextColorForBackground(lineColor);
-                          return (
-                            <View
-                              key={line}
-                              style={[
-                                styles.lineCircle,
-                                {
-                                  backgroundColor: lineColor,
-                                  width: dynamicIconSize,
-                                  height: dynamicIconSize,
-                                  borderRadius: dynamicIconSize / 2,
-                                },
-                              ]}
-                            >
-                              <Text
-                                style={[
-                                  styles.lineText,
-                                  {
-                                    color: textColor,
-                                    fontSize: 12 + fontOffset,
-                                  },
-                                ]}
-                              >
-                                {line.replace('호선', '')}
-                              </Text>
-                            </View>
-                          );
-                        })}
-                      </View>
-                    );
-                  }
-                )}
-              </View>
-            </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={
-          searchQuery.length > 0 ? (
+        keyExtractor={(i) => i.name}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.resultItem}
+            onPress={() => {
+              setSelectedStation(item);
+              setModalVisible(true);
+            }}
+            accessibilityLabel={`${item.name} 역, ${item.lines.join(", ")}`}
+          >
+            <Ionicons name="location-outline" size={24 + fontOffset / 2} />
             <Text
               style={[
-                styles.emptyText,
-                { fontSize: responsiveFontSize(16) + fontOffset },
+                styles.stationName,
+                { fontSize: responsiveFontSize(18) + fontOffset },
               ]}
             >
-              검색 결과가 없습니다.
+              {item.name}
             </Text>
-          ) : null
-        }
+            <View style={styles.lineContainer}>
+              {item.lines.map((l) => {
+                const color = getLineColor(l);
+                const textColor = getTextColorForBackground(color);
+                return (
+                  <View
+                    key={l}
+                    style={[
+                      styles.lineCircle,
+                      {
+                        backgroundColor: color,
+                        width: BASE_SEARCH_ICON_SIZE + fontOffset,
+                        height: BASE_SEARCH_ICON_SIZE + fontOffset,
+                        borderRadius:
+                          (BASE_SEARCH_ICON_SIZE + fontOffset) / 2,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.lineText,
+                        { color: textColor, fontSize: 12 + fontOffset },
+                      ]}
+                    >
+                      {l.replace("호선", "")}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          </TouchableOpacity>
+        )}
       />
+
+      {selectedStation && (
+        <StationActionModal
+          visible={modalVisible}
+          stationName={selectedStation.name}
+          onClose={() => setModalVisible(false)}
+          onViewInfo={() => {
+            setModalVisible(false);
+            const firstLine = selectedStation.lines[0];
+            const code = findStationCodeBy(selectedStation.name, firstLine);
+            navigation.navigate("MainStack", {
+              screen: "StationDetail",
+              params: {
+                stationName: selectedStation.name,
+                lines: selectedStation.lines,
+                stationCode: code,
+              },
+            });
+          }}
+          onSetAsDep={() => {
+            setModalVisible(false);
+            navigation.navigate("PathFinderStack", {
+              screen: "PathFinderHome",
+              params: { selectedDep: selectedStation.name },
+            });
+          }}
+          onSetAsArr={() => {
+            setModalVisible(false);
+            navigation.navigate("PathFinderStack", {
+              screen: "PathFinderHome",
+              params: { selectedArr: selectedStation.name },
+            });
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9f9f9' },
+  container: { flex: 1, backgroundColor: "#f9f9f9" },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f0f0f0",
     borderRadius: 20,
     margin: 16,
     paddingHorizontal: 12,
     minHeight: responsiveHeight(5.5),
   },
-  searchIcon: { marginRight: 8 },
-  input: { flex: 1, fontWeight: 'bold' },
+  input: { flex: 1, fontWeight: "bold", marginLeft: 8 },
   resultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#C9CDD1',
+    borderBottomColor: "#C9CDD1",
   },
-  locationIcon: { marginRight: 8 },
-  stationName: { flex: 1, fontWeight: 'bold', color: '#17171B' },
-  lineContainer: {
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: 4,
-  },
-  lineRow: {
-    flexDirection: 'row',
-    gap: 6,
-    justifyContent: 'flex-end',
-  },
-  lineCircle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lineText: {
-    fontWeight: 'bold',
-  },
-  emptyText: { textAlign: 'center', color: 'gray', marginTop: 20 },
+  stationName: { flex: 1, fontWeight: "bold", color: "#17171B" },
+  lineContainer: { flexDirection: "row", gap: 6 },
+  lineCircle: { justifyContent: "center", alignItems: "center" },
+  lineText: { fontWeight: "bold" },
 });
 
 export default SearchStationScreen;
