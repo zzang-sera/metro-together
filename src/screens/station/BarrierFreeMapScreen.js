@@ -1,23 +1,36 @@
+// src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
+  StyleSheet,
   ActivityIndicator,
   Animated,
   PanResponder,
+  Dimensions,
   Image,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import { responsiveFontSize } from "../../utils/responsive";
-import { useApiFacilities } from "../../hook/useApiFacilities";
-import { useLocalFacilities } from "../../hook/useLocalFacilities";
-import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
-import styles, { colors } from "../../styles/BarrierFreeMapScreen.styles"; // colors도 import
 
-// ... ICONS, TYPE_LABEL, BubbleMarker (변경 없음) ...
+import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
+import elevatorData from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
+import escalatorData from "../../assets/metro-data/metro/escalator/서울교통공사_에스컬레이터 설치 정보_20250310.json";
+import toiletData from "../../assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json";
+import disabledToiletData from "../../assets/metro-data/metro/disabled_toilets/서울교통공사_역사장애인화장실정보_20241127.json";
+import babyRoomData from "../../assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json";
+import lockerData from "../../assets/metro-data/metro/lostandFound/서울교통공사_물품보관함 위치정보_20240930.json";
+import liftData from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
+
+const { width: screenW, height: screenH } = Dimensions.get("window");
+const IMG_ORIGINAL_WIDTH = 3376;
+const IMG_ORIGINAL_HEIGHT = 3375;
+
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
   ES: require("../../assets/function-icon/Escalator.png"),
@@ -38,137 +51,130 @@ const TYPE_LABEL = {
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
-  WC: "휠체어 급속충전",
 };
 
+const BUBBLE_WIDTH = 10;
+const BUBBLE_HEIGHT = 10;
+const ICON_SIZE = 9;
+
 function BubbleMarker({ cx, cy, type }) {
-  const BUBBLE_WIDTH = 10;
-  const BUBBLE_HEIGHT = 10;
-  const ICON_SIZE = 9;
+  const halfW = BUBBLE_WIDTH / 2;
+  const rectY = -BUBBLE_HEIGHT - 2;
+  const iconX = -ICON_SIZE / 2;
+  const iconY = rectY + (BUBBLE_HEIGHT - ICON_SIZE) / 2;
+  const tailPath = `M 0 0 L -6 -2 L 6 -2 Z`;
   const iconSrc = ICONS[type] || ICONS["EV"];
 
   return (
     <G x={cx} y={cy}>
       <Rect
-        x={-BUBBLE_WIDTH / 2}
-        y={-BUBBLE_HEIGHT - 2}
+        x={-halfW}
+        y={rectY}
         width={BUBBLE_WIDTH}
         height={BUBBLE_HEIGHT}
         rx={2}
         ry={2}
-        fill="#fff"
-        stroke="#fff"
-        strokeWidth={1.2}
+        fill="#14CAC9"
+        stroke="#14CAC9"
+        strokeWidth={1}
       />
-      <Path d="M 0 0 L -5 -2 L 5 -2 Z" fill="#fff" stroke="#fff" strokeWidth={1.2} />
-      <SvgImage
-        href={iconSrc}
-        x={-ICON_SIZE / 2}
-        y={-BUBBLE_HEIGHT - 2 + (BUBBLE_HEIGHT - ICON_SIZE) / 2}
-        width={ICON_SIZE}
-        height={ICON_SIZE}
-      />
+      <Path d={tailPath} fill="#14CAC9" stroke="#14CAC9" strokeWidth={1} />
+      <SvgImage href={iconSrc} x={iconX} y={iconY} width={ICON_SIZE} height={ICON_SIZE} />
     </G>
   );
 }
 
-const getStatusCategory = (status) => {
-  if (!status || status === "-") {
-    return "none";
-  }
-  const lowerStatus = status.toLowerCase();
-  if (
-    lowerStatus.includes("보수") ||
-    lowerStatus.includes("불가") ||
-    lowerStatus.includes("점검") ||
-    lowerStatus.includes("중지")
-  ) {
-    return "unavailable";
-  }
-  if (lowerStatus.includes("가능") || lowerStatus.includes("운행")) {
-    return "available";
-  }
-  return "none";
-};
-
-// --- Main Screen ---
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
-  const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
-    route.params || {};
-
+  const navigation = useNavigation();
   const { fontOffset } = useFontSize();
 
-  const cleanName = (() => {
-    if (!stationName) return "";
-    let name = stationName.replace(/\(.*\)/g, "").trim();
-    if (name === "서울") return "서울역";
-    name = name.replace(/역$/, "");
-    return name;
-  })();
+  let { stationName = "서울역", type = "EV", imageUrl = null } = route.params || {};
 
-  const [coords, setCoords] = useState([]);
+  // ✅ 이름 정규화 + “서울” 예외처리
+  stationName = stationName.replace(/\(.*\)/g, "").trim();
+  if (stationName === "서울역") stationName = "서울"; // ← 좌표 파일 내 이름 일치
+
+  const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [tempPoints, setTempPoints] = useState([]);
   const [facilities, setFacilities] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [dataSource, setDataSource] = useState(null);
 
-  const api = useApiFacilities(cleanName, stationCode, null, type);
-  const local = useLocalFacilities(cleanName, stationCode, null, type);
-
-  // ... 좌표 로드 (변경 없음) ...
+  // ✅ 좌표 로드
   useEffect(() => {
     try {
-      const filtered = stationCoords.filter(
-        (p) =>
-          p.station.replace(/\(.*\)/g, "").trim() === cleanName &&
-          p.type.toUpperCase() === type.toUpperCase()
-      );
-      setCoords(filtered);
-      console.log(`📍 ${cleanName} ${type} 좌표 ${filtered.length}개 로드됨`);
+      const filtered = stationCoords.filter((p) => {
+        const s = p.station.replace(/\s/g, "").replace(/\(.*\)/g, "").trim();
+        const t = stationName.replace(/\s/g, "").replace(/\(.*\)/g, "").trim();
+        const nameMatch = s.includes(t) || t.includes(s);
+        const typeMatch = p.type && p.type.toUpperCase() === type.toUpperCase();
+        return nameMatch && typeMatch;
+      });
+      setTempPoints(filtered);
     } catch (e) {
-      console.error("🚨 좌표 로드 오류:", e);
+      console.error("🚨 station_coords load error:", e);
     }
-  }, [cleanName, type]);
+  }, [stationName, type]);
 
-  // ... API/로컬 fallback 로직 (변경 없음) ...
+  // ✅ 시설 데이터 로드
   useEffect(() => {
-    const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
-    setLoading(true); 
+    let data = [];
+    switch (type) {
+      case "EV":
+        data = elevatorData.DATA
+          ? elevatorData.DATA.filter((d) => d.stn_nm.includes(stationName))
+          : elevatorData.filter((d) => d.stn_nm.includes(stationName));
+        break;
 
-    if (apiSupported) {
-      if (!api.loading && api.data.length > 0) {
-        setFacilities(api.data);
-        setDataSource("API");
-      } else if (!api.loading && api.data.length === 0 && !local.loading) {
-        setFacilities(local.data || []);
-        setDataSource("LOCAL"); 
-      } else if (!api.loading && api.error && !local.loading) {
-        setFacilities(local.data || []);
-        setDataSource("LOCAL"); 
+      case "ES": {
+        const escalatorList = escalatorData.DATA || escalatorData;
+        data = escalatorList.filter((d) => {
+          const name = d["역명"] || d["역사명"] || d["역  명"] || d["역"] || "";
+          return name.replace(/\s/g, "").includes(stationName.replace(/\s/g, ""));
+        });
+        break;
       }
-    } else {
-      if (!local.loading) {
-        setFacilities(local.data);
-        setDataSource("LOCAL"); 
-      }
-    }
-    
-    if (!api.loading && !local.loading) {
-        setLoading(false);
-    }
 
-  }, [type, api, local]);
+      case "TO":
+        data = toiletData.filter((d) => d.역명.includes(stationName));
+        break;
 
-  // --- 팬/줌 ---
+      case "DT":
+        data = disabledToiletData.filter((d) => d.역명.includes(stationName));
+        break;
+
+      case "NU":
+        data = babyRoomData.filter((d) => d.역명.includes(stationName));
+        break;
+
+      case "WL":
+        data = liftData.filter((d) => d.역명.includes(stationName));
+        break;
+
+      case "LO":
+        data = lockerData.filter((d) => String(d["상세위치"]).includes(stationName));
+        break;
+
+      default:
+        data = [];
+    }
+    setFacilities(data);
+  }, [stationName, type]);
+
+  // 팬/줌 설정
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
-  // ✅ [수정] 누락된 useRef 변수 추가
   const baseScale = useRef(1);
   const initialDistance = useRef(null);
+  const panOffset = useRef({ x: 0, y: 0 }).current;
 
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset(panOffset);
+        pan.setValue({ x: 0, y: 0 });
+      },
       onPanResponderMove: (evt, gestureState) => {
         const touches = evt.nativeEvent.touches;
         if (touches.length === 2) {
@@ -196,170 +202,144 @@ export default function BarrierFreeMapScreen() {
         initialDistance.current = null;
         pan.flattenOffset();
       },
-      onPanResponderGrant: (evt, gestureState) => {
-        pan.setOffset({
-          x: pan.x._value,
-          y: pan.y._value
-        });
-        pan.setValue({ x: 0, y: 0 });
-      }
     })
   ).current;
 
-  // ... 로딩 뷰 (변경 없음) ...
-  if (coords.length === 0 && loading)
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-        <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-          지도와 시설 정보를 불러오는 중...
-        </Text>
-      </View>
-    );
-
-  // ... 동적 스타일 함수 (변경 없음) ...
-  const getCardBorderStyle = (category) => {
-    switch (category) {
-      case "available":
-        return styles.cardBorderAvailable;
-      case "unavailable":
-        return styles.cardBorderUnavailable;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusTextStyle = (category) => {
-    switch (category) {
-      case "available":
-        return styles.statusTextAvailable;
-      case "unavailable":
-        return styles.statusTextUnavailable;
-      default:
-        return null;
-    }
-  };
-
-  // --- 렌더링 ---
   return (
     <ScrollView style={styles.container}>
-      {/* ... 타이틀 (변경 없음) ... */}
-      <Text style={[styles.title, { fontSize: responsiveFontSize(20) + fontOffset }]}>
-        {cleanName} 무장애 지도
-      </Text>
+      <View style={styles.imageContainer} {...panResponder.panHandlers}>
+        <Animated.View
+          style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
+        >
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.image}
+            resizeMode="contain"
+            onLayout={(e) => {
+              const { width, height } = e.nativeEvent.layout;
+              setImgLayout({ width, height });
+              const imgAspect = IMG_ORIGINAL_WIDTH / IMG_ORIGINAL_HEIGHT;
+              const viewAspect = width / height;
+              let offsetX = 0,
+                offsetY = 0;
+              if (imgAspect > viewAspect) {
+                const drawH = width / imgAspect;
+                offsetY = (height - drawH) / 2;
+              } else {
+                const drawW = height * imgAspect;
+                offsetX = (width - drawW) / 2;
+              }
+              setOffset({ x: offsetX, y: offsetY });
+            }}
+          />
 
-      {/* ... 지도 렌더링 (변경 없음) ... */}
-      {coords.length > 0 && (
-        <View style={styles.imageContainer} {...panResponder.panHandlers}>
-          <Animated.View
-            style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
-          >
-            <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="contain" />
-            <Svg style={[styles.overlay]}>
-              {coords.map((p, i) => (
-                <BubbleMarker key={`${p.station}_${i}`} cx={p.x} cy={p.y} type={p.type} />
-              ))}
-            </Svg>
-          </Animated.View>
-        </View>
-      )}
+          <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
+            {tempPoints.map((p, i) => {
+              const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
+              const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y;
+              return <BubbleMarker key={i} cx={cx} cy={cy} type={p.type} />;
+            })}
+          </Svg>
 
-      {/* ... 시설 정보 리스트 (변경 없음) ... */}
-      <View style={styles.listContainer}>
-        {loading ? (
-          <View style={styles.center}>
-            <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-              시설 정보를 불러오는 중...
-            </Text>
+          {/* 뒤로가기 버튼 */}
+          <View pointerEvents="box-none" style={styles.backOverlay}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.85}
+              style={styles.backFab}
+            >
+              <Ionicons name="arrow-back" size={22} color="#fff" />
+            </TouchableOpacity>
           </View>
+        </Animated.View>
+      </View>
+
+      {/* 하단 리스트 */}
+      <View style={styles.listContainer}>
+        {facilities.length === 0 ? (
+          <Text style={[styles.empty, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            해당 시설 정보가 없습니다.
+          </Text>
         ) : (
-          <>
-            {dataSource === "LOCAL" && facilities.length > 0 && (
-              <View style={styles.disclaimerBox}>
+          facilities.map((item, idx) => (
+            <View key={idx} style={styles.mintCard}>
+              <View style={styles.cardHeader}>
+                <Image source={ICONS[type]} style={styles.cardIcon} />
                 <Text
                   style={[
-                    styles.disclaimerText,
-                    { fontSize: responsiveFontSize(13) + fontOffset },
+                    styles.facilityTitle,
+                    { fontSize: responsiveFontSize(17) + fontOffset },
                   ]}
                 >
-                  실시간 사용 가능 여부를 알 수 없는 시설입니다.
+                  {TYPE_LABEL[type]}
                 </Text>
               </View>
-            )}
-
-            {facilities.length === 0 ? (
-              <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-                해당 시설 정보가 없습니다.
+              <Text
+                style={[
+                  styles.facilityDesc,
+                  { fontSize: responsiveFontSize(14) + fontOffset },
+                ]}
+              >
+                {extractDetail(item, type)}
               </Text>
-            ) : (
-              facilities.map((item, idx) => {
-                const statusCategory =
-                  dataSource === "API" ? getStatusCategory(item.status) : "none";
-
-                return (
-                  <View
-                    key={idx}
-                    style={[styles.card, getCardBorderStyle(statusCategory)]}
-                  >
-                    <View style={styles.cardHeader}>
-                      <Image source={ICONS[type] || ICONS["EV"]} style={styles.cardIcon} />
-                      <Text
-                        style={[
-                          styles.facilityTitle,
-                          { fontSize: responsiveFontSize(18) + fontOffset },
-                        ]}
-                      >
-                        {TYPE_LABEL[type]}
-                      </Text>
-                    </View>
-
-                    <Text
-                      style={[
-                        styles.facilityDesc,
-                        {
-                          fontSize: responsiveFontSize(15) + fontOffset,
-                          lineHeight: (responsiveFontSize(15) + fontOffset) * 1.47,
-                        },
-                      ]}
-                    >
-                      {item.desc || "위치 정보 없음"}
-                    </Text>
-
-                    <View style={styles.cardFooter}>
-                      {statusCategory !== "none" ? (
-                        <Text
-                          style={[
-                            styles.statusTextBase,
-                            getStatusTextStyle(statusCategory),
-                            { fontSize: responsiveFontSize(15) + fontOffset },
-                          ]}
-                        >
-                          {item.status}
-                        </Text>
-                      ) : (
-                        <View /> 
-                      )}
-                      
-                      {item.contact ? (
-                        <Text
-                          style={[
-                            styles.facilityContact,
-                            { fontSize: responsiveFontSize(13) + fontOffset },
-                          ]}
-                        >
-                          문의: {item.contact}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </>
+            </View>
+          ))
         )}
       </View>
     </ScrollView>
   );
 }
 
+function extractDetail(item, type) {
+  switch (type) {
+    case "EV":
+      return `${item.instl_pstn || ""} (${item.use_yn || ""})`;
+    case "ES":
+      return `${item["시작층(상세위치)"] || ""} ↔ ${item["종료층(상세위치)"] || ""}`;
+    case "TO":
+    case "DT":
+      return item["상세위치"] || "";
+    case "WL":
+      return `${item["시작층(상세위치)"]} ↔ ${item["종료층(상세위치)"]}`;
+    case "NU":
+    case "LO":
+      return item["상세위치"] || "";
+    default:
+      return "";
+  }
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  imageContainer: { width: screenW, height: screenH * 0.6, overflow: "hidden" },
+  mapWrapper: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
+  image: { width: "100%", height: "100%", position: "absolute" },
+  overlay: { position: "absolute", top: 0, left: 0 },
+  backOverlay: { position: "absolute", top: 25, left: 0, right: 0, zIndex: 10 },
+  backFab: {
+    position: "absolute",
+    top: 20,
+    left: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  listContainer: { padding: 12, backgroundColor: "#fff" },
+  mintCard: {
+    backgroundColor: "#EEFFFE",
+    borderWidth: 1.5,
+    borderColor: "#14CAC9",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  cardIcon: { width: 22, height: 22, marginRight: 6, resizeMode: "contain" },
+  facilityTitle: { fontWeight: "700", color: "#0F6B6A" },
+  facilityDesc: { color: "#1A1A1A", marginTop: 2 },
+  empty: { textAlign: "center", color: "#666", marginTop: 10 },
+});
