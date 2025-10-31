@@ -1,4 +1,4 @@
-// src/screens/station/BarrierFreeMapScreen.js
+// ✅ src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef } from "react";
 import {
   View,
@@ -26,6 +26,8 @@ import disabledToiletData from "../../assets/metro-data/metro/disabled_toilets/�
 import babyRoomData from "../../assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json";
 import lockerData from "../../assets/metro-data/metro/lostandFound/서울교통공사_물품보관함 위치정보_20240930.json";
 import liftData from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
+// ✅ 음성유도기 JSON 추가
+import voiceData from "../../assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
@@ -37,7 +39,8 @@ const ICONS = {
   TO: require("../../assets/function-icon/Bathromm_for_all.png"),
   DT: require("../../assets/function-icon/Disablities_bathroom.png"),
   WL: require("../../assets/function-icon/Lift.png"),
-  VO: require("../../assets/function-icon/Seats_for_patients.png"),
+  WC: require("../../assets/function-icon/Wheelchair_Charging.png"),
+  VO: require("../../assets/function-icon/mic.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
 };
@@ -48,6 +51,7 @@ const TYPE_LABEL = {
   TO: "화장실",
   DT: "장애인 화장실",
   WL: "휠체어 리프트",
+  WC: "휠체어 급속충전",
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
@@ -153,6 +157,13 @@ export default function BarrierFreeMapScreen() {
 
       case "LO":
         data = lockerData.filter((d) => String(d["상세위치"]).includes(stationName));
+        break;
+
+      // ✅ 음성유도기(VO) 추가
+      case "VO":
+        data = voiceData.filter((d) =>
+          String(d["역명"]).replace(/\s/g, "").includes(stationName.replace(/\s/g, ""))
+        );
         break;
 
       default:
@@ -304,6 +315,8 @@ function extractDetail(item, type) {
     case "NU":
     case "LO":
       return item["상세위치"] || "";
+    case "VO": // ✅ 음성유도기 추가
+      return `${item["설치위치"] || "위치 정보 없음"} (호선: ${item["호선"] || "?"}호선)`;
     default:
       return "";
   }
