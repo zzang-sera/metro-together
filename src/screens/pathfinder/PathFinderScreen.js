@@ -1,4 +1,3 @@
-// src/screens/pathfinder/PathFinderScreen.js
 import React, { useState, useMemo, useRef } from 'react';
 import { useNavigation } from "@react-navigation/native";
 import {
@@ -23,7 +22,7 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; // ✅ export
+export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; // (CHECK) export
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
 
@@ -46,8 +45,7 @@ function getTextColorForBackground(hexColor) {
 }
 
 /** ----------------------------------------------------------------
- *  ✅ 챗봇/화면 양쪽에서 재사용할 실제 요청 함수 (Named export)
- *  동일 파일에서 export 하므로 별도 유틸 추출 불필요
+ * (CHECK) 챗봇/화면 양쪽에서 재사용할 실제 요청 함수
  * ----------------------------------------------------------------*/
 export async function fetchSubwayPath(dep, arr, wheelchair = false) {
   if (!dep?.trim() || !arr?.trim()) {
@@ -58,7 +56,7 @@ export async function fetchSubwayPath(dep, arr, wheelchair = false) {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   if (data?.error) throw new Error(data.error);
-  return data; // PathResultView에서 쓰는 구조 그대로 반환
+  return data;
 }
 
 const PathFinderScreen = () => {
@@ -76,14 +74,14 @@ const PathFinderScreen = () => {
   const depInputRef = useRef(null);
   const arrInputRef = useRef(null);
 
-  // ✅ “서울”을 “서울역”으로 표시
+  // (CHECK) "서울"을 "서울역"으로 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
     const matches = allStations.filter((s) => s && s.name && s.name.includes(q));
     const stationMap = new Map();
     matches.forEach((s) => {
-      const displayName = s.name === "서울" ? "서울역" : s.name; // ✅ 예외 처리
+      const displayName = s.name === "서울" ? "서울역" : s.name;
       if (stationMap.has(displayName)) {
         stationMap.get(displayName).lines.push(s.line);
       } else {
@@ -113,17 +111,24 @@ const PathFinderScreen = () => {
     setPathData(null);
   };
 
-  /** ✅ 내부 버튼도 같은 fetch 함수를 재사용 */
+  /** (CHECK) 길찾기 시작 버튼 동작 */
   const handleFindPath = async () => {
     if (!dep.trim() || !arr.trim()) {
       alert('출발역과 도착역을 모두 입력해주세요.');
       return;
     }
+
+    // (CHECK) 같은 역일 때 경고 후 중단
+    if (dep.trim() === arr.trim()) {
+      alert('출발역과 도착역이 같습니다. 다른 역을 선택해주세요.');
+      return;
+    }
+
     Keyboard.dismiss();
     setPathData(null);
     setIsLoading(true);
     try {
-      const data = await fetchSubwayPath(dep, arr, wheelchair); // ✅ 재사용
+      const data = await fetchSubwayPath(dep, arr, wheelchair);
       setPathData(data);
     } catch (e) {
       alert('경로를 불러오는 중 문제가 발생했습니다.');
@@ -138,9 +143,12 @@ const PathFinderScreen = () => {
       {/* 1. 고정 헤더 */}
       <View style={styles.fixedHeader}>
         {pathData === null && (
-          <Text style={[styles.subtitle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-            출발역과 도착역을 선택하세요.
-          </Text>
+          <View style={styles.noticeBox} accessibilityRole="alert">
+            <Ionicons name="information-circle-outline" size={responsiveFontSize(24)} color="#0B5FFF" style={{ marginRight: 8 }} />
+            <Text style={[styles.noticeText, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+              출발역과 도착역을 선택해주세요.
+            </Text>
+          </View>
         )}
 
         <View style={styles.searchBoxContainer}>
@@ -153,7 +161,7 @@ const PathFinderScreen = () => {
                 placeholder="출발역 검색"
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={dep}
-                multiline={true}
+                // multiline={true} // (CHECK) REMOVED: 높이 고정 및 레이아웃 안정성 확보
                 onFocus={() => {
                   depInputRef.current.measure((fx, fy, width, height, px, py) => {
                     const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
@@ -179,7 +187,7 @@ const PathFinderScreen = () => {
                 placeholder="도착역 검색"
                 style={[styles.input, { fontSize: responsiveFontSize(18) + fontOffset }]}
                 value={arr}
-                multiline={true}
+                // multiline={true} // (CHECK) REMOVED: 높이 고정 및 레이아웃 안정성 확보
                 onFocus={() => {
                   arrInputRef.current.measure((fx, fy, width, height, px, py) => {
                     const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 0 : 0;
@@ -300,13 +308,24 @@ const styles = StyleSheet.create({
     borderBottomColor: '#EEE',
     zIndex: 10,
   },
-  subtitle: {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 8,
+
+  /** (CHECK) 안내 문구 스타일 (WCAG 준수) */
+  noticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE', // 파란 배경 (명도 대비 충분)
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 10,
   },
+  noticeText: {
+    flex: 1, // (CHECK) ADDED: 아이콘을 제외한 나머지 공간을 모두 차지하여 자연스럽게 줄바꿈
+    color: '#l7171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR',
+  },
+
   searchBoxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -327,10 +346,11 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   inputLabel: {
+    width: responsiveFontSize(40), // (CHECK) ADDED: 라벨 너비 고정으로 정렬 맞춤
     fontFamily: 'NotoSansKR',
     fontWeight: '700',
     color: '#17171B',
-    marginRight: 10,
+    marginRight: 8, // (CHECK) MODIFIED: 간격 조정
   },
   input: {
     flex: 1,
@@ -363,7 +383,7 @@ const styles = StyleSheet.create({
     right: 20,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    shadowColor: '#000',
+    shadowColor: '#17171B',
     shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
@@ -397,3 +417,4 @@ const styles = StyleSheet.create({
 });
 
 export default PathFinderScreen;
+
