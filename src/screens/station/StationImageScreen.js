@@ -1,3 +1,4 @@
+//src/screens/station/StationImageScreen.js
 import React from "react";
 import { View, Text, Image, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
 import { useRoute } from "@react-navigation/native";

@@ -1,4 +1,4 @@
-// src/screens/station/StationDetailScreen.js
+// ✅ src/screens/station/StationDetailScreen.js
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -31,9 +31,10 @@ import { responsiveFontSize } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.json";
 import { getStationImageByName } from "../../api/metro/metroAPI";
+import { useLocalFacilities } from "../../hook/useLocalFacilities";
+import { useApiFacilities } from "../../hook/useApiFacilities";
 
 const lineData = lineJson.DATA;
-const MINT = "#14CAC9";
 const INK = "#17171B";
 const BG = "#F9F9F9";
 const BASE_ICON_SIZE = 22;
@@ -59,12 +60,15 @@ export default function StationDetailScreen() {
   const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
   const currentUser = auth.currentUser;
+
   const [isFavorite, setIsFavorite] = useState(false);
   const [stationImage, setStationImage] = useState(null);
+  const [facilityAvailability, setFacilityAvailability] = useState({});
 
   const displayName = stationName === "서울" ? "서울역" : stationName;
   const realStationName = stationName === "서울역" ? "서울" : stationName;
 
+  // ✅ 안내도 로드
   useEffect(() => {
     async function loadImage() {
       try {
@@ -72,18 +76,50 @@ export default function StationDetailScreen() {
           const res = await getStationImageByName(realStationName);
           if (res?.length) {
             setStationImage(res[0].image.uri);
-            console.log("🖼️ stationImage loaded:", res[0].image.uri);
           } else {
-            console.warn("⚠️ No image found for", realStationName);
+            setStationImage(null);
           }
         }
       } catch (e) {
         console.error("🚨 getStationImageByName error:", e);
+        setStationImage(null);
       }
     }
     loadImage();
   }, [realStationName]);
 
+  // ✅ 각 시설별 로컬 데이터 훅
+  const facilityTypes = ["EV", "ES", "TO", "DT", "WL", "WC", "VO", "NU", "LO"];
+  const facilityDataHooks = {};
+  facilityTypes.forEach((t) => {
+    facilityDataHooks[t] = useLocalFacilities(displayName, stationCode, null, t);
+  });
+
+  // ✅ 휠체어 급속충전(WC)용 API 데이터
+  const wcApi = useApiFacilities(displayName, stationCode, null, "WC");
+
+  useEffect(() => {
+    const status = {};
+    facilityTypes.forEach((t) => {
+      const hasList =
+        t === "WC"
+          ? wcApi?.data?.length > 0 // 🔹 WC는 API 기준으로 판단
+          : facilityDataHooks[t]?.data?.length > 0;
+
+      const hasMap = !!stationImage;
+      const disabled =
+        (!hasList && !hasMap) || (hasMap && !hasList); // 둘 다 없거나 안내도만 있는 경우
+
+      status[t] = { hasList, hasMap, disabled };
+    });
+    setFacilityAvailability(status);
+  }, [
+    stationImage,
+    wcApi.data,
+    ...facilityTypes.map((t) => facilityDataHooks[t]?.data),
+  ]);
+
+  // ✅ 즐겨찾기 관리
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -128,20 +164,24 @@ export default function StationDetailScreen() {
     }
   };
 
-  const goToFacilityMap = (type) => {
-    if (!stationImage) {
-      Alert.alert("잠시만요", "역 안내도가 아직 불러와지지 않았어요. 잠시 후 다시 시도해주세요.");
+  // ✅ 버튼 클릭
+  const handlePress = (type) => {
+    const facility = facilityAvailability[type];
+    if (!facility || facility.disabled) {
+      Alert.alert("안내", "이 역의 해당 시설 정보는 아직 준비 중이에요.");
       return;
     }
+
     navigation.push("BarrierFreeMap", {
       stationName: realStationName,
       stationCode,
       lines,
       type,
-      imageUrl: stationImage,
+      imageUrl: stationImage || null,
     });
   };
 
+  // ✅ 헤더
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -156,7 +196,6 @@ export default function StationDetailScreen() {
               const color = getLineColor(line);
               const textColor = getTextColorForBackground(color);
               const dynamicIconSize = BASE_ICON_SIZE + fontOffset;
-
               return (
                 <View
                   key={line}
@@ -205,44 +244,60 @@ export default function StationDetailScreen() {
     [navigation, displayName, lines, fontOffset, insets.top, isFavorite]
   );
 
+  const buttons = [
+    { icon: "elevator-passenger-outline", label: "엘리베이터", type: "EV" },
+    { icon: "escalator", label: "에스컬레이터", type: "ES" },
+    { icon: "restroom", label: "화장실", type: "TO", pack: FontAwesome5 },
+    { icon: "wheelchair", label: "장애인 화장실", type: "DT", pack: FontAwesome6 },
+    { icon: "human-wheelchair", label: "휠체어 리프트", type: "WL" },
+    { icon: "battery-charging", label: "휠체어 급속충전", type: "WC" },
+    { icon: "volume-high", label: "음성유도기", type: "VO", pack: Ionicons },
+    { icon: "baby-changing-station", label: "수유실", type: "NU", pack: MaterialIcons },
+    { icon: "locker-multiple", label: "보관함", type: "LO" },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.infoBox}>
+          {/* 역 코드 
           <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
             코드: {stationCode}
-          </Text>
+          </Text>*/}
+
         </View>
 
-        {/* ✅ 최신 아이콘 버튼 목록 */}
         <View style={styles.buttonListContainer}>
-          {[
-            { icon: "elevator-passenger-outline", label: "엘리베이터", type: "EV" },
-            { icon: "escalator", label: "에스컬레이터", type: "ES" },
-            { icon: "restroom", label: "화장실", type: "TO", pack: FontAwesome5 },
-            { icon: "wheelchair", label: "장애인 화장실", type: "DT", pack: FontAwesome6 },
-            { icon: "human-wheelchair", label: "휠체어 리프트", type: "WL" },
-            { icon: "volume-high", label: "음성유도기", type: "VO", pack: Ionicons },
-            { icon: "baby-changing-station", label: "수유실", type: "NU", pack: MaterialIcons },
-            { icon: "locker-multiple", label: "보관함", type: "LO" },
-          ].map((btn) => {
+          {buttons.map((btn) => {
             const IconPack = btn.pack || MaterialCommunityIcons;
+            const isDisabled = facilityAvailability[btn.type]?.disabled;
+
             return (
               <TouchableOpacity
                 key={btn.type}
-                style={styles.iconButton}
-                onPress={() => goToFacilityMap(btn.type)}
+                style={[
+                  styles.iconButton,
+                  isDisabled && { backgroundColor: "#E0E0E0" },
+                ]}
+                onPress={() => handlePress(btn.type)}
+                activeOpacity={isDisabled ? 1 : 0.7}
               >
                 <View style={styles.buttonLeft}>
                   <IconPack
                     name={btn.icon}
                     size={responsiveFontSize(26) + fontOffset}
-                    color={INK}
+                    color={isDisabled ? "#9E9E9E" : INK}
                   />
                   <Text
-                    style={[styles.iconLabel, { fontSize: responsiveFontSize(16) + fontOffset }]}
+                    style={[
+                      styles.iconLabel,
+                      {
+                        fontSize: responsiveFontSize(16) + fontOffset,
+                        color: isDisabled ? "#9E9E9E" : INK,
+                      },
+                    ]}
                   >
                     {btn.label}
                   </Text>
@@ -250,7 +305,7 @@ export default function StationDetailScreen() {
                 <Ionicons
                   name="chevron-forward"
                   size={responsiveFontSize(20) + fontOffset}
-                  color={INK}
+                  color={isDisabled ? "#9E9E9E" : INK}
                 />
               </TouchableOpacity>
             );

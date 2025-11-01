@@ -10,9 +10,13 @@ import {
   Dimensions,
   Image,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
-import { useRoute } from "@react-navigation/native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
+import { useFontSize } from "../../contexts/FontSizeContext";
+import { responsiveFontSize } from "../../utils/responsive";
 
 import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import elevatorData from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
@@ -51,17 +55,16 @@ const TYPE_LABEL = {
 
 const BUBBLE_WIDTH = 10;
 const BUBBLE_HEIGHT = 10;
-const BUBBLE_RADIUS = 2;
-const TAIL_HEIGHT = 2;
 const ICON_SIZE = 9;
 
 function BubbleMarker({ cx, cy, type }) {
   const halfW = BUBBLE_WIDTH / 2;
-  const rectY = -BUBBLE_HEIGHT - TAIL_HEIGHT;
+  const rectY = -BUBBLE_HEIGHT - 2;
   const iconX = -ICON_SIZE / 2;
   const iconY = rectY + (BUBBLE_HEIGHT - ICON_SIZE) / 2;
-  const tailPath = `M 0 0 L -6 ${-TAIL_HEIGHT} L 6 ${-TAIL_HEIGHT} Z`;
+  const tailPath = `M 0 0 L -6 -2 L 6 -2 Z`;
   const iconSrc = ICONS[type] || ICONS["EV"];
+
   return (
     <G x={cx} y={cy}>
       <Rect
@@ -69,13 +72,13 @@ function BubbleMarker({ cx, cy, type }) {
         y={rectY}
         width={BUBBLE_WIDTH}
         height={BUBBLE_HEIGHT}
-        rx={BUBBLE_RADIUS}
-        ry={BUBBLE_RADIUS}
-        fill="#fff"
-        stroke="#fff"
-        strokeWidth={1.5}
+        rx={2}
+        ry={2}
+        fill="#14CAC9"
+        stroke="#14CAC9"
+        strokeWidth={1}
       />
-      <Path d={tailPath} fill="#fff" stroke="#fff" strokeWidth={1.5} />
+      <Path d={tailPath} fill="#14CAC9" stroke="#14CAC9" strokeWidth={1} />
       <SvgImage href={iconSrc} x={iconX} y={iconY} width={ICON_SIZE} height={ICON_SIZE} />
     </G>
   );
@@ -83,63 +86,82 @@ function BubbleMarker({ cx, cy, type }) {
 
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
+  const navigation = useNavigation();
+  const { fontOffset } = useFontSize();
+
   let { stationName = "서울역", type = "EV", imageUrl = null } = route.params || {};
 
-  // ✅ 역 이름 정규화 (‘노원(4호선)’ → ‘노원’)
+  // ✅ 이름 정규화 + “서울” 예외처리
   stationName = stationName.replace(/\(.*\)/g, "").trim();
+  if (stationName === "서울역") stationName = "서울"; // ← 좌표 파일 내 이름 일치
 
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [tempPoints, setTempPoints] = useState([]);
   const [facilities, setFacilities] = useState([]);
 
-  // ✅ 좌표 불러오기 (단일 station_coords.json)
+  // ✅ 좌표 로드
   useEffect(() => {
     try {
-      const filtered = stationCoords.filter(
-        (p) =>
-          p.station.replace(/\(.*\)/g, "").trim() === stationName &&
-          p.type.toUpperCase() === type.toUpperCase()
-      );
+      const filtered = stationCoords.filter((p) => {
+        const s = p.station.replace(/\s/g, "").replace(/\(.*\)/g, "").trim();
+        const t = stationName.replace(/\s/g, "").replace(/\(.*\)/g, "").trim();
+        const nameMatch = s.includes(t) || t.includes(s);
+        const typeMatch = p.type && p.type.toUpperCase() === type.toUpperCase();
+        return nameMatch && typeMatch;
+      });
       setTempPoints(filtered);
-      console.log(`📍 ${stationName} ${type} 좌표 ${filtered.length}개 로드됨`);
     } catch (e) {
       console.error("🚨 station_coords load error:", e);
     }
   }, [stationName, type]);
 
-  // ✅ 시설 데이터 매칭
+  // ✅ 시설 데이터 로드
   useEffect(() => {
     let data = [];
     switch (type) {
       case "EV":
-        data = elevatorData.DATA.filter((d) => d.stn_nm.includes(stationName));
+        data = elevatorData.DATA
+          ? elevatorData.DATA.filter((d) => d.stn_nm.includes(stationName))
+          : elevatorData.filter((d) => d.stn_nm.includes(stationName));
         break;
-      case "ES":
-        data = escalatorData.filter((d) => (d["역명"] || d["역  명"] || "").includes(stationName));
+
+      case "ES": {
+        const escalatorList = escalatorData.DATA || escalatorData;
+        data = escalatorList.filter((d) => {
+          const name = d["역명"] || d["역사명"] || d["역  명"] || d["역"] || "";
+          return name.replace(/\s/g, "").includes(stationName.replace(/\s/g, ""));
+        });
         break;
+      }
+
       case "TO":
         data = toiletData.filter((d) => d.역명.includes(stationName));
         break;
+
       case "DT":
         data = disabledToiletData.filter((d) => d.역명.includes(stationName));
         break;
+
       case "NU":
         data = babyRoomData.filter((d) => d.역명.includes(stationName));
         break;
+
       case "WL":
         data = liftData.filter((d) => d.역명.includes(stationName));
         break;
+
       case "LO":
         data = lockerData.filter((d) => String(d["상세위치"]).includes(stationName));
         break;
+
       default:
         data = [];
     }
     setFacilities(data);
   }, [stationName, type]);
 
-  // ✅ 팬/줌 기능
+  // 팬/줌 설정
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
@@ -179,30 +201,12 @@ export default function BarrierFreeMapScreen() {
       onPanResponderRelease: () => {
         initialDistance.current = null;
         pan.flattenOffset();
-        const maxX = (screenW * (scale.__getValue() - 1)) / 2;
-        const maxY = (screenH * (scale.__getValue() - 1)) / 2;
-        const newPan = pan.__getValue();
-        const clampedX = Math.max(-maxX, Math.min(newPan.x, maxX));
-        const clampedY = Math.max(-maxY, Math.min(newPan.y, maxY));
-        panOffset.x = clampedX;
-        panOffset.y = clampedY;
-        pan.setValue({ x: clampedX, y: clampedY });
       },
     })
   ).current;
 
-  if (!imageUrl)
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color="#14CAC9" size="large" />
-        <Text>지도를 불러오는 중...</Text>
-      </View>
-    );
-
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>{stationName} 무장애 지도</Text>
-
       <View style={styles.imageContainer} {...panResponder.panHandlers}>
         <Animated.View
           style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
@@ -214,26 +218,18 @@ export default function BarrierFreeMapScreen() {
             onLayout={(e) => {
               const { width, height } = e.nativeEvent.layout;
               setImgLayout({ width, height });
-
-              // contain 비율 오프셋 계산
               const imgAspect = IMG_ORIGINAL_WIDTH / IMG_ORIGINAL_HEIGHT;
               const viewAspect = width / height;
               let offsetX = 0,
-                offsetY = 0,
-                drawW,
-                drawH;
+                offsetY = 0;
               if (imgAspect > viewAspect) {
-                drawW = width;
-                drawH = width / imgAspect;
+                const drawH = width / imgAspect;
                 offsetY = (height - drawH) / 2;
               } else {
-                drawH = height;
-                drawW = height * imgAspect;
+                const drawW = height * imgAspect;
                 offsetX = (width - drawW) / 2;
               }
               setOffset({ x: offsetX, y: offsetY });
-
-              console.log("🧭 이미지:", width, height, "offset:", offsetX, offsetY);
             }}
           />
 
@@ -241,27 +237,51 @@ export default function BarrierFreeMapScreen() {
             {tempPoints.map((p, i) => {
               const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
               const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y;
-              return (
-                <BubbleMarker
-                  key={`${p.station}_${p.type}_${p.x}_${p.y}_${i}`}
-                  cx={cx}
-                  cy={cy}
-                  type={p.type}
-                />
-              );
+              return <BubbleMarker key={i} cx={cx} cy={cy} type={p.type} />;
             })}
           </Svg>
+
+          {/* 뒤로가기 버튼 */}
+          <View pointerEvents="box-none" style={styles.backOverlay}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              activeOpacity={0.85}
+              style={styles.backFab}
+            >
+              <Ionicons name="arrow-back" size={22} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </Animated.View>
       </View>
 
+      {/* 하단 리스트 */}
       <View style={styles.listContainer}>
         {facilities.length === 0 ? (
-          <Text style={styles.empty}>해당 시설 정보가 없습니다.</Text>
+          <Text style={[styles.empty, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            해당 시설 정보가 없습니다.
+          </Text>
         ) : (
           facilities.map((item, idx) => (
-            <View key={idx} style={styles.card}>
-              <Text style={styles.facilityTitle}>{TYPE_LABEL[type]}</Text>
-              <Text style={styles.facilityDesc}>{extractDetail(item, type)}</Text>
+            <View key={idx} style={styles.mintCard}>
+              <View style={styles.cardHeader}>
+                <Image source={ICONS[type]} style={styles.cardIcon} />
+                <Text
+                  style={[
+                    styles.facilityTitle,
+                    { fontSize: responsiveFontSize(17) + fontOffset },
+                  ]}
+                >
+                  {TYPE_LABEL[type]}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.facilityDesc,
+                  { fontSize: responsiveFontSize(14) + fontOffset },
+                ]}
+              >
+                {extractDetail(item, type)}
+              </Text>
             </View>
           ))
         )}
@@ -291,22 +311,35 @@ function extractDetail(item, type) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
-  title: { fontSize: 18, fontWeight: "700", textAlign: "center", marginTop: 10 },
   imageContainer: { width: screenW, height: screenH * 0.6, overflow: "hidden" },
   mapWrapper: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
   image: { width: "100%", height: "100%", position: "absolute" },
   overlay: { position: "absolute", top: 0, left: 0 },
-  listContainer: { padding: 12, backgroundColor: "#f8f8f8" },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    borderWidth: 0.5,
-    borderColor: "#ddd",
-    padding: 10,
-    marginBottom: 8,
+  backOverlay: { position: "absolute", top: 25, left: 0, right: 0, zIndex: 10 },
+  backFab: {
+    position: "absolute",
+    top: 20,
+    left: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
   },
-  facilityTitle: { fontWeight: "600", fontSize: 15, color: "#222" },
-  facilityDesc: { fontSize: 13, color: "#555", marginTop: 2 },
+  listContainer: { padding: 12, backgroundColor: "#fff" },
+  mintCard: {
+    backgroundColor: "#EEFFFE",
+    borderWidth: 1.5,
+    borderColor: "#14CAC9",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  cardIcon: { width: 22, height: 22, marginRight: 6, resizeMode: "contain" },
+  facilityTitle: { fontWeight: "700", color: "#0F6B6A" },
+  facilityDesc: { color: "#1A1A1A", marginTop: 2 },
   empty: { textAlign: "center", color: "#666", marginTop: 10 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });
