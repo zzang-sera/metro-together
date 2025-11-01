@@ -2,11 +2,11 @@ import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
-  TouchableOpacity, // <--- 이 'TouchableOpacity'는 헤더와 즐겨찾기에 필요하므로 유지합니다.
+  TouchableOpacity,
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Alert,
+  Alert, // 1. Alert import 확인
   ScrollView,
 } from "react-native";
 import {
@@ -75,6 +75,7 @@ export default function StationDetailScreen() {
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
+  // ... (useEffect 로직들 ... )
   // ✅ 안내도 로드
   useEffect(() => {
     async function loadImage() {
@@ -187,16 +188,25 @@ export default function StationDetailScreen() {
     });
   };
 
-  // ✅ 전화 버튼 핸들러
+  // ✅ 전화 버튼 핸들러 (추천안 적용)
   const handleCallPress = () => {
     if (!phone) {
       Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
       return;
     }
-    makeCall(phone);
+    // 2. 전화번호 확인 Alert 추가
+    Alert.alert(
+      "전화 연결",
+      `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        { text: "전화 걸기", onPress: () => makeCall(phone) }, // 확인 시에만 makeCall(phone) 실행
+      ],
+      { cancelable: true }
+    );
   };
 
-  // ✅ 헤더
+  // ... (Header)
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -276,39 +286,36 @@ export default function StationDetailScreen() {
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* 1. buttonListContainer 안으로 '전화 걸기' 버튼 이동 */}
         <View style={styles.buttonListContainer}>
           {/* ✅ 전화 걸기 버튼 */}
           {phone && (
-            // 2. TouchableOpacity -> CustomButton으로 변경
             <CustomButton
-              type="call" // 3. 'call' 타입 적용
+              type="call"
               onPress={handleCallPress}
-              style={styles.buttonContentLayout} // 4. 다른 버튼들과 동일한 레이아웃 스타일 적용
+              style={styles.buttonContentLayout}
             >
-              {/* 5. 다른 버튼들과 동일한 children 구조 적용 */}
               <View style={styles.buttonLeft}>
                 <MaterialCommunityIcons
                   name="phone"
                   size={responsiveFontSize(26) + fontOffset}
-                  color="#17171B" // 'call' 타입의 고유 색상
+                  color={INK} // 3. 색상 대비를 위해 INK(#17171B)로 변경
                 />
                 <Text
                   style={[
-                    styles.iconLabel,
+                    styles.iconLabel, // (기본 color: INK)
                     {
                       fontSize: responsiveFontSize(16) + fontOffset,
-                      color: "#17171B", // 'call' 타입의 고유 색상
+                      // 4. color: "#0F766E" 오버라이드 제거 -> styles.iconLabel의 INK 색상 적용
                     },
                   ]}
                 >
-                  전화 걸기 ({phone})
+                  전화 걸기 {/* 5. ({phone}) 제거 */}
                 </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
                 size={responsiveFontSize(20) + fontOffset}
-                color="#0F766E" // 'call' 타입의 고유 색상
+                color={INK} // 3. 색상 대비를 위해 INK(#17171B)로 변경
               />
             </CustomButton>
           )}
@@ -364,7 +371,7 @@ export default function StationDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  scrollContainer: { paddingBottom: 30, paddingTop: 14 }, // 6. 전화걸기 버튼이 위로 붙어서 패딩 추가
+  scrollContainer: { paddingBottom: 30, paddingTop: 14 },
   mintHeader: {
     backgroundColor: BG,
     flexDirection: "row",
@@ -402,9 +409,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20, 
-    marginBottom: 16, // 9. CustomButton의 12로는 간격이 좁아서 16으로 재정의
+    marginBottom: 16, 
   },
 
   buttonLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
-  iconLabel: { color: INK, fontWeight: "bold" },
+  iconLabel: { color: INK, fontWeight: "bold" }, // INK가 #17171B 입니다.
 });

@@ -7,9 +7,8 @@ import {
   Image,
   ScrollView,
   PanResponder,
-  // TouchableOpacity, // CustomButton이 TouchableOpacity를 포함하므로, 여기선 제거 (헤더에서 쓴다면 유지)
   Dimensions,
-  Alert,
+  Alert, // 1. Alert import 확인
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
@@ -23,13 +22,14 @@ import { usePhoneCall } from "../../hook/usePhoneCall";
 import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import styles, { colors } from "../../styles/BarrierFreeMapScreen.styles";
 
-// 1. ✅ CustomButton import
+// CustomButton import
 import CustomButton from "../../components/CustomButton";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
 const IMG_ORIGINAL_HEIGHT = 3375;
 
+// ... (ICONS, TYPE_LABEL, BubbleMarker, extractDetail 함수는 동일)
 // ✅ 아이콘 모음
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
@@ -61,7 +61,6 @@ const BUBBLE_HEIGHT = 10;
 const ICON_SIZE = 9;
 
 function BubbleMarker({ cx, cy, type }) {
-  // ... (BubbleMarker 코드는 동일)
   const halfW = BUBBLE_WIDTH / 2;
   const rectY = -BUBBLE_HEIGHT - 2;
   const iconX = -ICON_SIZE / 2;
@@ -97,6 +96,7 @@ function extractDetail(item, type) {
   return [name, base, loc, extra].filter(Boolean).join(" · ");
 }
 
+
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
   const navigation = useNavigation();
@@ -109,12 +109,22 @@ export default function BarrierFreeMapScreen() {
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
+  // ✅ 전화 버튼 핸들러 (추천안 적용)
   const handleCallPress = () => {
     if (!phone) {
       Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
       return;
     }
-    makeCall(phone);
+    // 2. 전화번호 확인 Alert 추가
+    Alert.alert(
+      "전화 연결",
+      `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        { text: "전화 걸기", onPress: () => makeCall(phone) }, // 확인 시에만 makeCall(phone) 실행
+      ],
+      { cancelable: true }
+    );
   };
 
   // ✅ 헤더 설정
@@ -290,7 +300,7 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
-      {/* 2. ✅ 휠체어 리프트(WL) 전용 전화 버튼 (CustomButton으로 수정) */}
+      {/* ✅ 휠체어 리프트(WL) 전용 전화 버튼 */}
       {type === "WL" && phone && (
         <View style={styles.buttonContainer}>
           <CustomButton
@@ -298,27 +308,24 @@ export default function BarrierFreeMapScreen() {
             onPress={handleCallPress}
             style={styles.buttonContentLayout}
           >
-            {/* 3. ✅ StationDetailScreen과 동일한 children 구조 */}
             <View style={styles.buttonLeft}>
               <MaterialCommunityIcons
                 name="phone"
                 size={responsiveFontSize(26) + fontOffset}
-                // 4. ✅ 요청하신대로 #17171B (colors.text)로 색상 적용
                 color={colors.text} 
               />
               <Text
                 style={[
-                  styles.iconLabel, // (color: colors.text, fontWeight: 'bold')
+                  styles.iconLabel,
                   { fontSize: responsiveFontSize(16) + fontOffset },
                 ]}
               >
-                전화 걸기 ({phone})
+                전화 걸기 {/* 3. ({phone}) 제거 */}
               </Text>
             </View>
             <Ionicons
               name="chevron-forward"
               size={responsiveFontSize(20) + fontOffset}
-              // 5. ✅ 요청하신대로 #17171B (colors.text)로 색상 적용
               color={colors.text} 
             />
           </CustomButton>
@@ -328,6 +335,7 @@ export default function BarrierFreeMapScreen() {
       {/* 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
+          // ... (로딩 뷰)
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} size="large" />
             <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
@@ -335,10 +343,12 @@ export default function BarrierFreeMapScreen() {
             </Text>
           </View>
         ) : facilities.length === 0 ? (
+          // ... (데이터 없음 뷰)
           <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
             해당 시설 정보가 없습니다.
           </Text>
         ) : (
+          // ... (시설 목록 맵)
           facilities.map((item, idx) => {
             const isApi = dataSource === "API";
             const cardStyle = [
