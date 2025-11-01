@@ -25,28 +25,30 @@ const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
 const IMG_ORIGINAL_HEIGHT = 3375;
 
+// ✅ 아이콘 모음 (WC 포함)
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
   ES: require("../../assets/function-icon/Escalator.png"),
   TO: require("../../assets/function-icon/Bathromm_for_all.png"),
   DT: require("../../assets/function-icon/Disablities_bathroom.png"),
   WL: require("../../assets/function-icon/Lift.png"),
-  VO: require("../../assets/function-icon/mic.png"), // ✅ 변경됨
+  WC: require("../../assets/function-icon/Wheelchair_Charging.png"), // ✅ 추가 완료
+  VO: require("../../assets/function-icon/mic.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
-  WC: require("../../assets/function-icon/Wheelchair_charging.png"),
 };
 
+// ✅ 시설 라벨 정의 (WC 포함)
 const TYPE_LABEL = {
   EV: "엘리베이터",
   ES: "에스컬레이터",
   TO: "화장실",
   DT: "장애인 화장실",
   WL: "휠체어 리프트",
+  WC: "휠체어 급속충전", // ✅ 추가 완료
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
-  WC: "휠체어 급속충전",
 };
 
 // ✅ 마커 표시용 (최신 버전)
@@ -81,16 +83,6 @@ function BubbleMarker({ cx, cy, type }) {
   );
 }
 
-const getStatusCategory = (status) => {
-  if (!status || status === "-") return "none";
-  const s = status.toLowerCase();
-  if (s.includes("보수") || s.includes("불가") || s.includes("점검") || s.includes("중지"))
-    return "unavailable";
-  if (s.includes("가능") || s.includes("운행")) return "available";
-  return "none";
-};
-
-// ✅ desc 자동 생성 (fallback용)
 function extractDetail(item, type) {
   if (item?.desc) return item.desc;
   const base = TYPE_LABEL[type] || "시설";
