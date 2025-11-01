@@ -34,6 +34,7 @@ const ICONS = {
   VO: require("../../assets/function-icon/mic.png"), // ✅ 변경됨
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
+  WC: require("../../assets/function-icon/Wheelchair_charging.png"),
 };
 
 const TYPE_LABEL = {
