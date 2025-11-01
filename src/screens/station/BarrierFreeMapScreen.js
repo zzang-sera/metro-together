@@ -347,3 +347,59 @@ export default function BarrierFreeMapScreen() {
     </ScrollView>
   );
 }
+
+function extractDetail(item, type) {
+  switch (type) {
+    case "EV":
+      return `${item.instl_pstn || ""} (${item.use_yn || ""})`;
+    case "ES":
+      return `${item["시작층(상세위치)"] || ""} ↔ ${item["종료층(상세위치)"] || ""}`;
+    case "TO":
+    case "DT":
+      return item["상세위치"] || "";
+    case "WL":
+      return `${item["시작층(상세위치)"]} ↔ ${item["종료층(상세위치)"]}`;
+    case "NU":
+    case "LO":
+      return item["상세위치"] || "";
+    case "VO": // ✅ 음성유도기 추가
+      return `${item["설치위치"] || "위치 정보 없음"} (호선: ${item["호선"] || "?"}호선)`;
+    default:
+      return "";
+  }
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#fff" },
+  imageContainer: { width: screenW, height: screenH * 0.6, overflow: "hidden" },
+  mapWrapper: { width: "100%", height: "100%", alignItems: "center", justifyContent: "center" },
+  image: { width: "100%", height: "100%", position: "absolute" },
+  overlay: { position: "absolute", top: 0, left: 0 },
+  backOverlay: { position: "absolute", top: 25, left: 0, right: 0, zIndex: 10 },
+  backFab: {
+    position: "absolute",
+    top: 20,
+    left: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+  },
+  listContainer: { padding: 12, backgroundColor: "#fff" },
+  mintCard: {
+    backgroundColor: "#EEFFFE",
+    borderWidth: 1.5,
+    borderColor: "#14CAC9",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  cardIcon: { width: 22, height: 22, marginRight: 6, resizeMode: "contain" },
+  facilityTitle: { fontWeight: "700", color: "#0F6B6A" },
+  facilityDesc: { color: "#1A1A1A", marginTop: 2 },
+  empty: { textAlign: "center", color: "#666", marginTop: 10 },
+});
