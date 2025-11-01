@@ -7,7 +7,7 @@ import {
   Image,
   ScrollView,
   PanResponder,
-  TouchableOpacity,
+  // TouchableOpacity, // CustomButton이 TouchableOpacity를 포함하므로, 여기선 제거 (헤더에서 쓴다면 유지)
   Dimensions,
   Alert,
 } from "react-native";
@@ -22,6 +22,9 @@ import { useLocalPhoneNumber } from "../../hook/useLocalPhoneNumber";
 import { usePhoneCall } from "../../hook/usePhoneCall";
 import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import styles, { colors } from "../../styles/BarrierFreeMapScreen.styles";
+
+// 1. ✅ CustomButton import
+import CustomButton from "../../components/CustomButton";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
@@ -58,6 +61,7 @@ const BUBBLE_HEIGHT = 10;
 const ICON_SIZE = 9;
 
 function BubbleMarker({ cx, cy, type }) {
+  // ... (BubbleMarker 코드는 동일)
   const halfW = BUBBLE_WIDTH / 2;
   const rectY = -BUBBLE_HEIGHT - 2;
   const iconX = -ICON_SIZE / 2;
@@ -131,6 +135,7 @@ export default function BarrierFreeMapScreen() {
     });
   }, [navigation, type, fontOffset]);
 
+  // ... (cleanName, useState, 훅, useEffect 등 나머지 로직은 동일)
   const cleanName = (() => {
     if (!stationName) return "";
     let name = stationName.replace(/\(.*\)/g, "").trim();
@@ -229,6 +234,7 @@ export default function BarrierFreeMapScreen() {
     })
   ).current;
 
+  // ... (로딩 뷰)
   if (coords.length === 0 && loading) {
     return (
       <View style={styles.center}>
@@ -283,15 +289,42 @@ export default function BarrierFreeMapScreen() {
           </Animated.View>
         </View>
       )}
-      {/* ✅ 휠체어 리프트(WL) 전용 전화 버튼 */}
+
+      {/* 2. ✅ 휠체어 리프트(WL) 전용 전화 버튼 (CustomButton으로 수정) */}
       {type === "WL" && phone && (
-        <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
-          <MaterialCommunityIcons name="phone" size={24 + fontOffset / 2} color="#0F766E" />
-          <Text style={[styles.callText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-            전화 걸기 ({phone})
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            type="call"
+            onPress={handleCallPress}
+            style={styles.buttonContentLayout}
+          >
+            {/* 3. ✅ StationDetailScreen과 동일한 children 구조 */}
+            <View style={styles.buttonLeft}>
+              <MaterialCommunityIcons
+                name="phone"
+                size={responsiveFontSize(26) + fontOffset}
+                // 4. ✅ 요청하신대로 #17171B (colors.text)로 색상 적용
+                color={colors.text} 
+              />
+              <Text
+                style={[
+                  styles.iconLabel, // (color: colors.text, fontWeight: 'bold')
+                  { fontSize: responsiveFontSize(16) + fontOffset },
+                ]}
+              >
+                전화 걸기 ({phone})
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={responsiveFontSize(20) + fontOffset}
+              // 5. ✅ 요청하신대로 #17171B (colors.text)로 색상 적용
+              color={colors.text} 
+            />
+          </CustomButton>
+        </View>
       )}
+
       {/* 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
@@ -359,4 +392,3 @@ export default function BarrierFreeMapScreen() {
     </ScrollView>
   );
 }
-

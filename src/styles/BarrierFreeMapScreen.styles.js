@@ -1,4 +1,3 @@
-//src/styles/BarrierFreeMapScreen.styles.js
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: screenW, height: screenH } = Dimensions.get('window');
@@ -193,21 +192,37 @@ export default StyleSheet.create({
     alignItems: 'center',
     padding: 20,
   },
+
+  // 1. ✅ 'callButton'과 'callText' 삭제
+  /*
   callButton: {
-    flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#E6FFFA",
-  marginHorizontal: "6%",
-  paddingVertical: 14,
-  borderRadius: 40,
-  marginTop: 14,
-  marginBottom: 20,
-  elevation: 3,
+   ...
   },
   callText: {
-    color: "#0F766E",
-  fontWeight: "bold",
-  marginLeft: 8,
+    ...
+  },
+  */
+
+  // 2. ✅ StationDetailScreen과 동일한 버튼 레이아웃 스타일 추가
+  buttonContainer: {
+    paddingHorizontal: '5%', // StationDetailScreen의 buttonListContainer와 동일한 패딩
+    marginTop: 14,         // 기존 callButton의 여백 유지
+    marginBottom: 20,       // 기존 callButton의 여백 유지
+  },
+  buttonContentLayout: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 0, // CustomButton의 기본 marginBottom(12)을 덮어쓰고, buttonContainer가 여백을 제어
+  },
+  buttonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconLabel: {
+    color: colors.text, // #17171B
+    fontWeight: 'bold',
   },
 });
