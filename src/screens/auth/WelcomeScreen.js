@@ -33,7 +33,7 @@ const WelcomeScreen = ({ navigation }) => {
           flexGrow: 1, 
           justifyContent: 'space-between' 
         }}
-      >        <View>
+      ><View>
           <View style={styles.header}>
             <Image 
               source={require('../../../src/assets/brand-icon.png')}

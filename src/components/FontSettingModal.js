@@ -8,12 +8,11 @@ const FontSettingModal = ({ visible, onClose }) => {
   const { fontOffset, setFontOffset } = useFontSize();
   const isSelected = (offset) => fontOffset === offset;
 
-  // [수정] offset 값을 전체적으로 조금씩 키웁니다.
   const options = [
-    { label: '작게', offset: -1 },    // -2 -> -1
-    { label: '보통', offset: 2 },     // 0 -> 2
-    { label: '크게', offset: 5 },     // 4 -> 5
-    { label: '아주 크게', offset: 9 }, // 8 -> 9
+    { label: '작게', offset: -1 },
+    { label: '보통', offset: 2 },
+    { label: '크게', offset: 5 },
+    { label: '아주 크게', offset: 9 },
   ];
 
   return (
@@ -29,11 +28,8 @@ const FontSettingModal = ({ visible, onClose }) => {
         accessibilityLabel="닫기"
         accessibilityRole="button"
       >
-        {/* ModalContainer를 TouchableOpacity로 감싸면 
-            Pressable의 onPress 이벤트(배경 클릭 시 닫기)가 가로채질 수 있습니다.
-            Pressable 안에서 ModalContainer 클릭 시 이벤트 전파를 막거나,
-            ModalContainer 자체는 TouchableOpacity가 아닌 View로 두는 것이 좋습니다.
-            여기서는 TouchableOpacity를 View로 변경합니다. */}
+        {/* 이곳의 모든 주석을 완전히 삭제했습니다. 
+        */}
         <Pressable style={styles.modalContainer} onPress={() => {}}> 
             <View style={styles.header}>
               <Text style={[styles.modalTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>
@@ -64,9 +60,7 @@ const FontSettingModal = ({ visible, onClose }) => {
                 >
                   <Text style={[
                     styles.optionButtonText,
-                    // [수정] 선택된 버튼 텍스트 색상도 명확하게 (흰색)
                     isSelected(option.offset) ? styles.optionButtonTextSelected : {}, 
-                    // [추가] 각 버튼의 텍스트 크기도 미리보기처럼 보이도록 조정
                     { fontSize: responsiveFontSize(16) + option.offset } 
                   ]}>
                     {option.label}
@@ -121,7 +115,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
     borderRadius: 8,
     marginBottom: 24,
-    overflow: 'hidden', // [추가] borderRadius 적용되도록
+    overflow: 'hidden',
   },
   optionsContainer: {
     flexDirection: 'row',
@@ -132,7 +126,7 @@ const styles = StyleSheet.create({
     width: '48%', 
     paddingVertical: responsiveHeight(16), 
     marginBottom: responsiveHeight(10), 
-    borderRadius: 40, // [유지] 둥근 버튼
+    borderRadius: 40,
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
     backgroundColor: '#FAFAFA',
@@ -147,9 +141,7 @@ const styles = StyleSheet.create({
     fontFamily: 'NotoSansKR',
     fontWeight: 'bold',
     color: '#17171B',
-    // fontSize는 JSX에서 동적으로 설정
   },
-  // [수정] 선택된 텍스트 색상을 흰색으로 명확하게 변경
   optionButtonTextSelected: {
     color: '#17171B', 
   },
