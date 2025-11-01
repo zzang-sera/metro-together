@@ -1,4 +1,3 @@
-// ✅ src/screens/station/StationDetailScreen.js
 import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
@@ -7,7 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Alert,
+  Alert, 
   ScrollView,
 } from "react-native";
 import {
@@ -33,6 +32,9 @@ import lineJson from "../../assets/metro-data/metro/line/data-metro-line-1.0.0.j
 import { getStationImageByName } from "../../api/metro/metroAPI";
 import { useLocalFacilities } from "../../hook/useLocalFacilities";
 import { useApiFacilities } from "../../hook/useApiFacilities";
+import { usePhoneCall } from "../../hook/usePhoneCall";
+import { useLocalPhoneNumber } from "../../hook/useLocalPhoneNumber";
+import CustomButton from "../../components/CustomButton";
 
 const lineData = lineJson.DATA;
 const INK = "#17171B";
@@ -68,7 +70,9 @@ export default function StationDetailScreen() {
   const displayName = stationName === "서울" ? "서울역" : stationName;
   const realStationName = stationName === "서울역" ? "서울" : stationName;
 
-  // ✅ 안내도 로드
+  const { phone } = useLocalPhoneNumber(realStationName);
+  const { makeCall } = usePhoneCall();
+
   useEffect(() => {
     async function loadImage() {
       try {
@@ -88,14 +92,12 @@ export default function StationDetailScreen() {
     loadImage();
   }, [realStationName]);
 
-  // ✅ 각 시설별 로컬 데이터 훅
   const facilityTypes = ["EV", "ES", "TO", "DT", "WL", "WC", "VO", "NU", "LO"];
   const facilityDataHooks = {};
   facilityTypes.forEach((t) => {
     facilityDataHooks[t] = useLocalFacilities(displayName, stationCode, null, t);
   });
 
-  // ✅ 휠체어 급속충전(WC)용 API 데이터
   const wcApi = useApiFacilities(displayName, stationCode, null, "WC");
 
   useEffect(() => {
@@ -103,12 +105,12 @@ export default function StationDetailScreen() {
     facilityTypes.forEach((t) => {
       const hasList =
         t === "WC"
-          ? wcApi?.data?.length > 0 // 🔹 WC는 API 기준으로 판단
+          ? wcApi?.data?.length > 0
           : facilityDataHooks[t]?.data?.length > 0;
 
       const hasMap = !!stationImage;
       const disabled =
-        (!hasList && !hasMap) || (hasMap && !hasList); // 둘 다 없거나 안내도만 있는 경우
+        (!hasList && !hasMap) || (hasMap && !hasList);
 
       status[t] = { hasList, hasMap, disabled };
     });
@@ -119,7 +121,6 @@ export default function StationDetailScreen() {
     ...facilityTypes.map((t) => facilityDataHooks[t]?.data),
   ]);
 
-  // ✅ 즐겨찾기 관리
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -164,7 +165,6 @@ export default function StationDetailScreen() {
     }
   };
 
-  // ✅ 버튼 클릭
   const handlePress = (type) => {
     const facility = facilityAvailability[type];
     if (!facility || facility.disabled) {
@@ -181,7 +181,22 @@ export default function StationDetailScreen() {
     });
   };
 
-  // ✅ 헤더
+  const handleCallPress = () => {
+    if (!phone) {
+      Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
+      return;
+    }
+    Alert.alert(
+      "전화 연결",
+      `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        { text: "전화 걸기", onPress: () => makeCall(phone) }, 
+      ],
+      { cancelable: true }
+    );
+  };
+
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -261,28 +276,53 @@ export default function StationDetailScreen() {
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.infoBox}>
-          {/* 역 코드 
-          <Text style={[styles.codeText, { fontSize: responsiveFontSize(12) + fontOffset }]}>
-            코드: {stationCode}
-          </Text>*/}
-
-        </View>
-
         <View style={styles.buttonListContainer}>
+          {phone && (
+            <CustomButton
+              type="call"
+              onPress={handleCallPress}
+              style={styles.buttonContentLayout}
+            >
+              <View style={styles.buttonLeft}>
+                <MaterialCommunityIcons
+                  name="phone"
+                  size={responsiveFontSize(26) + fontOffset}
+                  color={INK} 
+                />
+                <Text
+                  style={[
+                    styles.iconLabel, 
+                    {
+                      fontSize: responsiveFontSize(16) + fontOffset,
+                    },
+                  ]}
+                >
+                  전화 걸기 
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={responsiveFontSize(20) + fontOffset}
+                color={INK} 
+              />
+            </CustomButton>
+          )}
+
           {buttons.map((btn) => {
             const IconPack = btn.pack || MaterialCommunityIcons;
             const isDisabled = facilityAvailability[btn.type]?.disabled;
 
             return (
-              <TouchableOpacity
+              <CustomButton
                 key={btn.type}
-                style={[
-                  styles.iconButton,
-                  isDisabled && { backgroundColor: "#E0E0E0" },
-                ]}
+                type="outline"
                 onPress={() => handlePress(btn.type)}
+                disabled={isDisabled}
                 activeOpacity={isDisabled ? 1 : 0.7}
+                style={[
+                  styles.buttonContentLayout,
+                  isDisabled && { backgroundColor: "#E0E0E0", borderColor: '#BDBDBD' }
+                ]}
               >
                 <View style={styles.buttonLeft}>
                   <IconPack
@@ -307,7 +347,7 @@ export default function StationDetailScreen() {
                   size={responsiveFontSize(20) + fontOffset}
                   color={isDisabled ? "#9E9E9E" : INK}
                 />
-              </TouchableOpacity>
+              </CustomButton>
             );
           })}
         </View>
@@ -318,7 +358,7 @@ export default function StationDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  scrollContainer: { paddingBottom: 30 },
+  scrollContainer: { paddingBottom: 30, paddingTop: 14 },
   mintHeader: {
     backgroundColor: BG,
     flexDirection: "row",
@@ -349,20 +389,16 @@ const styles = StyleSheet.create({
   lineBadgeText: { fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold", textAlign: "center" },
   starBtn: { padding: 6 },
-  infoBox: { alignItems: "center", marginTop: 24, marginBottom: 16 },
-  codeText: { color: "#6B7280", marginTop: 4 },
   buttonListContainer: { width: "100%", paddingHorizontal: "5%" },
-  iconButton: {
+
+  buttonContentLayout: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F1FAFA",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 40,
-    elevation: 3,
-    marginBottom: 16,
+    paddingHorizontal: 20, 
+    marginBottom: 16, 
   },
+
   buttonLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
-  iconLabel: { color: INK, fontWeight: "bold" },
+  iconLabel: { color: INK, fontWeight: "bold" }, 
 });

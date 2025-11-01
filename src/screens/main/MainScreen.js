@@ -18,10 +18,7 @@ const MainScreen = () => {
     navigation.navigate(name);
   };
 
-  // [추가] PathFinderScreen으로 이동하는 핸들러
   const handlePathFinderPress = () => {
-    // HomeStackNavigator의 'MainStack' 스크린(MainStackNavigator)으로 이동 후,
-    // 그 안의 'PathFinder' 스크린으로 이동
     navigation.navigate('MainStack', { screen: 'PathFinder' });
   };
 

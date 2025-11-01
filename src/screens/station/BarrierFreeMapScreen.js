@@ -1,4 +1,3 @@
-// ✅ src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import {
   View,
@@ -8,50 +7,55 @@ import {
   Image,
   ScrollView,
   PanResponder,
-  TouchableOpacity,
   Dimensions,
+  Alert, // 1. Alert import 확인
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import { responsiveFontSize } from "../../utils/responsive";
 import { useApiFacilities } from "../../hook/useApiFacilities";
 import { useLocalFacilities } from "../../hook/useLocalFacilities";
+import { useLocalPhoneNumber } from "../../hook/useLocalPhoneNumber";
+import { usePhoneCall } from "../../hook/usePhoneCall";
 import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import styles, { colors } from "../../styles/BarrierFreeMapScreen.styles";
+
+// CustomButton import
+import CustomButton from "../../components/CustomButton";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
 const IMG_ORIGINAL_HEIGHT = 3375;
 
-// ✅ 아이콘 모음 (WC 포함)
+// ... (ICONS, TYPE_LABEL, BubbleMarker, extractDetail 함수는 동일)
+// ✅ 아이콘 모음
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
   ES: require("../../assets/function-icon/Escalator.png"),
   TO: require("../../assets/function-icon/Bathromm_for_all.png"),
   DT: require("../../assets/function-icon/Disablities_bathroom.png"),
   WL: require("../../assets/function-icon/Lift.png"),
-  WC: require("../../assets/function-icon/Wheelchair_Charging.png"), // ✅ 추가 완료
+  WC: require("../../assets/function-icon/Wheelchair_Charging.png"),
   VO: require("../../assets/function-icon/mic.png"),
   NU: require("../../assets/function-icon/Baby.png"),
   LO: require("../../assets/function-icon/Lost and Found.png"),
 };
 
-// ✅ 시설 라벨 정의 (WC 포함)
+// ✅ 시설 라벨 정의
 const TYPE_LABEL = {
   EV: "엘리베이터",
   ES: "에스컬레이터",
   TO: "화장실",
   DT: "장애인 화장실",
   WL: "휠체어 리프트",
-  WC: "휠체어 급속충전", // ✅ 추가 완료
+  WC: "휠체어 급속충전",
   VO: "음성유도기",
   NU: "수유실",
   LO: "보관함",
 };
 
-// ✅ 마커 표시용 (최신 버전)
 const BUBBLE_WIDTH = 10;
 const BUBBLE_HEIGHT = 10;
 const ICON_SIZE = 9;
@@ -92,12 +96,36 @@ function extractDetail(item, type) {
   return [name, base, loc, extra].filter(Boolean).join(" · ");
 }
 
+
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();
   const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
     route.params || {};
+
+  // ✅ 전화 관련 훅
+  const realStationName = stationName === "서울역" ? "서울" : stationName;
+  const { phone } = useLocalPhoneNumber(realStationName);
+  const { makeCall } = usePhoneCall();
+
+  // ✅ 전화 버튼 핸들러 (추천안 적용)
+  const handleCallPress = () => {
+    if (!phone) {
+      Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
+      return;
+    }
+    // 2. 전화번호 확인 Alert 추가
+    Alert.alert(
+      "전화 연결",
+      `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
+      [
+        { text: "취소", style: "cancel" },
+        { text: "전화 걸기", onPress: () => makeCall(phone) }, // 확인 시에만 makeCall(phone) 실행
+      ],
+      { cancelable: true }
+    );
+  };
 
   // ✅ 헤더 설정
   useLayoutEffect(() => {
@@ -117,6 +145,7 @@ export default function BarrierFreeMapScreen() {
     });
   }, [navigation, type, fontOffset]);
 
+  // ... (cleanName, useState, 훅, useEffect 등 나머지 로직은 동일)
   const cleanName = (() => {
     if (!stationName) return "";
     let name = stationName.replace(/\(.*\)/g, "").trim();
@@ -132,11 +161,9 @@ export default function BarrierFreeMapScreen() {
   const api = useApiFacilities(cleanName, stationCode, null, type);
   const local = useLocalFacilities(cleanName, stationCode, null, type);
 
-  // 지도 계산용
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  // 좌표 로드
   useEffect(() => {
     try {
       const filtered = stationCoords.filter(
@@ -150,7 +177,6 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
-  // API/로컬 fallback
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
     setLoading(true);
@@ -176,7 +202,6 @@ export default function BarrierFreeMapScreen() {
     if (!api.loading && !local.loading) setLoading(false);
   }, [type, api, local]);
 
-  // 팬/줌
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
@@ -219,6 +244,7 @@ export default function BarrierFreeMapScreen() {
     })
   ).current;
 
+  // ... (로딩 뷰)
   if (coords.length === 0 && loading) {
     return (
       <View style={styles.center}>
@@ -232,6 +258,8 @@ export default function BarrierFreeMapScreen() {
 
   return (
     <ScrollView style={styles.container}>
+      
+
       {/* 지도 */}
       {coords.length > 0 && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
@@ -261,7 +289,6 @@ export default function BarrierFreeMapScreen() {
               }}
             />
 
-            {/* ✅ 최신 마커 렌더링 */}
             <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
               {coords.map((p, i) => {
                 const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
@@ -273,9 +300,42 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
+      {/* ✅ 휠체어 리프트(WL) 전용 전화 버튼 */}
+      {type === "WL" && phone && (
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            type="call"
+            onPress={handleCallPress}
+            style={styles.buttonContentLayout}
+          >
+            <View style={styles.buttonLeft}>
+              <MaterialCommunityIcons
+                name="phone"
+                size={responsiveFontSize(26) + fontOffset}
+                color={colors.text} 
+              />
+              <Text
+                style={[
+                  styles.iconLabel,
+                  { fontSize: responsiveFontSize(16) + fontOffset },
+                ]}
+              >
+                전화 걸기 {/* 3. ({phone}) 제거 */}
+              </Text>
+            </View>
+            <Ionicons
+              name="chevron-forward"
+              size={responsiveFontSize(20) + fontOffset}
+              color={colors.text} 
+            />
+          </CustomButton>
+        </View>
+      )}
+
       {/* 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
+          // ... (로딩 뷰)
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} size="large" />
             <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
@@ -283,10 +343,12 @@ export default function BarrierFreeMapScreen() {
             </Text>
           </View>
         ) : facilities.length === 0 ? (
+          // ... (데이터 없음 뷰)
           <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
             해당 시설 정보가 없습니다.
           </Text>
         ) : (
+          // ... (시설 목록 맵)
           facilities.map((item, idx) => {
             const isApi = dataSource === "API";
             const cardStyle = [

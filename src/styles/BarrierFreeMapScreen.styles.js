@@ -1,4 +1,3 @@
-//src/styles/BarrierFreeMapScreen.styles.js
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: screenW, height: screenH } = Dimensions.get('window');
@@ -59,7 +58,6 @@ export default StyleSheet.create({
     bottom: 0,
   },
 
-  // ✅ 뒤로가기 버튼
   backOverlay: {
     position: 'absolute',
     top: 25,
@@ -96,7 +94,6 @@ export default StyleSheet.create({
     textAlign: 'center',
   },
 
-  // --- 카드 ---
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
@@ -192,5 +189,28 @@ export default StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+
+
+  buttonContainer: {
+    paddingHorizontal: '5%', 
+    marginTop: 14,        
+    marginBottom: 20,      
+  },
+  buttonContentLayout: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 0, 
+  },
+  buttonLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  iconLabel: {
+    color: colors.text, 
+    fontWeight: 'bold',
   },
 });

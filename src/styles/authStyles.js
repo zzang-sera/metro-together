@@ -2,7 +2,6 @@ import { StyleSheet } from 'react-native';
 import { responsiveWidth, responsiveFontSize, responsiveHeight } from '../utils/responsive';
 
 export const styles = StyleSheet.create({
-  // --- 공용 스타일 ---
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
@@ -12,7 +11,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
-  // --- WelcomeScreen 전용 스타일 ---
   startContainer: {
     flex: 1,
     backgroundColor: '#F9F9F9',
@@ -22,6 +20,7 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+    paddingBottom: 0,
   },
   logoImage: {
     width: responsiveWidth(300),
@@ -54,7 +53,20 @@ export const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  // --- 로그인/회원가입 등 Form 화면 스타일 ---
+  // ✅✅✅ --- 여기에 Google 버튼 스타일 2개 추가 --- ✅✅✅
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12, // 아이콘과 텍스트 사이 간격
+  },
+  googleButtonText: {
+    color: '#1f1f1f', // 공식 CSS 텍스트 색상
+    fontWeight: '700', 
+    fontFamily: 'NotoSansKR',
+    paddingBottom: 9,
+  },
+
   title: {
     fontSize: responsiveFontSize(28),
     fontFamily: 'NotoSansKR',
@@ -69,7 +81,6 @@ export const styles = StyleSheet.create({
     width: '100%',
   },
   
-  // --- AuthInput 컴포넌트 스타일 ---
   inputGroup: {
     marginBottom: 24,
   },
@@ -80,7 +91,6 @@ export const styles = StyleSheet.create({
     color: '#17171B',
     marginBottom: 12,
   },
-  // --- 👇 [수정] borderRadius를 40으로 변경하여 둥글게 만듭니다 ---
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -108,14 +118,14 @@ export const styles = StyleSheet.create({
   inputInner: {
     flex: 1,
     height: '100%',
-    paddingHorizontal: 20, // 둥근 디자인에 맞게 여백 조정
+    paddingHorizontal: 20, 
     fontSize: responsiveFontSize(16),
     fontFamily: 'NotoSansKR',
     fontWeight: 'bold',
     color: '#17171B', 
   },
   eyeIcon: {
-    paddingHorizontal: 16, // 여백 조정
+    paddingHorizontal: 16, 
   },
   inputError: {
     borderColor: '#C62828',
@@ -127,9 +137,8 @@ export const styles = StyleSheet.create({
     fontFamily: 'NotoSansKR',
     fontWeight: 'bold',
     marginTop: 8,
-    paddingLeft: 16, // 들여쓰기 추가
+    paddingLeft: 16, 
   },
-  // --- 👇 [수정] questionBox도 동일하게 둥글게 만듭니다 ---
   questionBox: {
     width: '100%',
     minHeight: 56,
@@ -162,4 +171,3 @@ export const styles = StyleSheet.create({
     marginBottom: 32,
   },
 });
-
