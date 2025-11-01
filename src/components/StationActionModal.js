@@ -12,7 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { responsiveFontSize, responsiveHeight } from "../utils/responsive";
 import { useFontSize } from "../contexts/FontSizeContext";
 
-// 1. CustomButton import
 import CustomButton from "./CustomButton";
 
 export default function StationActionModal({
@@ -33,9 +32,8 @@ export default function StationActionModal({
     }
   }, [visible, stationName]);
 
-  // 3. 버튼별 텍스트/아이콘 색상 정의
-  const featureColor = "#17171B"; // feature(민트) 버튼의 텍스트/아이콘 색상
-  const outlineColor = "#17171B"; // outline(흰색) 버튼의 텍스트/아이콘 색상
+  const featureColor = "#17171B"; 
+  const outlineColor = "#17171B"; 
 
   return (
     <Modal
@@ -57,22 +55,19 @@ export default function StationActionModal({
           >
             {stationName} 역
           </Text>
-
-          {/* 4. "역 정보 보기" 버튼 (TouchableOpacity -> CustomButton) */}
           <CustomButton
-            type="feature" // 민트색 배경
+            type="feature" 
             onPress={onViewInfo}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`${stationName} 역 정보 보기 버튼`}
-            style={styles.customButtonMargin} // 5. 버튼 간격 스타일 적용
+            style={styles.customButtonMargin} 
           >
-            {/* 6. 아이콘/텍스트를 children으로 전달 */}
             <View style={styles.buttonContent}>
               <Ionicons
                 name="information-circle-outline"
                 size={24 + fontOffset}
-                color={featureColor} // 민트 버튼의 텍스트 색상
+                color={featureColor} 
               />
               <Text
                 style={[
@@ -85,21 +80,19 @@ export default function StationActionModal({
             </View>
           </CustomButton>
 
-          {/* 7. "출발역으로 길찾기" 버튼 (TouchableOpacity -> CustomButton) */}
           <CustomButton
-            type="outline" // 흰색 배경
+            type="outline" 
             onPress={onSetAsDep}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`출발역으로 설정 버튼, ${stationName}을 출발역으로`}
-            style={styles.customButtonMargin} // 5. 버튼 간격 스타일 적용
+            style={styles.customButtonMargin} 
           >
-            {/* 6. 아이콘/텍스트를 children으로 전달 */}
             <View style={styles.buttonContent}>
               <Ionicons
                 name="walk-outline"
                 size={24 + fontOffset}
-                color={outlineColor} // 흰색 버튼의 텍스트 색상
+                color={outlineColor} 
               />
               <Text
                 style={[
@@ -112,21 +105,19 @@ export default function StationActionModal({
             </View>
           </CustomButton>
 
-          {/* 8. "도착역으로 길찾기" 버튼 (TouchableOpacity -> CustomButton) */}
           <CustomButton
-            type="outline" // 흰색 배경
+            type="outline" 
             onPress={onSetAsArr}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel={`도착역으로 설정 버튼, ${stationName}을 도착역으로`}
-            style={styles.customButtonMargin} // 5. 버튼 간격 스타일 적용
+            style={styles.customButtonMargin} 
           >
-            {/* 6. 아이콘/텍스트를 children으로 전달 */}
             <View style={styles.buttonContent}>
               <Ionicons
                 name="flag-outline"
                 size={24 + fontOffset}
-                color={outlineColor} // 흰색 버튼의 텍스트 색상
+                color={outlineColor} 
               />
               <Text
                 style={[
@@ -139,7 +130,6 @@ export default function StationActionModal({
             </View>
           </CustomButton>
 
-          {/* 닫기 버튼 (기존 TouchableOpacity 유지) */}
           <TouchableOpacity
             onPress={onClose}
             style={styles.closeArea}
@@ -178,20 +168,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   
-  // 9. ✅ 기존 actionButton 스타일 삭제
-  /*
-  actionButton: {
-    ...
-  },
-  */
-
-  // 10. ✅ CustomButton에 적용할 간격 스타일
-  // CustomButton 자체의 marginBottom(12)과 modal의 16 사이의 간격을 맞춤
   customButtonMargin: {
-    marginBottom: 16, // CustomButton의 12를 덮어쓰기 위해 16으로 설정
+    marginBottom: 16, 
   },
 
-  // 11. ✅ CustomButton의 children으로 전달될 <View>의 스타일
   buttonContent: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -199,7 +179,6 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    // color: "#17171B", // (CustomButton의 children에서 개별 설정)
     fontWeight: "700",
     marginLeft: 8,
   },

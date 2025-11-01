@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, SafeAreaView, Image } from 'react-native';
+import { View, Text, Alert, SafeAreaView, Image, ScrollView } from 'react-native'; 
 import { styles } from '../../styles/authStyles';
 import { signInWithGoogle } from '../../api/auth';
 import CustomButton from '../../components/CustomButton';
@@ -18,9 +18,7 @@ const WelcomeScreen = ({ navigation }) => {
     }
   };
 
-  const footerTextContent = fontOffset >= 8
-    ? "즐겨찾기, 챗봇 기능을\n사용할 수 있습니다."
-    : "회원 가입 시\n즐겨찾기, 챗봇 기능을 사용할 수 있습니다.";
+  const footerTextContent = "로그인 시\n즐겨찾기, 챗봇 기능을 사용할 수 있습니다.";
   
   return (
     <SafeAreaView style={styles.startContainer}>
@@ -29,59 +27,66 @@ const WelcomeScreen = ({ navigation }) => {
         onClose={() => setModalVisible(false)}
       />
 
-      <View style={styles.header}>
-        <Image 
-          source={require('../../../src/assets/brand-icon.png')}
-          style={styles.logoImage}
-          resizeMode="contain"
-        />
-      </View>
-      
-      <View style={styles.content}>
-        <Text style={[styles.descriptionText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-          모두를 위한 지하철 이용 도우미,{'\n'}함께타요입니다.
-        </Text>
-      </View>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1, 
+          justifyContent: 'space-between' 
+        }}
+      >        <View>
+          <View style={styles.header}>
+            <Image 
+              source={require('../../../src/assets/brand-icon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+          
+          <View style={styles.content}>
+            <Text style={[styles.descriptionText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              모두를 위한 지하철 이용 도우미,{'\n'}함께타요입니다.
+            </Text>
+          </View>
+        </View>
 
-      <View style={styles.buttonContainer}>
-        <CustomButton
-          type="feature"
-          title="가까운 역 안내"
-          onPress={() => navigation.navigate('GuestTabs', { screen: '주변' })}
-        />
-        <CustomButton
-          type="feature"
-          title="원하는 역 검색"
-          onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
-        />
-        <CustomButton
-          type="feature"
-          title="지하철 최단경로"
-          onPress={() => navigation.navigate('PathFinderStack')}
-        />
-        <CustomButton
-          type="outline" 
-          title="글자 크기 설정"
-          onPress={() => setModalVisible(true)}
-        />
-        <CustomButton
-          type="outline"
-          title="이메일로 시작하기"
-          onPress={() => navigation.navigate('Login')}
-        />
-        <CustomButton
-          type="outline"
-          title="Google로 시작하기"
-          onPress={handleGoogleLogin}
-        />
-        {/* --- 👇 [수정] 위에서 정의한 조건부 텍스트를 적용 --- */}
-        <Text style={[styles.footerText, { fontSize: responsiveFontSize(12) + fontOffset, marginTop: 15 }]}>
-          {footerTextContent}
-        </Text>
-      </View>
+        <View style={styles.buttonContainer}>
+          <CustomButton
+            type="feature"
+            title="가까운 역 안내"
+            onPress={() => navigation.navigate('GuestTabs', { screen: '주변' })}
+          />
+          <CustomButton
+            type="feature"
+            title="원하는 역 검색"
+            onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
+          />
+          <CustomButton
+            type="feature"
+            title="지하철 최단경로"
+            onPress={() => navigation.navigate('PathFinderStack')}
+          />
+          <CustomButton
+            type="outline" 
+            title="글자 크기 설정"
+            onPress={() => setModalVisible(true)}
+          />
+          <CustomButton
+            type="outline"
+            title="이메일로 시작하기"
+            onPress={() => navigation.navigate('Login')}
+          />
+          <CustomButton
+            type="outline"
+            title="Google로 시작하기"
+            onPress={handleGoogleLogin}
+          />
+          <Text style={[styles.footerText, { fontSize: responsiveFontSize(12) + fontOffset, marginTop: 15 }]}>
+            {footerTextContent}
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
 export default WelcomeScreen;
-

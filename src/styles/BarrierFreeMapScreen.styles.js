@@ -58,7 +58,6 @@ export default StyleSheet.create({
     bottom: 0,
   },
 
-  // ✅ 뒤로가기 버튼
   backOverlay: {
     position: 'absolute',
     top: 25,
@@ -95,7 +94,6 @@ export default StyleSheet.create({
     textAlign: 'center',
   },
 
-  // --- 카드 ---
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
@@ -193,28 +191,18 @@ export default StyleSheet.create({
     padding: 20,
   },
 
-  // 1. ✅ 'callButton'과 'callText' 삭제
-  /*
-  callButton: {
-   ...
-  },
-  callText: {
-    ...
-  },
-  */
 
-  // 2. ✅ StationDetailScreen과 동일한 버튼 레이아웃 스타일 추가
   buttonContainer: {
-    paddingHorizontal: '5%', // StationDetailScreen의 buttonListContainer와 동일한 패딩
-    marginTop: 14,         // 기존 callButton의 여백 유지
-    marginBottom: 20,       // 기존 callButton의 여백 유지
+    paddingHorizontal: '5%', 
+    marginTop: 14,        
+    marginBottom: 20,      
   },
   buttonContentLayout: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    marginBottom: 0, // CustomButton의 기본 marginBottom(12)을 덮어쓰고, buttonContainer가 여백을 제어
+    marginBottom: 0, 
   },
   buttonLeft: {
     flexDirection: 'row',
@@ -222,7 +210,7 @@ export default StyleSheet.create({
     gap: 16,
   },
   iconLabel: {
-    color: colors.text, // #17171B
+    color: colors.text, 
     fontWeight: 'bold',
   },
 });

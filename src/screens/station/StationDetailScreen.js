@@ -6,7 +6,7 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Alert, // 1. Alert import 확인
+  Alert, 
   ScrollView,
 } from "react-native";
 import {
@@ -34,8 +34,6 @@ import { useLocalFacilities } from "../../hook/useLocalFacilities";
 import { useApiFacilities } from "../../hook/useApiFacilities";
 import { usePhoneCall } from "../../hook/usePhoneCall";
 import { useLocalPhoneNumber } from "../../hook/useLocalPhoneNumber";
-
-// CustomButton import
 import CustomButton from "../../components/CustomButton";
 
 const lineData = lineJson.DATA;
@@ -75,8 +73,6 @@ export default function StationDetailScreen() {
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
-  // ... (useEffect 로직들 ... )
-  // ✅ 안내도 로드
   useEffect(() => {
     async function loadImage() {
       try {
@@ -96,14 +92,12 @@ export default function StationDetailScreen() {
     loadImage();
   }, [realStationName]);
 
-  // ✅ 각 시설별 로컬 데이터 훅
   const facilityTypes = ["EV", "ES", "TO", "DT", "WL", "WC", "VO", "NU", "LO"];
   const facilityDataHooks = {};
   facilityTypes.forEach((t) => {
     facilityDataHooks[t] = useLocalFacilities(displayName, stationCode, null, t);
   });
 
-  // ✅ 휠체어 급속충전(WC)용 API 데이터
   const wcApi = useApiFacilities(displayName, stationCode, null, "WC");
 
   useEffect(() => {
@@ -127,7 +121,6 @@ export default function StationDetailScreen() {
     ...facilityTypes.map((t) => facilityDataHooks[t]?.data),
   ]);
 
-  // ✅ 즐겨찾기 관리
   useEffect(() => {
     if (!currentUser || !stationCode) return;
     const userDocRef = doc(db, "users", currentUser.uid);
@@ -188,25 +181,22 @@ export default function StationDetailScreen() {
     });
   };
 
-  // ✅ 전화 버튼 핸들러 (추천안 적용)
   const handleCallPress = () => {
     if (!phone) {
       Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
       return;
     }
-    // 2. 전화번호 확인 Alert 추가
     Alert.alert(
       "전화 연결",
       `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
       [
         { text: "취소", style: "cancel" },
-        { text: "전화 걸기", onPress: () => makeCall(phone) }, // 확인 시에만 makeCall(phone) 실행
+        { text: "전화 걸기", onPress: () => makeCall(phone) }, 
       ],
       { cancelable: true }
     );
   };
 
-  // ... (Header)
   const Header = useMemo(
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
@@ -287,7 +277,6 @@ export default function StationDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.buttonListContainer}>
-          {/* ✅ 전화 걸기 버튼 */}
           {phone && (
             <CustomButton
               type="call"
@@ -298,29 +287,27 @@ export default function StationDetailScreen() {
                 <MaterialCommunityIcons
                   name="phone"
                   size={responsiveFontSize(26) + fontOffset}
-                  color={INK} // 3. 색상 대비를 위해 INK(#17171B)로 변경
+                  color={INK} 
                 />
                 <Text
                   style={[
-                    styles.iconLabel, // (기본 color: INK)
+                    styles.iconLabel, 
                     {
                       fontSize: responsiveFontSize(16) + fontOffset,
-                      // 4. color: "#0F766E" 오버라이드 제거 -> styles.iconLabel의 INK 색상 적용
                     },
                   ]}
                 >
-                  전화 걸기 {/* 5. ({phone}) 제거 */}
+                  전화 걸기 
                 </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
                 size={responsiveFontSize(20) + fontOffset}
-                color={INK} // 3. 색상 대비를 위해 INK(#17171B)로 변경
+                color={INK} 
               />
             </CustomButton>
           )}
 
-          {/* ✅ 편의시설 버튼 목록 */}
           {buttons.map((btn) => {
             const IconPack = btn.pack || MaterialCommunityIcons;
             const isDisabled = facilityAvailability[btn.type]?.disabled;
@@ -413,5 +400,5 @@ const styles = StyleSheet.create({
   },
 
   buttonLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
-  iconLabel: { color: INK, fontWeight: "bold" }, // INK가 #17171B 입니다.
+  iconLabel: { color: INK, fontWeight: "bold" }, 
 });
