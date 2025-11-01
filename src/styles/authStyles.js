@@ -53,6 +53,20 @@ export const styles = StyleSheet.create({
     marginTop: 16,
   },
 
+  // ✅✅✅ --- 여기에 Google 버튼 스타일 2개 추가 --- ✅✅✅
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12, // 아이콘과 텍스트 사이 간격
+  },
+  googleButtonText: {
+    color: '#1f1f1f', // 공식 CSS 텍스트 색상
+    fontWeight: '700', 
+    fontFamily: 'NotoSansKR',
+    paddingBottom: 9,
+  },
+
   title: {
     fontSize: responsiveFontSize(28),
     fontFamily: 'NotoSansKR',
@@ -157,4 +171,3 @@ export const styles = StyleSheet.create({
     marginBottom: 32,
   },
 });
-
