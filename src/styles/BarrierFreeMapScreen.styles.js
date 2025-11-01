@@ -1,8 +1,8 @@
+//src/styles/BarrierFreeMapScreen.styles.js
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: screenW, height: screenH } = Dimensions.get('window');
 
-// ✅ [수정] 붉은색(destructive) 추가
 export const colors = {
   text: '#17171B',
   textSecondary: '#555555',
@@ -11,15 +11,18 @@ export const colors = {
   background: '#F9F9F9',
   white: '#FFFFFF',
   border: '#EEEEEE',
-  destructive: '#D32F2F', // 사용 불가/보수중
+  destructive: '#D32F2F',
+  warningBorder: '#FEEB8A',
+  warningBackground: '#FFFBEB',
+  warningText: '#8A6100',
 };
 
 export default StyleSheet.create({
-  // ... container, title, map styles (변경 없음) ...
   container: {
     flex: 1,
     backgroundColor: colors.white,
   },
+
   title: {
     fontWeight: '700',
     textAlign: 'center',
@@ -27,23 +30,27 @@ export default StyleSheet.create({
     marginBottom: 10,
     color: colors.text,
   },
+
   imageContainer: {
     width: screenW,
     height: screenH * 0.55,
     overflow: 'hidden',
     backgroundColor: '#f0f0f0',
   },
+
   mapWrapper: {
     width: '100%',
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },
+
   image: {
     width: '100%',
     height: '100%',
     position: 'absolute',
   },
+
   overlay: {
     position: 'absolute',
     top: 0,
@@ -52,28 +59,44 @@ export default StyleSheet.create({
     bottom: 0,
   },
 
-  // --- 리스트 스타일 ---
+  // ✅ 뒤로가기 버튼
+  backOverlay: {
+    position: 'absolute',
+    top: 25,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  backFab: {
+    position: 'absolute',
+    top: 20,
+    left: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 6,
+  },
+
   listContainer: {
     padding: 16,
     backgroundColor: colors.background,
   },
-  
-  // ✅ [추가] Request 3: JSON 안내문 스타일
+
   disclaimerBox: {
-    backgroundColor: '#FFFBEB', // 밝은 노란색
-    borderColor: '#FEEB8A',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
     marginBottom: 16,
+    alignItems: 'center',
   },
+
   disclaimerText: {
-    color: '#8A6100', // 어두운 노란색 계열
-    fontWeight: '500',
+    color: colors.warningText,
+    fontWeight: '700',
     textAlign: 'center',
   },
 
-  // --- 카드 스타일 ---
+  // --- 카드 ---
   card: {
     backgroundColor: colors.white,
     borderRadius: 12,
@@ -84,18 +107,21 @@ export default StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    borderWidth: 2, // ✅ [수정] 테두리 기본 두께
-    borderColor: colors.white, // ✅ [수정] 기본 테두리 색상 (투명)
-  },
-  // ✅ [추가] Request 2: 상태별 테두리 스타일
-  cardBorderAvailable: {
-    borderColor: colors.primary, // 민트색
-  },
-  cardBorderUnavailable: {
-    borderColor: colors.destructive, // 붉은색
+    borderWidth: 2,
+    borderColor: colors.white,
   },
 
-  // ... cardHeader, cardIcon, facilityTitle (변경 없음) ...
+  cardBorderAvailable: {
+    borderColor: colors.primary,
+  },
+  cardBorderUnavailable: {
+    borderColor: colors.destructive,
+  },
+  cardBorderLocal: {
+    borderColor: colors.warningBorder,
+    backgroundColor: colors.warningBackground,
+  },
+
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -110,10 +136,10 @@ export default StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
   },
-
   facilityDesc: {
     color: colors.textSecondary,
     marginBottom: 12,
+    fontWeight: '700',
   },
 
   cardFooter: {
@@ -123,28 +149,35 @@ export default StyleSheet.create({
     marginTop: 4,
   },
 
-  // ✅ [추가] Request 2: 새로운 상태 텍스트 스타일
-  statusTextBase: {
-    fontWeight: '700',
-    flexShrink: 1, // 공간이 부족하면 줄바꿈
+  statusBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    flexShrink: 1,
     marginRight: 8,
   },
-  statusTextAvailable: {
-    color: colors.primary,
+  statusBadgeAvailable: {
+    backgroundColor: colors.primary,
   },
-  statusTextUnavailable: {
-    color: colors.destructive,
+  statusBadgeUnavailable: {
+    backgroundColor: colors.destructive,
   },
-  
-  // ✅ [제거] 기존 배지 스타일 (statusBadge, statusBadgeText)
-  // statusBadge: { ... }
-  // statusBadgeText: { ... }
+  statusBadgeText: {
+    fontWeight: '700',
+  },
+  statusBadgeTextAvailable: {
+    color: colors.textOnPrimary,
+  },
+  statusBadgeTextUnavailable: {
+    color: colors.white,
+  },
 
   facilityContact: {
     color: colors.textSecondary,
     flexShrink: 1,
     textAlign: 'right',
     marginLeft: 8,
+    fontWeight: '700',
   },
 
   empty: {
@@ -152,6 +185,7 @@ export default StyleSheet.create({
     color: colors.textSecondary,
     marginTop: 20,
     paddingBottom: 20,
+    fontWeight: '700',
   },
   center: {
     flex: 1,
@@ -160,4 +194,3 @@ export default StyleSheet.create({
     padding: 20,
   },
 });
-
