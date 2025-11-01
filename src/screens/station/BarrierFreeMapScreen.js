@@ -360,21 +360,3 @@ export default function BarrierFreeMapScreen() {
   );
 }
 
-// ✅ 추가된 전화 버튼 스타일
-styles.callButton = {
-  flexDirection: "row",
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "#E6FFFA",
-  marginHorizontal: "6%",
-  paddingVertical: 14,
-  borderRadius: 40,
-  marginTop: 14,
-  marginBottom: 20,
-  elevation: 3,
-};
-styles.callText = {
-  color: "#0F766E",
-  fontWeight: "bold",
-  marginLeft: 8,
-};

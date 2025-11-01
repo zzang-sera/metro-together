@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
-  TouchableOpacity,
+  TouchableOpacity, // <--- 이 'TouchableOpacity'는 헤더와 즐겨찾기에 필요하므로 유지합니다.
   StyleSheet,
   SafeAreaView,
   StatusBar,
@@ -34,6 +34,9 @@ import { useLocalFacilities } from "../../hook/useLocalFacilities";
 import { useApiFacilities } from "../../hook/useApiFacilities";
 import { usePhoneCall } from "../../hook/usePhoneCall";
 import { useLocalPhoneNumber } from "../../hook/useLocalPhoneNumber";
+
+// CustomButton import
+import CustomButton from "../../components/CustomButton";
 
 const lineData = lineJson.DATA;
 const INK = "#17171B";
@@ -69,7 +72,6 @@ export default function StationDetailScreen() {
   const displayName = stationName === "서울" ? "서울역" : stationName;
   const realStationName = stationName === "서울역" ? "서울" : stationName;
 
-  // ✅ 전화번호 훅
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
@@ -274,30 +276,59 @@ export default function StationDetailScreen() {
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ✅ 전화 걸기 버튼 */}
-        {phone && (
-          <TouchableOpacity style={styles.callButton} onPress={handleCallPress}>
-            <MaterialCommunityIcons name="phone" size={24 + fontOffset / 2} color="#0F766E" />
-            <Text style={[styles.callText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-              전화 걸기 ({phone})
-            </Text>
-          </TouchableOpacity>
-        )}
-
+        {/* 1. buttonListContainer 안으로 '전화 걸기' 버튼 이동 */}
         <View style={styles.buttonListContainer}>
+          {/* ✅ 전화 걸기 버튼 */}
+          {phone && (
+            // 2. TouchableOpacity -> CustomButton으로 변경
+            <CustomButton
+              type="call" // 3. 'call' 타입 적용
+              onPress={handleCallPress}
+              style={styles.buttonContentLayout} // 4. 다른 버튼들과 동일한 레이아웃 스타일 적용
+            >
+              {/* 5. 다른 버튼들과 동일한 children 구조 적용 */}
+              <View style={styles.buttonLeft}>
+                <MaterialCommunityIcons
+                  name="phone"
+                  size={responsiveFontSize(26) + fontOffset}
+                  color="#17171B" // 'call' 타입의 고유 색상
+                />
+                <Text
+                  style={[
+                    styles.iconLabel,
+                    {
+                      fontSize: responsiveFontSize(16) + fontOffset,
+                      color: "#17171B", // 'call' 타입의 고유 색상
+                    },
+                  ]}
+                >
+                  전화 걸기 ({phone})
+                </Text>
+              </View>
+              <Ionicons
+                name="chevron-forward"
+                size={responsiveFontSize(20) + fontOffset}
+                color="#0F766E" // 'call' 타입의 고유 색상
+              />
+            </CustomButton>
+          )}
+
+          {/* ✅ 편의시설 버튼 목록 */}
           {buttons.map((btn) => {
             const IconPack = btn.pack || MaterialCommunityIcons;
             const isDisabled = facilityAvailability[btn.type]?.disabled;
 
             return (
-              <TouchableOpacity
+              <CustomButton
                 key={btn.type}
-                style={[
-                  styles.iconButton,
-                  isDisabled && { backgroundColor: "#E0E0E0" },
-                ]}
+                type="outline"
                 onPress={() => handlePress(btn.type)}
+                disabled={isDisabled}
                 activeOpacity={isDisabled ? 1 : 0.7}
+                style={[
+                  styles.buttonContentLayout,
+                  isDisabled && { backgroundColor: "#E0E0E0", borderColor: '#BDBDBD' }
+                ]}
               >
                 <View style={styles.buttonLeft}>
                   <IconPack
@@ -322,7 +353,7 @@ export default function StationDetailScreen() {
                   size={responsiveFontSize(20) + fontOffset}
                   color={isDisabled ? "#9E9E9E" : INK}
                 />
-              </TouchableOpacity>
+              </CustomButton>
             );
           })}
         </View>
@@ -333,7 +364,7 @@ export default function StationDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  scrollContainer: { paddingBottom: 30 },
+  scrollContainer: { paddingBottom: 30, paddingTop: 14 }, // 6. 전화걸기 버튼이 위로 붙어서 패딩 추가
   mintHeader: {
     backgroundColor: BG,
     flexDirection: "row",
@@ -365,34 +396,15 @@ const styles = StyleSheet.create({
   headerTitle: { color: INK, fontWeight: "bold", textAlign: "center" },
   starBtn: { padding: 6 },
   buttonListContainer: { width: "100%", paddingHorizontal: "5%" },
-  iconButton: {
+
+  buttonContentLayout: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#F1FAFA",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 40,
-    elevation: 3,
-    marginBottom: 16,
+    paddingHorizontal: 20, 
+    marginBottom: 16, // 9. CustomButton의 12로는 간격이 좁아서 16으로 재정의
   },
+
   buttonLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
   iconLabel: { color: INK, fontWeight: "bold" },
-  callButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#E6FFFA",
-    marginHorizontal: "6%",
-    paddingVertical: 14,
-    borderRadius: 40,
-    marginTop: 14,
-    marginBottom: 20,
-    elevation: 3,
-  },
-  callText: {
-    color: "#0F766E",
-    fontWeight: "bold",
-    marginLeft: 8,
-  },
 });
