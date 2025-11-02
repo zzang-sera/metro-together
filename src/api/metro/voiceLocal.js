@@ -2,7 +2,7 @@
 import voiceJson from "../../assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json";
 import stationJson from "../../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
 
-// 🔹 유틸
+/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (any?.DATA && Array.isArray(any.DATA)) return any.DATA;
@@ -15,23 +15,25 @@ function pickArray(any) {
   return [];
 }
 
+// "신설동(1)" → "신설동"
 function sanitizeName(name = "") {
   return String(name).replace(/\(.*\)/g, "").trim();
 }
 
-// 🔹 정규화
+/* ---------------------- 데이터 정규화 ---------------------- */
 const RAW = pickArray(voiceJson);
 const PRETTY = RAW.map((r) => ({
   seq: String(r["연번"] || ""),
-  line: `${r["호선"] || ""}호선`,
+  line: r["호선"] ? `${r["호선"]}호선` : "",
   stationName: sanitizeName(r["역명"] || ""),
   externalCode: String(r["외부역번호"] || ""),
   location: String(r["설치위치"] || ""),
 }));
 
-// 🔹 인덱스 생성
+/* ---------------------- 인덱스 ---------------------- */
 const INDEX_BY_NAME = new Map();
 const INDEX_BY_EXT = new Map();
+
 for (const r of PRETTY) {
   if (r.stationName) {
     const arr = INDEX_BY_NAME.get(r.stationName) || [];
@@ -45,7 +47,7 @@ for (const r of PRETTY) {
   }
 }
 
-// 🔹 stationCode → 외부역번호 매핑
+/* ---------------------- stationCode → 외부역번호 ---------------------- */
 const ST_ROWS = pickArray(stationJson);
 const MAP_STCODE_TO_EXT = new Map();
 for (const s of ST_ROWS) {
@@ -54,15 +56,19 @@ for (const s of ST_ROWS) {
   if (stCode && ext) MAP_STCODE_TO_EXT.set(String(stCode), String(ext));
 }
 
-// ✅ 메인 함수
+/* ---------------------- 메인 함수 ---------------------- */
 export function getAudioBeaconsForStation(stationName, line = "", stationCode = "") {
+  const nameKey = sanitizeName(stationName);
   const ext = MAP_STCODE_TO_EXT.get(String(stationCode));
-  const result = ext
-    ? INDEX_BY_EXT.get(ext) || []
-    : INDEX_BY_NAME.get(sanitizeName(stationName)) || [];
+
+  // ✅ stationCode 없거나 매칭 안되면 stationName으로 바로 조회
+  const result =
+    (ext && INDEX_BY_EXT.get(ext)) ||
+    INDEX_BY_NAME.get(nameKey) ||
+    [];
 
   return (result || []).map((r, i) => ({
-    id: `${r.stationName}-${r.externalCode}-${i}`,
+    id: `${r.stationName}-${r.externalCode || "X"}-${i}`,
     title: "음성유도기",
     desc: `${r.location}${r.externalCode ? ` · 외부역번호:${r.externalCode}` : ""}`,
     status: "정상",

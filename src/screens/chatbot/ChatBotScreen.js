@@ -23,7 +23,8 @@ import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
 import { getFacilityForStation } from "../../api/metro/elevEsLocal";
 import { getToiletsForStation } from "../../api/metro/toiletLocal";
 import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
-import { getWheelchairLiftsForStation } from "../../api/metro/wheelchairLiftLocal"; // ✅ 수정 반영됨
+import { getWheelchairLiftsForStation } from "../../api/metro/wheelchairLiftLocal";
+import { getAudioBeaconsForStation } from "../../api/metro/voiceLocal"; // ✅ 새로 추가됨
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
@@ -44,7 +45,7 @@ const FAQ_GROUPS = [
       { key: "DT", label: "장애인 화장실 위치" },
       { key: "WL", label: "휠체어 리프트 위치" },
       { key: "WC", label: "휠체어 급속충전 위치" },
-      { key: "VO", label: "음성유도기 위치" },
+      { key: "VO", label: "음성유도기 위치" }, // ✅ 연결됨
       { key: "NU", label: "수유실 위치" },
       { key: "LO", label: "보관함 위치" },
     ],
@@ -136,23 +137,31 @@ export default function ChatBotScreen() {
       return `${head(title)}\n${lines.join("\n")}`;
     }
 
-    // ✅ 휠체어 리프트 (정상 문구 제거)
+    // ✅ 휠체어 리프트
     if (type === "WL") {
       const rows = getWheelchairLiftsForStation(stationName);
       if (!rows.length) return `${head(title)}\n${stationName}역에는 휠체어 리프트 정보가 없습니다.`;
-
       const lines = rows.map((r, i) => {
         const parts = r.desc
           .split(/[·\\n]/)
           .map((p) => p.trim())
           .filter(Boolean)
-          // "정상" 제거
           .filter((p) => !/정상/.test(p));
         const formatted = parts.map((p) => `   • ${p}`).join("\n");
         return `#${i + 1}\n${formatted}`;
       });
-
       return `${head(title)}\n${lines.join("\n\n")}`;
+    }
+
+    // ✅ 음성유도기 (새로 추가됨)
+    if (type === "VO") {
+      const rows = getAudioBeaconsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역에는 음성유도기 정보가 없습니다.`;
+
+      const lines = rows.map(
+        (r, i) => `#${i + 1} ${r.desc.replace(/·/g, " ").trim() || "위치 정보 없음"}`
+      );
+      return `${head(title)}\n${lines.join("\n")}`;
     }
 
     // ✅ 기타 시설
