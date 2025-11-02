@@ -114,3 +114,43 @@ export async function getWheelchairChargeStatusByName(stationName) {
     return [];
   }
 }
+/**
+ * ✅ 실시간 지하철 공지사항 (역명 필터링 버전)
+ */
+export async function getMetroNotices(stationName = "") {
+  const url = `${SUPABASE_URL}/functions/v1/metro-notices`;
+
+  try {
+    const res = await fetch(url, { headers: { "Content-Type": "application/json" } });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+
+    if (!Array.isArray(json)) return [];
+
+    const all = json.map((r, i) => ({
+      id: `${r.line || "line"}-${i}`,
+      title: r.title?.trim() || "제목 없음",
+      content: (r.content || "").replace(/&#xd;/g, " ").trim(),
+      occurred: r.occurred || "",
+      line: r.line || "",
+      nonstop: r.nonstop || "",
+      direction: r.direction || "",
+      category: r.category || "",
+    }));
+
+    // ✅ 특정 역명 입력 시 필터링
+    if (stationName) {
+      const keyword = stationName.replace(/역$/u, "").trim();
+      return all.filter((n) =>
+        n.title.includes(keyword) ||
+        n.content.includes(keyword)
+      );
+    }
+
+    // ✅ 역명 없으면 전체 반환
+    return all;
+  } catch (e) {
+    console.error("🚨 getMetroNotices error:", e);
+    return [];
+  }
+}
