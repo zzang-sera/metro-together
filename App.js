@@ -349,7 +349,7 @@ function InlineOnboarding({ onFinish }) {
     color: '#17171B',
     marginTop: -40,
   };
-  const subS = { fontFamily: 'NotoSansKR', fontWeight: '500', color: '#17171B', lineHeight: 22 };
+  const subS = { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B', lineHeight: 22 };
 
   return (
     <Onboarding
