@@ -23,6 +23,7 @@ import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
 import { getFacilityForStation } from "../../api/metro/elevEsLocal";
 import { getToiletsForStation } from "../../api/metro/toiletLocal";
 import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
+import { getWheelchairLiftsForStation } from "../../api/metro/wheelchairLiftLocal"; // ✅ 수정 반영됨
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
@@ -114,51 +115,52 @@ export default function ChatBotScreen() {
       if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
 
       const lines = rows.map((r, i) => {
-        const loc = r.desc
-          .replace(/·/g, "")
-          .replace(/출입구.*|운영시간.*|비상벨.*|CCTV.*/g, "")
-          .trim();
+        const loc = r.desc.replace(/·/g, "").replace(/출입구.*|운영시간.*|비상벨.*|CCTV.*/g, "").trim();
         const hasBabyTable =
-          r.desc.includes("기저귀") ||
-          r.desc.includes("교환대") ||
-          r.desc.includes("기저귀교환대설치유무") ||
-          r.desc.includes("기저귀교환대 있음");
-        const clean = loc
-          .replace(/\s+/g, " ")
-          .replace(/^[·\s]+|[·\s]+$/g, "")
-          .replace(/\s{2,}/g, " ");
-        const status = r.status || "정상";
-        return `#${i + 1} ${clean || "위치 정보 없음"} (${status})${
-          hasBabyTable ? " 기저귀교환대 있음" : ""
-        }`;
+          r.desc.includes("기저귀") || r.desc.includes("교환대") || r.desc.includes("기저귀교환대 있음");
+        const clean = loc.replace(/\s+/g, " ").replace(/^[·\s]+|[·\s]+$/g, "");
+        return `#${i + 1} ${clean || "위치 정보 없음"}${hasBabyTable ? " (기저귀교환대 있음)" : ""}`;
       });
       return `${head(title)}\n${lines.join("\n")}`;
     }
 
+    // ✅ 장애인 화장실
     if (type === "DT") {
       const rows = getDisabledToiletsForStation(stationName);
       if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
-
       const lines = rows.map((r, i) => {
         const loc = r.desc.replace(/·/g, " ").replace(/출입구.*|운영시간.*/g, "").trim();
         const hasBabyTable = r.desc.includes("기저귀교환대 있음");
-        const status = r.status || "정상";
-        return `#${i + 1} ${loc || "위치 정보 없음"} (${status})${
-          hasBabyTable ? " 기저귀교환대 있음" : ""
-        }`;
+        return `#${i + 1} ${loc || "위치 정보 없음"}${hasBabyTable ? " (기저귀교환대 있음)" : ""}`;
+      });
+      return `${head(title)}\n${lines.join("\n")}`;
+    }
+
+    // ✅ 휠체어 리프트 (정상 문구 제거)
+    if (type === "WL") {
+      const rows = getWheelchairLiftsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역에는 휠체어 리프트 정보가 없습니다.`;
+
+      const lines = rows.map((r, i) => {
+        const parts = r.desc
+          .split(/[·\\n]/)
+          .map((p) => p.trim())
+          .filter(Boolean)
+          // "정상" 제거
+          .filter((p) => !/정상/.test(p));
+        const formatted = parts.map((p) => `   • ${p}`).join("\n");
+        return `#${i + 1}\n${formatted}`;
       });
 
-      return `${head(title)}\n${lines.join("\n")}`;
+      return `${head(title)}\n${lines.join("\n\n")}`;
     }
 
     // ✅ 기타 시설
     const rows = getFacilityForStation(stationName, type);
-    if (!rows.length)
-      return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
+    if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
 
     const lines = rows.map(
-      (r, i) =>
-        `#${i + 1} ${r.line ? `${stationName} · ${r.line}` : stationName} (${r.status})\n   • ${r.desc}`
+      (r, i) => `#${i + 1} ${stationName}${r.line ? ` · ${r.line}` : ""}\n   • ${r.desc}`
     );
 
     return `${head(title)}\n${lines.join("\n\n")}`;
@@ -232,17 +234,36 @@ export default function ChatBotScreen() {
       return (
         <View style={{ flexDirection: "row", paddingHorizontal: 16, marginBottom: 12 }}>
           <View style={{ width: avatarSize, marginRight: 8 }} />
-          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 18, padding: 10, elevation: 2 }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "#fff",
+              borderRadius: 18,
+              padding: 10,
+              elevation: 2,
+            }}
+          >
             {FAQ_GROUPS.map((group) => (
               <View key={group.title} style={{ marginBottom: 12 }}>
-                <View style={{ backgroundColor: group.color, borderTopLeftRadius: 14, borderTopRightRadius: 14, padding: 12 }}>
+                <View
+                  style={{
+                    backgroundColor: group.color,
+                    borderTopLeftRadius: 14,
+                    borderTopRightRadius: 14,
+                    padding: 12,
+                  }}
+                >
                   <Text style={{ color: "#fff", fontWeight: "800" }}>{group.title}</Text>
                 </View>
                 <View style={{ borderBottomLeftRadius: 14, borderBottomRightRadius: 14 }}>
                   {group.items.map((it, i) => (
                     <TouchableOpacity
                       key={it.key}
-                      style={{ padding: 14, borderTopWidth: i === 0 ? 0 : 1, borderColor: "#eee" }}
+                      style={{
+                        padding: 14,
+                        borderTopWidth: i === 0 ? 0 : 1,
+                        borderColor: "#eee",
+                      }}
                       onPress={() => {
                         if (it.key === "ROUTE") {
                           appendBot("휠체어 이용자이신가요? (네 / 아니오)");
