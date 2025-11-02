@@ -1,8 +1,9 @@
-// src/api/metro/wheelchairLiftLocal.js
+// ✅ src/api/metro/wheelchairLiftLocal.js
 // Source:
 //   src/assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json
 
 import liftJson from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
+import phoneJson from "../../assets/metro-data/metro/tel/서울교통공사_역주소 및 전화번호_20250820 (1).json"; // ✅ 추가됨
 
 /* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
@@ -23,8 +24,17 @@ function pickArray(any) {
 // "신설동(1)" / "신설동 (1)" → "신설동"
 function sanitizeName(s = "") {
   return typeof s === "string"
-    ? s.replace(/\s*\(\s*\d+\s*\)\s*$/g, "").trim()
+    ? s.replace(/\s*\(\s*\d+\s*\)\s*$/g, "").replace(/역$/, "").trim()
     : "";
+}
+
+/* ---------------------- 전화번호 매핑 ---------------------- */
+const PHONE_MAP = new Map();
+if (Array.isArray(phoneJson)) {
+  for (const p of phoneJson) {
+    const name = sanitizeName(p["역명"]);
+    if (name) PHONE_MAP.set(name, p["역전화번호"]);
+  }
 }
 
 /* ---------------------- 키 맵 ---------------------- */
@@ -47,6 +57,7 @@ const K = {
   date: "데이터 기준일자",
 };
 
+/* ---------------------- 변환 ---------------------- */
 function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
@@ -60,11 +71,14 @@ function toPretty(raw) {
   const eDetail = String(raw[K.eDetail] ?? "").trim();
 
   const startTxt = [sGround, sLevel ? `${sLevel}층` : "", sDetail].filter(Boolean).join(" ");
-  const endTxt   = [eGround, eLevel ? `${eLevel}층` : "", eDetail].filter(Boolean).join(" ");
+  const endTxt = [eGround, eLevel ? `${eLevel}층` : "", eDetail].filter(Boolean).join(" ");
+
+  // ✅ 역 전화번호 우선 사용
+  const phone = PHONE_MAP.get(stationName) || "서울교통공사 고객센터 1577-1234";
 
   return {
-    seq: raw[K.seq] ?? "",
-    line: String(raw[K.line] ?? "").trim(), // 보통 "1호선" 형태
+    seq: String(raw[K.seq] ?? ""),
+    line: String(raw[K.line] ?? "").trim(),
     stationName,
     stationNameRaw: stationNameFull,
     manageNo: String(raw[K.manageNo] ?? "").trim(),
@@ -75,6 +89,7 @@ function toPretty(raw) {
     width: raw[K.width] ?? "",
     limitWeight: raw[K.limitWeight] ?? "",
     serial: String(raw[K.serial] ?? "").trim(),
+    phone,
     date: String(raw[K.date] ?? "").trim(),
   };
 }
@@ -101,7 +116,6 @@ export function getWheelchairLiftsByName(stationName) {
 export function prettifyWheelchairLifts(rows, fallbackLine = "") {
   const arr = Array.isArray(rows) ? rows : [];
   return arr.map((r, i) => ({
-    // key 충돌 방지: 역명 + 관리번호/serial + seq
     id: `${r.stationName}-${r.manageNo || r.serial || "X"}-${r.seq ?? i}`,
     title: "휠체어 리프트",
     desc: [
@@ -109,9 +123,11 @@ export function prettifyWheelchairLifts(rows, fallbackLine = "") {
       r.nearGate ? `출입구: ${r.nearGate}` : "",
       r.width ? `폭: ${r.width}mm` : "",
       r.limitWeight ? `허용중량: ${r.limitWeight}kg` : "",
-      r.serial ? `SN: ${r.serial}` : "",
-    ].filter(Boolean).join(" · "),
-    status: "정상",                // 실시간 상태 없음 → 기본값
+      r.phone ? `전화: ${r.phone}` : "",
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    status: "정상",
     line: r.line || fallbackLine,
   }));
 }
