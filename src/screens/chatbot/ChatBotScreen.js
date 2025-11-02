@@ -14,7 +14,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { createChatbotStyles } from "../../styles/chatbotStyles";
-import { responsiveWidth, responsiveHeight, responsiveFontSize } from "../../utils/responsive";
+import { responsiveWidth, responsiveHeight } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import { fetchSubwayPath } from "../pathfinder/PathFinderScreen";
 import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
@@ -25,7 +25,7 @@ import stationImages from "../../assets/metro-data/metro/station/station_images.
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
 
-/* ---------------------- 섹션 정의 (UI 변경 없음) ---------------------- */
+/* ---------------------- 섹션 정의 ---------------------- */
 const FAQ_GROUPS = [
   {
     title: "지하철 경로 안내",
@@ -55,24 +55,30 @@ const sanitizeName = (s = "") =>
 const normalizeStationName = (name) =>
   String(name || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
 const pickArray = (any) => (Array.isArray(any?.DATA) ? any.DATA : Array.isArray(any) ? any : []);
-const koStatus = (v = "") => (v === "Y" ? "사용가능" : v === "N" ? "중지" : v || "상태미상");
+const koStatus = (v = "") => (v === "Y" || v === "사용가능" ? "사용가능" : v === "N" ? "중지" : v || "상태미상");
 const normalizeLine = (line = "") => {
   const m = String(line).match(/(\d+)/);
   return m ? `${parseInt(m[1], 10)}호선` : String(line || "");
 };
 
-/* ---------------------- 엘리베이터 인덱싱 ---------------------- */
-const ELEV_ROWS = pickArray(elevLocalJson).map((raw) => {
-  const stnNm = raw.stn_nm ?? raw.STN_NM ?? raw.station_nm ?? raw.name ?? "";
-  return {
-    code: String(raw.stn_cd ?? raw.STN_CD ?? "").trim(),
-    name: sanitizeName(stnNm),
-    location: raw.instl_pstn ?? "",
-    status: koStatus(raw.use_yn ?? ""),
-    kind: raw.elvtr_se ?? "",
-    line: normalizeLine(raw.line ?? ""),
-  };
-});
+/* ---------------------- 엘리베이터 & 에스컬레이터 인덱싱 ---------------------- */
+function parseElevatorJson(rawJson) {
+  const rows = pickArray(rawJson).map((raw) => {
+    const stnNm = raw.stn_nm ?? raw.STN_NM ?? raw.station_nm ?? raw.name ?? "";
+    return {
+      code: String(raw.stn_cd ?? raw.STN_CD ?? "").trim(),
+      name: sanitizeName(stnNm),
+      location: raw.instl_pstn ?? "",
+      status: koStatus(raw.use_yn ?? ""),
+      kind: raw.elvtr_se ?? "",
+      line: normalizeLine(raw.line ?? ""),
+      oprSec: raw.opr_sec ?? "",
+    };
+  });
+  return rows;
+}
+
+const ELEV_ROWS = parseElevatorJson(elevLocalJson);
 const ELEV_BY_NAME = new Map();
 for (const r of ELEV_ROWS) {
   if (!r.name) continue;
@@ -80,7 +86,11 @@ for (const r of ELEV_ROWS) {
   arr.push(r);
   ELEV_BY_NAME.set(r.name, arr);
 }
-const searchLocalElev = (arg) => ELEV_BY_NAME.get(sanitizeName(arg)) || [];
+
+function searchLocalElev(stationName, type) {
+  const rows = ELEV_BY_NAME.get(sanitizeName(stationName)) || [];
+  return rows.filter((r) => r.kind === type);
+}
 
 /* ---------------------- 이미지 매핑 ---------------------- */
 function getMapImageUrlFromJson(stationName) {
@@ -98,11 +108,11 @@ export default function ChatBotScreen() {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [wheelchair, setWheelchair] = useState(false); // 휠체어 모드
-  const [mode, setMode] = useState(null); // pathStartAwait / pathEndAwait / wheelchairAsk / facilityAwait ...
+  const [wheelchair, setWheelchair] = useState(false);
+  const [mode, setMode] = useState(null);
   const [pathStart, setPathStart] = useState("");
   const [facilityType, setFacilityType] = useState(null);
-  const [lastPathEnd, setLastPathEnd] = useState("노원"); // 최근 도착역
+  const [lastPathEnd, setLastPathEnd] = useState("노원");
   const listRef = useRef(null);
   const styles = useMemo(() => createChatbotStyles(fontOffset), [fontOffset]);
 
@@ -119,58 +129,56 @@ export default function ChatBotScreen() {
   const appendUser = (text) => append("user", { text });
   const appendBot = (text, isMap = false, mapProps) => append("bot", { text, isMap, mapProps });
 
-  /* ---------------------- 시설 리스트 포맷터 (텍스트만 생성) ---------------------- */
+  /* ---------------------- 시설 리스트 포맷터 ---------------------- */
   function formatFacilityList({ type, stationName }) {
-    const head = (title) => `【${title}】`;
-
-    // 1) 엘리베이터: 로컬 JSON에서 실제 데이터 출력
-    if (type === "EV") {
-      const rows = searchLocalElev(stationName);
-      if (!rows.length) return `${head("엘리베이터")}\n해당 역의 로컬 데이터가 없습니다.`;
-      const top = rows.slice(0, 8); // 너무 길어지지 않게 제한
-      const lines = top.map((r, i) => {
-        const nameSeg = r.line ? `${r.name} · ${r.line}` : r.name;
-        const statusSeg = r.status ? `(${r.status})` : "";
-        const locSeg = r.location ? `\n   • 위치: ${r.location}` : "";
-        return `#${i + 1} ${nameSeg} ${statusSeg}${locSeg}`;
-      });
-      const more = rows.length > top.length ? `\n…외 ${rows.length - top.length}건` : "";
-      return `${head("엘리베이터")}\n${lines.join("\n\n")}${more}`;
-    }
-
-    // 2) 그 외 타입(ES/TO/DT/WL/NU/LO): 현재 로컬 JSON이 없으므로 안내만
     const titleMap = {
+      EV: "엘리베이터",
       ES: "에스컬레이터",
       TO: "화장실",
       DT: "장애인 화장실",
       WL: "휠체어 리프트",
-      WC: "휠체어 급속충전",
+      WC: "휠체어 급속충전기",
       VO: "음성유도기",
       NU: "수유실",
       LO: "보관함",
     };
     const title = titleMap[type] || "시설";
-    return `${head(title)}\n해당 시설의 로컬 데이터가 아직 연결되지 않았습니다.\n지도에서 위치를 확인해주세요.`;
+    const head = (title) => `【${title}】`;
+
+    if (type === "WC") {
+      return `${head(title)}\n이 시설은 아직 API 연결 중입니다.`;
+    }
+
+    const rows = searchLocalElev(stationName, type);
+    if (!rows.length) {
+      return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
+    }
+
+    const lines = rows.map((r, i) => {
+      const nameSeg = r.line ? `${r.name} · ${r.line}` : r.name;
+      const statusSeg = r.status ? `(${r.status})` : "";
+      const locSeg = r.location ? `\n   • 위치: ${r.location}` : "";
+      const oprSeg = r.oprSec ? `\n   • 운행구간: ${r.oprSec}` : "";
+      return `#${i + 1} ${nameSeg} ${statusSeg}${locSeg}${oprSeg}`;
+    });
+
+    return `${head(title)}\n${lines.join("\n\n")}`;
   }
 
-  /* ---------------------- 지도 + 리스트 설명 (요구사항 핵심) ---------------------- */
+  /* ---------------------- 지도 + 리스트 ---------------------- */
   const runFacilityMap = async (stationName, type) => {
     const imageUrl = getMapImageUrlFromJson(stationName);
-
-    // 1) 사진(지하철 안내도/레이아웃) 표시
     appendBot("", true, { stationName, imageUrl, type });
-
-    // 2) 사진 아래에 텍스트 리스트 설명 표시
     const listText = formatFacilityList({ type, stationName });
     appendBot(listText);
-
-    // 3) 사진을 못 찾았을 때도 친절 메시지
     if (!imageUrl) {
       appendBot(`🗺 ${stationName}역의 지도 이미지를 찾지 못했습니다. station_images.json을 확인해주세요.`);
     }
+    // ✅ 리스트 출력 후 메뉴 다시 표시
+    append("menu", {});
   };
 
-  /* ---------------------- 경로 탐색 (기존 동작 유지) ---------------------- */
+  /* ---------------------- 경로 탐색 ---------------------- */
   const runPathSearch = useCallback(
     async (start, end, opts = { wheelchair: false }) => {
       appendBot(`🚇 ${start} → ${end} ${opts.wheelchair ? "🦽 휠체어 경로" : "최단경로"}를 탐색합니다...`);
@@ -187,11 +195,9 @@ export default function ChatBotScreen() {
         setLastPathEnd(arrName);
 
         const time =
-          data?.routeSummary?.estimatedTime ??
-          data?.totalTime ?? data?.duration ?? data?.time ?? "?";
+          data?.routeSummary?.estimatedTime ?? data?.totalTime ?? data?.duration ?? data?.time ?? "?";
         const transfers =
-          data?.routeSummary?.transfers ??
-          data?.transfers ?? data?.transferCount ?? 0;
+          data?.routeSummary?.transfers ?? data?.transfers ?? data?.transferCount ?? 0;
 
         const sf = data?.stationFacilities || {};
         const ti = Array.isArray(data?.transferInfo) ? data.transferInfo : [];
@@ -228,7 +234,7 @@ export default function ChatBotScreen() {
     [appendBot]
   );
 
-  /* ---------------------- 메시지 ---------------------- */
+  /* ---------------------- 메시지 렌더 ---------------------- */
   const MessageBubble = ({ item }) => {
     const avatarSize = responsiveWidth(40) + fontOffset * 1.5;
     if (item.role === "system")
@@ -337,12 +343,13 @@ export default function ChatBotScreen() {
     if (mode === "pathEndAwait") {
       setMode(null);
       await runPathSearch(pathStart, t, { wheelchair });
+      append("menu", {}); // ✅ 경로 결과 후에도 메뉴 다시 표시
       return;
     }
 
     if (mode === "facilityAwait" && facilityType) {
       setMode(null);
-      await runFacilityMap(t, facilityType); // 사진 + 리스트 설명
+      await runFacilityMap(t, facilityType); // ✅ 리스트 후 자동으로 메뉴 표시됨
       return;
     }
 
