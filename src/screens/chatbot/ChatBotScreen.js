@@ -144,7 +144,7 @@ export default function ChatBotScreen() {
         const hasBabyTable = r.desc.includes("기저귀교환대 있음");
         const status = r.status || "정상";
         return `#${i + 1} ${loc || "위치 정보 없음"} (${status})${
-          hasBabyTable ? " 👶 기저귀교환대 있음" : ""
+          hasBabyTable ? " 기저귀교환대 있음" : ""
         }`;
       });
 
