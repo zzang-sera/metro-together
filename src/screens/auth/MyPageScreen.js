@@ -24,9 +24,9 @@ const MyPageScreen = () => {
     );
   };
 
-const handleUsageGuidePress = () => {
-  navigation.getParent()?.navigate('Onboarding');
-};
+  const handleUsageGuidePress = () => {
+    Alert.alert("알림", "현재 개발 중인 기능입니다.");
+  };
 
   return (
     <View style={[authStyles.container, styles.contentContainer]}>

@@ -1,8 +1,7 @@
 // src/screens/intro/OnboardingScreen.js
 import React from "react";
-import { Image, Dimensions, View, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import { Image, Dimensions, View, Text, TouchableOpacity } from "react-native";
 import Onboarding from "react-native-onboarding-swiper";
-import { useNavigation } from "@react-navigation/native"; 
 
 const { width: W, height: H } = Dimensions.get("window");
 const IMG_W = Math.min(320, W * 0.82);
@@ -10,7 +9,7 @@ const IMG_H = Math.min(IMG_W * 1.95, H * 0.62);
 const MINT = "#14CAC9";
 
 const titleStyle = { fontFamily: "NotoSansKR", fontWeight: "700", color: "#17171B" };
-const subStyle = { fontFamily: "NotoSansKR", fontWeight: "700", color: "#17171B", lineHeight: 22 };
+const subStyle   = { fontFamily: "NotoSansKR", fontWeight: "500", color: "#17171B", lineHeight: 22 };
 
 const Dot = ({ selected }) => (
   <View
@@ -30,18 +29,12 @@ const TextBtn = ({ label, onPress }) => (
   </TouchableOpacity>
 );
 
-export default function OnboardingScreen() {
-  const navigation = useNavigation(); 
-
-  const handleFinish = () => {
-    navigation.goBack(); 
-  };
-
+// onFinish 콜백을 App.js에서 넘겨받아 AsyncStorage 플래그를 세팅/종료
+export default function OnboardingScreen({ onFinish }) {
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
     <Onboarding
-      onDone={handleFinish}   
-      onSkip={handleFinish}   
+      onDone={onFinish}
+      onSkip={onFinish}
       titleStyles={titleStyle}
       subTitleStyles={subStyle}
       containerStyles={{ paddingHorizontal: 20 }}
@@ -191,6 +184,5 @@ export default function OnboardingScreen() {
         },
       ]}
     />
-    </SafeAreaView>
   );
 }
