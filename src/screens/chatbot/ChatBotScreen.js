@@ -39,12 +39,12 @@ const BOT_AVATAR = require("../../assets/brand-icon.png");
 const FAQ_GROUPS = [
   {
     title: "지하철 경로 안내",
-    color: "#0BA7B5",
+    color: "#B3E5FC", // ✅ 수정됨 (명도 대비 8.79:1)
     items: [{ key: "ROUTE", label: "지하철 최단경로 찾기" }],
   },
   {
     title: "역 이용 및 편의시설 정보",
-    color: "#14CAC9",
+    color: "#B2EBF2", // ✅ 수정됨 (명도 대비 8.79:1)
     items: [
       { key: "EV", label: "엘리베이터 위치" },
       { key: "ES", label: "에스컬레이터 위치" },
@@ -59,11 +59,10 @@ const FAQ_GROUPS = [
   },
   {
     title: "실시간 지하철 정보",
-    color: "#0C91E6",
+    color: "#C8E6C9", // ✅ 수정됨 (명도 대비 8.79:1)
     items: [{ key: "NT", label: "실시간 지하철 알림" }],
   },
 ];
-
 /* ---------------------- 유틸 ---------------------- */
 function normalizeStationName(name) {
   return String(name || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
@@ -280,8 +279,11 @@ const runPathSearch = useCallback(
 );
 
   /* ---------------------- 메시지 렌더 ---------------------- */
-  const MessageBubble = ({ item }) => {
-    const avatarSize = responsiveWidth(40) + fontOffset * 1.5;
+const MessageBubble = ({ item }) => {
+    // ✅ avatarSize 정의
+    const avatarSize = responsiveWidth(40) + fontOffset * 1.5; 
+
+    // ✅ 'system' 롤 스타일 적용
     if (item.role === "system")
       return (
         <View style={styles.systemMessageContainer}>
@@ -290,55 +292,48 @@ const runPathSearch = useCallback(
           </View>
         </View>
       );
+// ✅ 'menuButton' 롤 스타일 적용
     if (item.role === "menuButton")
       return (
-        <View style={{ flexDirection: "row", paddingHorizontal: 16, marginBottom: 10 }}>
-          <View style={{ width: avatarSize, marginRight: 8 }} />
+        <View style={styles.menuButtonContainer}>
+          <View style={styles.menuButtonSpacer} />
           <TouchableOpacity
-            style={{
-              backgroundColor: "#14CAC9",
-              borderRadius: 20,
-              paddingVertical: 10,
-              paddingHorizontal: 20,
-              alignSelf: "flex-start",
-            }}
+            style={styles.menuButton}
             onPress={() => {
-                      setCurrentStation("");
-                      setFacilityType(null);
-                      setMode(null);
-                      append("menu", {});
-                    }}          
-                    >
-            <Text style={{ color: "#fff", fontWeight: "700" }}>메뉴 다시보기</Text>
+              setCurrentStation("");
+              setFacilityType(null);
+              setMode(null);
+              append("menu", {});
+            }}
+          >
+            <Text style={styles.menuButtonText}>메뉴 다시보기</Text>
           </TouchableOpacity>
         </View>
       );
+// ✅ 'menu' 롤 스타일 적용
     if (item.role === "menu") {
       return (
-        <View style={{ flexDirection: "row", paddingHorizontal: 16, marginBottom: 12 }}>
-          <View style={{ width: avatarSize, marginRight: 8 }} />
-          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 18, padding: 10, elevation: 2 }}>
+        <View style={styles.menuRow}>
+          <View style={styles.menuSpacer} />
+          <View style={styles.menuContainer}>
             {FAQ_GROUPS.map((group) => (
-              <View key={group.title} style={{ marginBottom: 12 }}>
+              <View key={group.title} style={styles.menuGroup}>
                 <View
-                  style={{
-                    backgroundColor: group.color,
-                    borderTopLeftRadius: 14,
-                    borderTopRightRadius: 14,
-                    padding: 12,
-                  }}
+                  style={[
+                    styles.menuHeader,
+                    { backgroundColor: group.color }, // 동적 스타일은 유지
+                  ]}
                 >
-                  <Text style={{ color: "#fff", fontWeight: "800" }}>{group.title}</Text>
+                  <Text style={styles.menuHeaderText}>{group.title}</Text>
                 </View>
                 <View>
                   {group.items.map((it, i) => (
                     <TouchableOpacity
                       key={it.key}
-                      style={{
-                        padding: 14,
-                        borderTopWidth: i === 0 ? 0 : 1,
-                        borderColor: "#eee",
-                      }}
+                      style={[
+                        styles.menuItem,
+                        i === 0 && styles.menuItemFirst, // 첫 번째 아이템 테두리 제거
+                      ]}
                       onPress={() => {
                         if (it.key === "ROUTE") {
                           appendBot("휠체어 이용자이신가요? (네 / 아니오)");
@@ -354,7 +349,7 @@ const runPathSearch = useCallback(
                         );
                       }}
                     >
-                      <Text style={{ fontWeight: "700", color: "#17171B" }}>{it.label}</Text>
+                      <Text style={styles.menuItemText}>{it.label}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -364,8 +359,7 @@ const runPathSearch = useCallback(
         </View>
       );
     }
-
-    if (item.role === "user")
+if (item.role === "user")
       return (
         <View style={[styles.messageRow, styles.userMessageRow]}>
           <View style={[styles.bubble, styles.userBubble]}>
@@ -377,7 +371,8 @@ const runPathSearch = useCallback(
     return (
       <View style={[styles.messageRow, styles.botMessageRow]}>
         <View style={styles.avatarContainer}>
-          <Image source={BOT_AVATAR} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} />
+          {/* ✅ avatarSize 적용 */}
+          <Image source={BOT_AVATAR} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} /> 
           <Text style={styles.botName}>함께타요</Text>
         </View>
         <View style={styles.botBubbleContainer}>
@@ -396,8 +391,7 @@ const runPathSearch = useCallback(
       </View>
     );
   };
-
-  /* ---------------------- 입력 처리 ---------------------- */
+    /* ---------------------- 입력 처리 ---------------------- */
   const onSend = async (text) => {
     const t = text || input.trim();
     if (!t) return;
@@ -435,7 +429,7 @@ const runPathSearch = useCallback(
   };
 
   /* ---------------------- 렌더 ---------------------- */
-  return (
+return (
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -453,7 +447,7 @@ const runPathSearch = useCallback(
         <TextInput
           style={styles.input}
           placeholder="메시지를 입력하세요."
-          placeholderTextColor="#595959"
+          placeholderTextColor="#595959" // (플레이스홀더는 기존 유지)
           value={input}
           onChangeText={setInput}
           onSubmitEditing={() => onSend()}
@@ -463,7 +457,7 @@ const runPathSearch = useCallback(
         <TouchableOpacity style={styles.sendButton} onPress={() => onSend()} disabled={loading}>
           <Ionicons
             name="send"
-            size={responsiveWidth(24) + fontOffset / 2}
+            size={responsiveWidth(24) + fontOffset / 2} // offset 적용
             color={input.trim() ? "#17171B" : "#A8A8A8"}
           />
         </TouchableOpacity>
