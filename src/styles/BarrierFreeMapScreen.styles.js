@@ -4,8 +4,8 @@ const { width: screenW, height: screenH } = Dimensions.get('window');
 
 export const colors = {
   text: '#17171B',
-  textSecondary: '#555555',
-  textOnPrimary: '#0D0D0D',
+  textSecondary: '#17171B',
+  textOnPrimary: '#17171B',
   primary: '#14CAC9',
   background: '#F9F9F9',
   white: '#FFFFFF',

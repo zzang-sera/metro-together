@@ -1,7 +1,5 @@
-// ✅ src/hook/useLocalFacilities.js
 import { useEffect, useState } from "react";
-import { getElevatorsByCode } from "../api/metro/elevLocal";
-import { getEscalatorsForStation } from "../api/metro/escalatorLocal";
+import { getFacilityForStation } from "../api/metro/elevEsLocal"
 import { getLockersForStation } from "../api/metro/lockerLocal";
 import { getNursingRoomsForStation } from "../api/metro/nursingRoomLocal";
 import { getAudioBeaconsForStation } from "../api/metro/voiceLocal";
@@ -12,6 +10,7 @@ import { getToiletsForStation } from "../api/metro/toiletLocal";
 /**
  * ✅ 로컬 지하철 시설 정보를 불러오는 훅
  * - 실시간 API 실패 시 로컬 JSON으로 폴백
+ * - EV / ES → esEvLocal.js 사용 (통합 JSON 기반)
  * - WC(휠체어 급속충전)는 API 전용 → 빈 배열 반환
  * - 서울역 예외 처리 (항상 “서울역”으로 통일)
  */
@@ -33,12 +32,9 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
         if (cleanName === "서울") cleanName = "서울역";
 
         switch (type) {
-          case "EV": // 엘리베이터
-            result = await getElevatorsByCode(String(stationCode));
-            break;
-
-          case "ES": // 에스컬레이터
-            result = await getEscalatorsForStation(cleanName, line, stationCode);
+          case "EV": // ✅ 엘리베이터 → esEvLocal.js 사용
+          case "ES": // ✅ 에스컬레이터 → esEvLocal.js 사용
+            result = getFacilityForStation(cleanName, type);
             break;
 
           case "LO": // 물품보관함
@@ -54,7 +50,6 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
             if (byCode.length > 0) {
               result = byCode;
             } else {
-              // ✅ stationCode 매칭 안 될 경우 자동 fallback → 역명 검색
               const byName = await getAudioBeaconsForStation(cleanName, line);
               result = byName;
             }
