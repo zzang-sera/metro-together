@@ -25,7 +25,8 @@ import { getToiletsForStation } from "../../api/metro/toiletLocal";
 import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
 import { getWheelchairLiftsForStation } from "../../api/metro/wheelchairLiftLocal";
 import { getAudioBeaconsForStation } from "../../api/metro/voiceLocal";
-import { getNursingRoomsForStation } from "../../api/metro/nursingRoomLocal"; // ✅ 추가됨
+import { getNursingRoomsForStation } from "../../api/metro/nursingRoomLocal";
+import { getLockersForStation } from "../../api/metro/lockerLocal"; // ✅ 보관함 추가
 
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
@@ -48,8 +49,8 @@ const FAQ_GROUPS = [
       { key: "WL", label: "휠체어 리프트 위치" },
       { key: "WC", label: "휠체어 급속충전 위치" },
       { key: "VO", label: "음성유도기 위치" },
-      { key: "NU", label: "수유실 위치" }, // ✅ 수유실 추가
-      { key: "LO", label: "보관함 위치" },
+      { key: "NU", label: "수유실 위치" },
+      { key: "LO", label: "보관함 위치" }, // ✅ 보관함 메뉴 추가
     ],
   },
 ];
@@ -114,18 +115,12 @@ export default function ChatBotScreen() {
     if (type === "NU") {
       const rows = getNursingRoomsForStation(stationName);
       if (!rows.length) return `${head(title)}\n${stationName}역에는 수유실 정보가 없습니다.`;
-
       const lines = rows.map((r, i) => {
-        // 줄바꿈 포함된 포맷: ①위치 ②비품
-        const details = r.desc
-          .split("·")
-          .map((s) => s.trim())
-          .filter(Boolean);
+        const details = r.desc.split("·").map((s) => s.trim()).filter(Boolean);
         const firstLine = details[0] || "위치 정보 없음";
         const others = details.slice(1).join(" · ");
         return `#${i + 1} ${firstLine}${others ? `\n${others}` : ""}`;
       });
-
       return `${head(title)}\n${lines.join("\n\n")}`;
     }
 
@@ -149,6 +144,21 @@ export default function ChatBotScreen() {
       return `${head(title)}\n${lines.join("\n\n")}`;
     }
 
+    // ✅ 보관함
+    if (type === "LO") {
+      const rows = getLockersForStation(stationName);
+      // 🔍 “보관함명”에 역명이 포함된 것도 찾기
+      const normalized = String(stationName).replace(/역$/, "").trim();
+      const filtered = rows.filter((r) => r.title.includes(normalized));
+      const finalRows = filtered.length ? filtered : rows;
+      if (!finalRows.length) return `${head(title)}\n${stationName}역에는 보관함 정보가 없습니다.`;
+      const lines = finalRows.map((r, i) => {
+        const loc = r.desc ? `\n${r.desc}` : "";
+        return `#${i + 1} ${r.title}${loc}`;
+      });
+      return `${head(title)}\n${lines.join("\n\n")}`;
+    }
+
     // ✅ 일반 화장실
     if (type === "TO") {
       const rows = getToiletsForStation(stationName);
@@ -156,8 +166,7 @@ export default function ChatBotScreen() {
       const lines = rows.map((r, i) => {
         const loc = r.desc.replace(/·/g, "").replace(/출입구.*|운영시간.*|비상벨.*|CCTV.*/g, "").trim();
         const hasBaby = r.desc.includes("기저귀교환대 있음");
-        const clean = loc.replace(/\s+/g, " ").trim();
-        return `#${i + 1} ${clean || "위치 정보 없음"}${hasBaby ? " (기저귀교환대 있음)" : ""}`;
+        return `#${i + 1} ${loc}${hasBaby ? " (기저귀교환대 있음)" : ""}`;
       });
       return `${head(title)}\n${lines.join("\n")}`;
     }
@@ -174,7 +183,7 @@ export default function ChatBotScreen() {
       return `${head(title)}\n${lines.join("\n")}`;
     }
 
-    // ✅ 기타 시설 (엘리베이터, 에스컬레이터 등)
+    // ✅ 기타 시설
     const rows = getFacilityForStation(stationName, type);
     if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
     const lines = rows.map(
