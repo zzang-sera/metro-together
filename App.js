@@ -1,6 +1,6 @@
 // App.js
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, ActivityIndicator, Alert, Image, Dimensions, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer, useNavigation, DefaultTheme } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StatusBar } from 'expo-status-bar';
+import Onboarding from 'react-native-onboarding-swiper';
 
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { FontSizeProvider, useFontSize } from "./src/contexts/FontSizeContext";
@@ -34,14 +35,14 @@ import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
 
 // Navigators 정의
 const RootStack = createStackNavigator();
-const Stack = createStackNavigator(); // Auth 스택용
+const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 const MyPageStack = createStackNavigator();
 const NearbyStack = createStackNavigator();
 const SearchStack = createStackNavigator();
 const MainStack = createStackNavigator();
 const HomeStack = createStackNavigator();
-const PathFinderStack = createStackNavigator(); // PathFinder 스택
+const PathFinderStack = createStackNavigator();
 
 /* ──────────────────────────────
    공통 옵션
@@ -63,7 +64,7 @@ const mintHeaderOptions = {
 };
 
 /* ──────────────────────────────
-   MainStack (Detail, Map 등 공통 상세 화면)
+   MainStack
 ────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator screenOptions={{ headerShown: false }}>
@@ -73,7 +74,7 @@ const MainStackNavigator = () => (
 );
 
 /* ──────────────────────────────
-   각 탭별 스택 네비게이터들 (Home, MyPage, Nearby, Search)
+   각 스택 네비게이터
 ────────────────────────────── */
 const HomeStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -138,10 +139,6 @@ const SearchStackNavigator = () => {
   );
 };
 
-
-/* ──────────────────────────────
-   PathFinder Stack
-────────────────────────────── */
 const PathFinderStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -151,28 +148,15 @@ const PathFinderStackNavigator = () => {
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
       }}
     >
-      <PathFinderStack.Screen
-        name="PathFinderHome"
-        component={PathFinderScreen}
-        options={{ title: '지하철 최단 경로' }}
-      />
-      <PathFinderStack.Screen
-        name="StationDetail"
-        component={StationDetailScreen}
-        options={{ title: '역 정보', headerShown: false }}
-      />
-      <PathFinderStack.Screen
-        name="BarrierFreeMap"
-        component={BarrierFreeMapScreen}
-        options={{ title: '배리어프리 지도', headerShown: false }}
-      />
+      <PathFinderStack.Screen name="PathFinderHome" component={PathFinderScreen} options={{ title: '지하철 최단 경로' }} />
+      <PathFinderStack.Screen name="StationDetail" component={StationDetailScreen} options={{ headerShown: false }} />
+      <PathFinderStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} options={{ headerShown: false }} />
     </PathFinderStack.Navigator>
   );
 };
 
-
 /* ──────────────────────────────
-   Guest Tabs (비로그인)
+   Guest Tabs
 ────────────────────────────── */
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
@@ -220,7 +204,9 @@ const GuestTabs = () => {
         listeners={{
           tabPress: (e) => {
             e.preventDefault();
-            navigation.navigate("Welcome");
+            navigation.getParent()?.navigate("AuthScreens", {
+              screen: "Welcome",
+              });
           },
         }}
       />
@@ -235,7 +221,7 @@ const GuestTabs = () => {
             e.preventDefault();
             Alert.alert("로그인 필요", "로그인이 필요합니다.", [
               { text: "취소", style: "cancel" },
-              { text: "확인", onPress: () => navigation.navigate("Welcome") },
+              { text: "확인", onPress: () => navigation.getParent()?.navigate("Welcome") },
             ]);
           },
         }}
@@ -245,10 +231,10 @@ const GuestTabs = () => {
 };
 
 /* ──────────────────────────────
-   User Tabs (로그인)
+   User Tabs
 ────────────────────────────── */
 const UserTabs = () => {
-   const insets = useSafeAreaInsets();
+  const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
 
   const tabBarStyle = {
@@ -308,7 +294,7 @@ const UserTabs = () => {
 };
 
 /* ──────────────────────────────
-   Auth Stack (로그인/회원가입 관련 화면)
+   Auth Stack
 ────────────────────────────── */
 const AuthStackNavigator = () => {
   const { fontOffset } = useFontSize();
@@ -331,14 +317,195 @@ const AuthStackNavigator = () => {
 };
 
 /* ──────────────────────────────
-   Root Component & Navigation Logic
+   Onboarding
+────────────────────────────── */
+const { width: W, height: H } = Dimensions.get('window');
+const IMG_W = Math.min(320, W * 0.82);
+const IMG_H = Math.min(IMG_W * 1.95, H * 0.62);
+const MINT = "#14CAC9";
+
+const Dot = ({ selected }) => (
+  <View
+    style={{
+      width: selected ? 20 : 8,
+      height: 8,
+      borderRadius: 4,
+      marginHorizontal: 3,
+      backgroundColor: selected ? MINT : "#D7EDEA",
+    }}
+  />
+);
+
+const TextBtn = ({ label, onPress }) => (
+  <TouchableOpacity onPress={onPress} style={{ paddingHorizontal: 16, paddingVertical: 8 }}>
+    <Text style={{ fontFamily: "NotoSansKR", fontWeight: "700", color: MINT, fontSize: 16 }}>{label}</Text>
+  </TouchableOpacity>
+);
+
+function InlineOnboarding({ onFinish }) {
+  const titleS = {
+    fontFamily: 'NotoSansKR',
+    fontWeight: '700',
+    color: '#17171B',
+    marginTop: -40,
+  };
+  const subS = { fontFamily: 'NotoSansKR', fontWeight: '500', color: '#17171B', lineHeight: 22 };
+
+  return (
+    <Onboarding
+      onDone={onFinish}
+      onSkip={onFinish}
+      titleStyles={titleS}
+      subTitleStyles={subS}
+      containerStyles={{ paddingHorizontal: 20 }}
+      bottomBarColor="#FFFFFF"
+      showDone
+      showNextButton
+      showSkip
+      NextButtonComponent={(props) => <TextBtn label="다음" {...props} />}
+      SkipButtonComponent={(props) => <TextBtn label="건너뛰기" {...props} />}
+      DoneButtonComponent={(props) => <TextBtn label="시작하기" {...props} />}
+      DotComponent={Dot}
+      pages={[
+        {
+          backgroundColor: '#FFFFFF',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding1.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="시작하기 화면 예시"
+            />
+          ),
+          title: '시작하기',
+          subtitle:
+            '이메일 또는 Google로 가입할 수 있어요.\n가입하면 즐겨찾기·챗봇 기능을 사용할 수 있습니다.\n비회원도 앱 기능 대부분을 이용할 수 있어요.',
+        },
+        {
+          backgroundColor: '#F2FFFD',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding2.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="개인설정 화면 예시"
+            />
+          ),
+          title: '개인설정',
+          subtitle: '글자 크기를 조절해 가독성을 높이고,\n즐겨찾기한 역을 한눈에 확인하세요.',
+        },
+        {
+          backgroundColor: '#E8FBF9',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding3.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="가까운 역 안내 화면 예시"
+            />
+          ),
+          title: '가까운 역 안내',
+          subtitle: '현재 위치 기준 가까운 역을 자동으로 보여줍니다.\n거리와 노선 배지를 함께 확인하세요.',
+        },
+        {
+          backgroundColor: '#F2FFFD',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding4.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="역 검색 화면 예시"
+            />
+          ),
+          title: '원하는 역 검색',
+          subtitle: '역 이름을 입력하면 즉시 결과가 나타납니다.\n선택해 상세 정보 또는 길찾기를 진행하세요.',
+        },
+        {
+          backgroundColor: '#E8FBF9',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding5.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="역 선택 시 메뉴 예시"
+            />
+          ),
+          title: '역 선택 시 메뉴',
+          subtitle: '① 역 정보 보기  ② 출발역으로 길찾기  ③ 도착역으로 길찾기',
+        },
+        {
+          backgroundColor: '#F2FFFD',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding6.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="지하철 최단 경로 화면 예시"
+            />
+          ),
+          title: '지하철 최단 경로',
+          subtitle: '배리어프리 경로로 안내합니다.\n소요 시간·환승 횟수와 함께 상세 단계가 제공돼요.',
+        },
+        {
+          backgroundColor: '#E8FBF9',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding7.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="역 정보 보기 화면 예시"
+            />
+          ),
+          title: '역 정보 보기',
+          subtitle: '엘리베이터·에스컬레이터·화장실·리프트 위치 확인.\n자주 쓰는 역은 즐겨찾기에 추가하세요.',
+        },
+        {
+          backgroundColor: '#F2FFFD',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding8.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="출발역으로 길찾기 화면 예시"
+            />
+          ),
+          title: '출발역으로 길찾기',
+          subtitle: '출발역 지정 후, 도착역을 선택하면 경로가 계산돼요.',
+        },
+        {
+          backgroundColor: '#E8FBF9',
+          image: (
+            <Image
+              source={require('./src/assets/onboarding/onboarding9.jpg')}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="도착역으로 길찾기 화면 예시"
+            />
+          ),
+          title: '도착역으로 길찾기',
+          subtitle: '도착역을 지정하면 최적 경로가 표시됩니다.',
+        },
+      ]}
+    />
+  );
+}
+
+
+/* ──────────────────────────────
+   Root Component
 ────────────────────────────── */
 const navTheme = {
   ...DefaultTheme,
-  colors: {
-    ...DefaultTheme.colors,
-    background: '#F9F9F9',
-  },
+  colors: { ...DefaultTheme.colors, background: '#F9F9F9' },
 };
 
 const AppContent = () => {
@@ -346,6 +513,8 @@ const AppContent = () => {
   const [fontsLoaded] = useFonts({
     NotoSansKR: require("./src/assets/fonts/NotoSansKR-VariableFont_wght.ttf"),
   });
+
+  const [showOnboarding, setShowOnboarding] = React.useState(true);
 
   if (isAuthLoading || !fontsLoaded) {
     return (
@@ -355,34 +524,23 @@ const AppContent = () => {
     );
   }
 
-
   return (
     <NavigationContainer theme={navTheme}>
-      <RootStack.Navigator>
-        {user ? (
-          <RootStack.Screen
-            name="AppTabs"
-            component={UserTabs}
-            options={{ headerShown: false }}
-          />
+      <RootStack.Navigator screenOptions={{ headerShown: false }}>
+        {showOnboarding ? (
+          <RootStack.Screen name="Onboarding">
+            {() => <InlineOnboarding onFinish={() => setShowOnboarding(false)} />}
+          </RootStack.Screen>
+        ) : user ? (
+          <RootStack.Screen name="UserTabs" component={UserTabs} />
         ) : (
-          <RootStack.Screen
-            name="AuthScreens"
-            component={AuthStackNavigator}
-            options={{ headerShown: false }}
-          />
+          <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
         )}
-        {/* PathFinder 스택을 RootStack에 정의 */}
-        <RootStack.Screen
-          name="PathFinderStack" // 이 이름으로 navigate 호출
-          component={PathFinderStackNavigator}
-          options={{ headerShown: false }} // 스택 자체의 헤더는 숨김 (내부 화면 헤더 사용)
-        />
+        <RootStack.Screen name="PathFinderStack" component={PathFinderStackNavigator} options={{ headerShown: false }} />
       </RootStack.Navigator>
     </NavigationContainer>
   );
 };
-
 
 export default function App() {
   useEffect(() => {
