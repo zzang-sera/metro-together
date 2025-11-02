@@ -288,7 +288,7 @@ const runPathSearch = useCallback(
       }
 
       const stepsText = steps.length ? steps.join("\n\n") : "세부 이동 안내가 없습니다.";
-      appendBot(`✅ ${depName} → ${arrName}\n⏱ 소요 시간: ${time}분 | 🔄 환승 ${transfers}회\n\n${stepsText}`);
+      appendBot(`✅ ${depName} → ${arrName}\n⏱ 소요 시간: ${time} | 🔄 환승 ${transfers}회\n\n${stepsText}`);
     } catch (err) {
       console.error("🚨 fetchSubwayPath error:", err);
       appendBot("⚠️ 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
@@ -369,10 +369,10 @@ const MessageBubble = ({ item }) => {
                         setFacilityType(it.key);
                         setMode("facilityAwait");
                         appendBot(
-                          it.key === "NT"
-                            ? "알림을 확인할 역명을 입력해주세요."
-                            : `${it.label.replace(" 위치", "")}를 확인할 역명을 입력해주세요.`
-                        );
+                      it.key === "NT"
+                        ? "알림을 확인할 역명을 입력해주세요."
+                        : it.label.replace(" 위치", "") + "를 확인할 역명을 입력해주세요."
+                    );
                       }}
                     >
                       <Text style={styles.menuItemText}>{it.label}</Text>
