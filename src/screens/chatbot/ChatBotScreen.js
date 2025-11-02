@@ -10,6 +10,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Image,
+  Linking, 
+  Alert
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
@@ -60,7 +62,10 @@ const FAQ_GROUPS = [
   {
     title: "실시간 지하철 정보",
     color: "#C8E6C9", // ✅ 수정됨 (명도 대비 8.79:1)
-    items: [{ key: "NT", label: "실시간 지하철 알림" }],
+    items: [
+      { key: "NT", label: "실시간 지하철 알림" },
+      { key: "CS", label: "불편 신고하기" },
+    ],
   },
 ];
 /* ---------------------- 유틸 ---------------------- */
@@ -105,7 +110,24 @@ export default function ChatBotScreen() {
   };
   const appendUser = (text) => append("user", { text });
   const appendBot = (text, isMap = false, mapProps) => append("bot", { text, isMap, mapProps });
+  const handleSendComplaint = () => {
+  const phoneNumber = "1577-1234";
+  const defaultBody = "지하철 이용 중 불편사항이 있습니다.\n(내용을 입력해주세요)";
+  const smsUrl = `sms:${phoneNumber}?body=${encodeURIComponent(defaultBody)}`;
 
+  Linking.canOpenURL(smsUrl)
+    .then((supported) => {
+      if (supported) {
+        Linking.openURL(smsUrl);
+      } else {
+        Alert.alert("문자 전송 불가", "이 기기에서 문자 기능을 지원하지 않습니다.");
+      }
+    })
+    .catch((err) => {
+      console.error("🚨 문자 전송 오류:", err);
+      Alert.alert("오류", "문자 앱을 열 수 없습니다.");
+    });
+};
   /* ---------------------- 실시간 API 훅 ---------------------- */
   const { data: apiData, loading: apiLoading, error: apiError } = useApiFacilities(
     currentStation,
@@ -338,6 +360,10 @@ const MessageBubble = ({ item }) => {
                         if (it.key === "ROUTE") {
                           appendBot("휠체어 이용자이신가요? (네 / 아니오)");
                           setMode("wheelchairAsk");
+                          return;
+                        }
+                        if (it.key === "CS") {
+                          handleSendComplaint();
                           return;
                         }
                         setFacilityType(it.key);
