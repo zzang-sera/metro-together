@@ -228,25 +228,37 @@ export default function ChatBotScreen() {
     append("menuButton", {});
   }, [apiData, apiError, apiLoading]);
 
-  /* ---------------------- 경로찾기 ---------------------- */
-  const runPathSearch = useCallback(async (start, end, opts = { wheelchair: false }) => {
-    appendBot(`🚇 ${start} → ${end} ${opts.wheelchair ? "🦽 휠체어 경로" : "최단경로"}를 탐색합니다...`);
-    setLoading(true);
-    try {
-      const data = await fetchSubwayPath(start, end, !!opts.wheelchair);
-      const dep = data?.routeSummary?.departure ?? start;
-      const arr = data?.routeSummary?.arrival ?? end;
-      const time = data?.routeSummary?.estimatedTime ?? "?";
-      const transfers = data?.routeSummary?.transfers ?? 0;
-      appendBot(`✅ ${dep} → ${arr}\n⏱ 소요 시간: ${time}분 | 🔄 환승 ${transfers}회`);
-    } catch {
-      appendBot("⚠️ 경로 탐색 중 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-      append("menuButton", {});
-    }
-  }, []);
+/* ---------------------- 경로찾기 ---------------------- */
+const runPathSearch = useCallback(async (start, end, opts = { wheelchair: false }) => {
+  // ✅ 출발역 = 도착역일 때 안내
+  if (normalizeStationName(start) === normalizeStationName(end)) {
+    appendBot("⚠️ 출발역과 도착역이 같습니다. 다른 역으로 입력해주세요.");
+    append("menuButton", {});
+    return;
+  }
 
+  appendBot(
+    `🚇 ${start} → ${end} ${opts.wheelchair ? "🦽 휠체어 경로" : "최단경로"}를 탐색합니다...`
+  );
+  setLoading(true);
+
+  try {
+    const data = await fetchSubwayPath(start, end, !!opts.wheelchair);
+    const dep = data?.routeSummary?.departure ?? start;
+    const arr = data?.routeSummary?.arrival ?? end;
+    const time = data?.routeSummary?.estimatedTime ?? "?";
+    const transfers = data?.routeSummary?.transfers ?? 0;
+
+    appendBot(
+      `✅ ${dep} → ${arr}\n⏱ 소요 시간: ${time}분 | 🔄 환승 ${transfers}회\n\n세부 경로는 지도에서 확인해주세요.`
+    );
+  } catch {
+    appendBot("⚠️ 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
+  } finally {
+    setLoading(false);
+    append("menuButton", {});
+  }
+}, []);
   /* ---------------------- 메시지 렌더링 ---------------------- */
   const MessageBubble = ({ item }) => {
     const avatarSize = responsiveWidth(40) + fontOffset * 1.5;
