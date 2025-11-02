@@ -18,12 +18,15 @@ import { responsiveWidth, responsiveHeight } from "../../utils/responsive";
 import { useFontSize } from "../../contexts/FontSizeContext";
 import { fetchSubwayPath } from "../pathfinder/PathFinderScreen";
 import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
+
+// ✅ 데이터 import
 import { getFacilityForStation } from "../../api/metro/elevEsLocal";
+import { getToiletsForStation } from "../../api/metro/toiletLocal";
+import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
 
-/* ---------------------- 메뉴 그룹 ---------------------- */
 const FAQ_GROUPS = [
   {
     title: "지하철 경로 안내",
@@ -47,7 +50,7 @@ const FAQ_GROUPS = [
   },
 ];
 
-/* ---------------------- 이미지 매핑 ---------------------- */
+/* ---------------------- 이미지 ---------------------- */
 function normalizeStationName(name) {
   return String(name || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
 }
@@ -103,14 +106,55 @@ export default function ChatBotScreen() {
     const title = titleMap[type] || "시설";
     const head = (title) => `【${title}】`;
 
-    if (type === "WC") {
-      return `${head(title)}\n이 시설은 아직 API 연결 중입니다.`;
+    if (type === "WC") return `${head(title)}\n이 시설은 아직 API 연결 중입니다.`;
+
+    // ✅ 일반 화장실
+    if (type === "TO") {
+      const rows = getToiletsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
+
+      const lines = rows.map((r, i) => {
+        const loc = r.desc
+          .replace(/·/g, "")
+          .replace(/출입구.*|운영시간.*|비상벨.*|CCTV.*/g, "")
+          .trim();
+        const hasBabyTable =
+          r.desc.includes("기저귀") ||
+          r.desc.includes("교환대") ||
+          r.desc.includes("기저귀교환대설치유무") ||
+          r.desc.includes("기저귀교환대 있음");
+        const clean = loc
+          .replace(/\s+/g, " ")
+          .replace(/^[·\s]+|[·\s]+$/g, "")
+          .replace(/\s{2,}/g, " ");
+        const status = r.status || "정상";
+        return `#${i + 1} ${clean || "위치 정보 없음"} (${status})${
+          hasBabyTable ? " 기저귀교환대 있음" : ""
+        }`;
+      });
+      return `${head(title)}\n${lines.join("\n")}`;
     }
 
-    const rows = getFacilityForStation(stationName, type);
-    if (!rows.length) {
-      return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
+    if (type === "DT") {
+      const rows = getDisabledToiletsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
+
+      const lines = rows.map((r, i) => {
+        const loc = r.desc.replace(/·/g, " ").replace(/출입구.*|운영시간.*/g, "").trim();
+        const hasBabyTable = r.desc.includes("기저귀교환대 있음");
+        const status = r.status || "정상";
+        return `#${i + 1} ${loc || "위치 정보 없음"} (${status})${
+          hasBabyTable ? " 👶 기저귀교환대 있음" : ""
+        }`;
+      });
+
+      return `${head(title)}\n${lines.join("\n")}`;
     }
+
+    // ✅ 기타 시설
+    const rows = getFacilityForStation(stationName, type);
+    if (!rows.length)
+      return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
 
     const lines = rows.map(
       (r, i) =>
@@ -120,13 +164,12 @@ export default function ChatBotScreen() {
     return `${head(title)}\n${lines.join("\n\n")}`;
   }
 
-  /* ---------------------- 지도 출력 ---------------------- */
   const runFacilityMap = async (stationName, type) => {
     const imageUrl = getMapImageUrlFromJson(stationName);
     appendBot("", true, { stationName, imageUrl, type });
     const listText = formatFacilityList({ type, stationName });
     appendBot(listText);
-    append("menuButton", {}); // ✅ 메뉴 다시보기 버튼
+    append("menuButton", {});
   };
 
   /* ---------------------- 경로 탐색 ---------------------- */
@@ -136,53 +179,21 @@ export default function ChatBotScreen() {
       setLoading(true);
       try {
         const data = await fetchSubwayPath(start, end, !!opts.wheelchair);
-
-        const depRaw = data?.routeSummary?.departure ?? data?.dep ?? data?.start ?? start;
-        const arrRaw = data?.routeSummary?.arrival ?? data?.arr ?? data?.end ?? end;
-
-        const clean = (s) => String(s || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
-        const depName = clean(depRaw) || start;
-        const arrName = clean(arrRaw) || end;
-
-        const time =
-          data?.routeSummary?.estimatedTime ?? data?.totalTime ?? data?.duration ?? data?.time ?? "?";
-        const transfers =
-          data?.routeSummary?.transfers ?? data?.transfers ?? data?.transferCount ?? 0;
-
-        const sf = data?.stationFacilities || {};
-        const ti = Array.isArray(data?.transferInfo) ? data.transferInfo : [];
-        const linesToText = (v) =>
-          Array.isArray(v) ? v.join("\n") : (typeof v === "string" ? v : "");
-
-        const steps = [];
-        if (sf?.departure?.station) {
-          const depDesc = linesToText(sf.departure.displayLines) || sf.departure.text || "";
-          steps.push(`🚉 출발: ${sf.departure.station}\n${depDesc}`.trim());
-        }
-        for (const info of ti) {
-          const idx = info?.index ?? steps.length;
-          const desc =
-            linesToText(info?.displayLines) ||
-            info?.text ||
-            (info?.fromLine && info?.toLine ? `${info.fromLine} → ${info.toLine}` : "");
-          steps.push(`🚉 ${idx}회 환승: ${info?.station || ""}\n${desc}`.trim());
-        }
-        if (sf?.arrival?.station) {
-          const arrDesc = linesToText(sf.arrival.displayLines) || sf.arrival.text || "";
-          steps.push(`🚉 도착: ${sf.arrival.station}\n${arrDesc}`.trim());
-        }
-
-        const stepsText = steps.length ? steps.join("\n\n") : "세부 이동 안내가 없습니다.";
-        appendBot(`✅ ${depName} → ${arrName}\n⏱ 소요 시간: ${time}분 | 🔄 환승 ${transfers}회\n\n${stepsText}`);
-      } catch (err) {
-        console.error("🚨 fetchSubwayPath error:", err);
+        const dep = data?.routeSummary?.departure ?? start;
+        const arr = data?.routeSummary?.arrival ?? end;
+        const time = data?.routeSummary?.estimatedTime ?? "?";
+        const transfers = data?.routeSummary?.transfers ?? 0;
+        appendBot(
+          `✅ ${dep} → ${arr}\n⏱ 소요 시간: ${time}분 | 🔄 환승 ${transfers}회\n\n세부 경로는 지도에서 확인해주세요.`
+        );
+      } catch {
         appendBot("⚠️ 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
       } finally {
         setLoading(false);
-        append("menuButton", {}); // ✅ 메뉴 다시보기 버튼
+        append("menuButton", {});
       }
     },
-    [appendBot]
+    []
   );
 
   /* ---------------------- 메시지 렌더 ---------------------- */
@@ -334,7 +345,6 @@ export default function ChatBotScreen() {
     appendBot("하단 메뉴에서 항목을 선택해주세요.");
   };
 
-  /* ---------------------- 렌더 ---------------------- */
   return (
     <KeyboardAvoidingView
       style={styles.container}

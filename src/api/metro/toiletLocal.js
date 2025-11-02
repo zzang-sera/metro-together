@@ -46,6 +46,12 @@ function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
 
+  const hasBabyTable =
+    raw["기저귀교환대설치유무-남자화장실"] === "Y" ||
+    raw["기저귀교환대설치유무-남자장애인화장실"] === "Y" ||
+    raw["기저귀교환대설치유무-여자화장실"] === "Y" ||
+    raw["기저귀교환대설치유무-여자장애인화장실"] === "Y";
+
   return {
     seq: String(raw[K.seq] ?? ""),
     line: String(raw[K.line] ?? "").trim(),
@@ -60,6 +66,7 @@ function toPretty(raw) {
     femaleToilet: String(raw[K.femaleToilet] ?? "").trim(),
     cctv: String(raw[K.cctv] ?? "").trim(),
     bell: String(raw[K.bell] ?? "").trim(),
+    hasBabyTable, 
   };
 }
 
@@ -92,6 +99,7 @@ export function prettifyToilets(rows, fallbackLine = "") {
       r.gate ? `출입구: ${r.gate}` : "",
       r.floor ? `${r.floor}층` : "",
       r.openTime ? `운영시간: ${r.openTime}` : "",
+      r.hasBabyTable ? "기저귀교환대 있음" : "", 
       r.bell === "Y" ? "비상벨 있음" : "",
       r.cctv === "Y" ? "입구 CCTV" : "",
     ]
