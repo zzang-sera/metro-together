@@ -243,7 +243,7 @@ const PathFinderScreen = () => {
           <TouchableOpacity onPress={swapStations} style={styles.swapButton}>
             <MaterialCommunityIcons
               name="swap-vertical"
-              size={40 + fontOffset}
+              size={24 + fontOffset / 2}
               color="#17171B"
             />
           </TouchableOpacity>
