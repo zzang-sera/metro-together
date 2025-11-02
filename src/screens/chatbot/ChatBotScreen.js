@@ -19,12 +19,14 @@ import { useFontSize } from "../../contexts/FontSizeContext";
 import { fetchSubwayPath } from "../pathfinder/PathFinderScreen";
 import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
 
-// ✅ 데이터 import
+// ✅ API imports
 import { getFacilityForStation } from "../../api/metro/elevEsLocal";
 import { getToiletsForStation } from "../../api/metro/toiletLocal";
 import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
 import { getWheelchairLiftsForStation } from "../../api/metro/wheelchairLiftLocal";
-import { getAudioBeaconsForStation } from "../../api/metro/voiceLocal"; // ✅ 새로 추가됨
+import { getAudioBeaconsForStation } from "../../api/metro/voiceLocal";
+import { getNursingRoomsForStation } from "../../api/metro/nursingRoomLocal"; // ✅ 추가됨
+
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
@@ -45,8 +47,8 @@ const FAQ_GROUPS = [
       { key: "DT", label: "장애인 화장실 위치" },
       { key: "WL", label: "휠체어 리프트 위치" },
       { key: "WC", label: "휠체어 급속충전 위치" },
-      { key: "VO", label: "음성유도기 위치" }, // ✅ 연결됨
-      { key: "NU", label: "수유실 위치" },
+      { key: "VO", label: "음성유도기 위치" },
+      { key: "NU", label: "수유실 위치" }, // ✅ 수유실 추가
       { key: "LO", label: "보관함 위치" },
     ],
   },
@@ -108,19 +110,54 @@ export default function ChatBotScreen() {
     const title = titleMap[type] || "시설";
     const head = (title) => `【${title}】`;
 
-    if (type === "WC") return `${head(title)}\n이 시설은 아직 API 연결 중입니다.`;
+    // ✅ 수유실
+    if (type === "NU") {
+      const rows = getNursingRoomsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역에는 수유실 정보가 없습니다.`;
+
+      const lines = rows.map((r, i) => {
+        // 줄바꿈 포함된 포맷: ①위치 ②비품
+        const details = r.desc
+          .split("·")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const firstLine = details[0] || "위치 정보 없음";
+        const others = details.slice(1).join(" · ");
+        return `#${i + 1} ${firstLine}${others ? `\n${others}` : ""}`;
+      });
+
+      return `${head(title)}\n${lines.join("\n\n")}`;
+    }
+
+    // ✅ 음성유도기
+    if (type === "VO") {
+      const rows = getAudioBeaconsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역에는 음성유도기 정보가 없습니다.`;
+      const lines = rows.map((r, i) => `#${i + 1} ${r.desc.replace(/·/g, " ").trim()}`);
+      return `${head(title)}\n${lines.join("\n")}`;
+    }
+
+    // ✅ 휠체어 리프트
+    if (type === "WL") {
+      const rows = getWheelchairLiftsForStation(stationName);
+      if (!rows.length) return `${head(title)}\n${stationName}역에는 휠체어 리프트 정보가 없습니다.`;
+      const lines = rows.map((r, i) => {
+        const parts = r.desc.split(/[·\\n]/).map((p) => p.trim()).filter(Boolean);
+        const formatted = parts.map((p) => `   • ${p}`).join("\n");
+        return `#${i + 1}\n${formatted}`;
+      });
+      return `${head(title)}\n${lines.join("\n\n")}`;
+    }
 
     // ✅ 일반 화장실
     if (type === "TO") {
       const rows = getToiletsForStation(stationName);
       if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
-
       const lines = rows.map((r, i) => {
         const loc = r.desc.replace(/·/g, "").replace(/출입구.*|운영시간.*|비상벨.*|CCTV.*/g, "").trim();
-        const hasBabyTable =
-          r.desc.includes("기저귀") || r.desc.includes("교환대") || r.desc.includes("기저귀교환대 있음");
-        const clean = loc.replace(/\s+/g, " ").replace(/^[·\s]+|[·\s]+$/g, "");
-        return `#${i + 1} ${clean || "위치 정보 없음"}${hasBabyTable ? " (기저귀교환대 있음)" : ""}`;
+        const hasBaby = r.desc.includes("기저귀교환대 있음");
+        const clean = loc.replace(/\s+/g, " ").trim();
+        return `#${i + 1} ${clean || "위치 정보 없음"}${hasBaby ? " (기저귀교환대 있음)" : ""}`;
       });
       return `${head(title)}\n${lines.join("\n")}`;
     }
@@ -130,48 +167,19 @@ export default function ChatBotScreen() {
       const rows = getDisabledToiletsForStation(stationName);
       if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
       const lines = rows.map((r, i) => {
-        const loc = r.desc.replace(/·/g, " ").replace(/출입구.*|운영시간.*/g, "").trim();
-        const hasBabyTable = r.desc.includes("기저귀교환대 있음");
-        return `#${i + 1} ${loc || "위치 정보 없음"}${hasBabyTable ? " (기저귀교환대 있음)" : ""}`;
+        const loc = r.desc.replace(/·/g, " ").trim();
+        const hasBaby = r.desc.includes("기저귀교환대 있음");
+        return `#${i + 1} ${loc}${hasBaby ? " (기저귀교환대 있음)" : ""}`;
       });
       return `${head(title)}\n${lines.join("\n")}`;
     }
 
-    // ✅ 휠체어 리프트
-    if (type === "WL") {
-      const rows = getWheelchairLiftsForStation(stationName);
-      if (!rows.length) return `${head(title)}\n${stationName}역에는 휠체어 리프트 정보가 없습니다.`;
-      const lines = rows.map((r, i) => {
-        const parts = r.desc
-          .split(/[·\\n]/)
-          .map((p) => p.trim())
-          .filter(Boolean)
-          .filter((p) => !/정상/.test(p));
-        const formatted = parts.map((p) => `   • ${p}`).join("\n");
-        return `#${i + 1}\n${formatted}`;
-      });
-      return `${head(title)}\n${lines.join("\n\n")}`;
-    }
-
-    // ✅ 음성유도기 (새로 추가됨)
-    if (type === "VO") {
-      const rows = getAudioBeaconsForStation(stationName);
-      if (!rows.length) return `${head(title)}\n${stationName}역에는 음성유도기 정보가 없습니다.`;
-
-      const lines = rows.map(
-        (r, i) => `#${i + 1} ${r.desc.replace(/·/g, " ").trim() || "위치 정보 없음"}`
-      );
-      return `${head(title)}\n${lines.join("\n")}`;
-    }
-
-    // ✅ 기타 시설
+    // ✅ 기타 시설 (엘리베이터, 에스컬레이터 등)
     const rows = getFacilityForStation(stationName, type);
     if (!rows.length) return `${head(title)}\n${stationName}역의 ${title} 정보가 없습니다.`;
-
     const lines = rows.map(
       (r, i) => `#${i + 1} ${stationName}${r.line ? ` · ${r.line}` : ""}\n   • ${r.desc}`
     );
-
     return `${head(title)}\n${lines.join("\n\n")}`;
   }
 
@@ -210,6 +218,7 @@ export default function ChatBotScreen() {
   /* ---------------------- 메시지 렌더 ---------------------- */
   const MessageBubble = ({ item }) => {
     const avatarSize = responsiveWidth(40) + fontOffset * 1.5;
+    const isBot = item.role === "bot";
 
     if (item.role === "system")
       return (
@@ -243,15 +252,7 @@ export default function ChatBotScreen() {
       return (
         <View style={{ flexDirection: "row", paddingHorizontal: 16, marginBottom: 12 }}>
           <View style={{ width: avatarSize, marginRight: 8 }} />
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "#fff",
-              borderRadius: 18,
-              padding: 10,
-              elevation: 2,
-            }}
-          >
+          <View style={{ flex: 1, backgroundColor: "#fff", borderRadius: 18, padding: 10, elevation: 2 }}>
             {FAQ_GROUPS.map((group) => (
               <View key={group.title} style={{ marginBottom: 12 }}>
                 <View
@@ -294,7 +295,6 @@ export default function ChatBotScreen() {
         </View>
       );
 
-    const isBot = item.role === "bot";
     if (!isBot)
       return (
         <View style={[styles.messageRow, styles.userMessageRow]}>
@@ -307,14 +307,7 @@ export default function ChatBotScreen() {
     return (
       <View style={[styles.messageRow, styles.botMessageRow]}>
         <View style={styles.avatarContainer}>
-          <Image
-            source={BOT_AVATAR}
-            style={{
-              width: avatarSize,
-              height: avatarSize,
-              borderRadius: avatarSize / 2,
-            }}
-          />
+          <Image source={BOT_AVATAR} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} />
           <Text style={styles.botName}>함께타요</Text>
         </View>
         <View style={styles.botBubbleContainer}>
