@@ -32,6 +32,7 @@ import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
 import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
 import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
+import OnboardingScreen from './src/screens/intro/OnboardingScreen';
 
 // Navigators 정의
 const RootStack = createStackNavigator();
@@ -101,6 +102,7 @@ const MyPageStackNavigator = () => {
       }}
     >
       <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: "내 정보" }} />
+      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: "회원관리" }} />
       <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: "즐겨찾기" }} />
       <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: "이용약관" }} />
