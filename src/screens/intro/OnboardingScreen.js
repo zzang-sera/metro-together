@@ -10,7 +10,7 @@ const IMG_W = Math.min(320, W * 0.82);
 const IMG_H = Math.min(IMG_W * 1.95, H * 0.62);
 const MINT = "#14CAC9";
 
-const titleStyle = { fontFamily: "NotoSansKR", fontWeight: "700", color: "#17171B" };
+const titleStyle = { fontFamily: "NotoSansKR", fontWeight: "700", color: "#17171B",   marginTop: -50};
 const subStyle = { fontFamily: "NotoSansKR", fontWeight: "700", color: "#17171B", lineHeight: 22 };
 
 const Dot = ({ selected }) => (
@@ -32,13 +32,13 @@ const TextBtn = ({ label, onPress }) => (
 );
 
 // onFinish 콜백을 App.js에서 넘겨받아 AsyncStorage 플래그를 세팅/종료
-export default function OnboardingScreen() {
+export default function OnboardingScreen({ onFinish }) {
   const navigation = useNavigation(); 
 
   const handleFinish = () => {
-    navigation.goBack(); 
-  };
-
+      if (onFinish) onFinish(); 
+      else navigation.goBack();
+    };
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
     <Onboarding
@@ -46,7 +46,11 @@ export default function OnboardingScreen() {
       onSkip={handleFinish}
       titleStyles={titleStyle}
       subTitleStyles={subStyle}
-      containerStyles={{ paddingHorizontal: 20 }}
+      containerStyles={{ 
+        paddingHorizontal: 20,
+        paddingTop: 5,     // 상단 여백
+        paddingBottom: 20,   // 하단 여백
+       }}
       bottomBarColor="#FFFFFF"
       showDone
       showNext
@@ -191,9 +195,25 @@ export default function OnboardingScreen() {
           subtitle:
             "출발역을 이미 지정한 상태에서 도착역을 선택하면,\n두 역 사이의 이동 경로가 표시됩니다.",
         },
+        {
+          backgroundColor: "#F2FFFD",
+          image: (
+            <Image
+              source={require("../../assets/onboarding/onboarding10_chatbot.jpg")}
+              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
+              resizeMode="contain"
+              accessible
+              accessibilityLabel="챗봇 화면 예시"
+            />
+          ),
+          title: "지하철 챗봇 서비스",
+          subtitle:
+            "역 시설 정보, 화장실 위치, 승강기 상태 등 궁금한 점을 챗봇에게 물어보세요.\n실시간으로 정보를 받아 대화하듯 쉽게 확인할 수 있습니다.",
+        },
       ]}
     />
     </SafeAreaView>
 
   );
 }
+

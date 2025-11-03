@@ -56,7 +56,6 @@ const WelcomeScreen = ({ navigation }) => {
         </View>
 
         <View style={styles.buttonContainer}>
-          {/* ... (다른 버튼들은 동일) ... */}
           <CustomButton
             type="feature"
             title="가까운 역 안내"
