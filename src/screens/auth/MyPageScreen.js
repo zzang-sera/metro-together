@@ -25,7 +25,7 @@ const MyPageScreen = () => {
   };
 
   const handleUsageGuidePress = () => {
-navigation.navigate("OnboardingModal");
+    navigation.navigate("Onboarding");
   };
 
   return (

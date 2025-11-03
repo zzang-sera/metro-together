@@ -1,7 +1,7 @@
 // App.js
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image, Dimensions, Text, TouchableOpacity } from 'react-native';
-import { NavigationContainer, useNavigation, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, DefaultTheme, getFocusedRouteNameFromRoute  } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -250,41 +250,51 @@ const UserTabs = () => {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        ...commonTabOptions,
-        headerTitleStyle: { ...commonTabOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        tabBarStyle,
-        tabBarHideOnKeyboard: true,
-        tabBarLabelStyle: {
-          fontSize: responsiveFontSize(16) + fontOffset,
-          fontFamily: "NotoSansKR",
-          fontWeight: "700",
-          marginBottom: 5,
-        },
-        tabBarIcon: ({ focused, size }) => {
-          const iconColor = focused ? "#14CAC9" : "gray";
-          const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
-          if (route.name === "챗봇") {
-            return (
-              <Image
-                source={require("./src/assets/brand-icon.png")}
-                resizeMode="contain"
-                style={{
-                  width: 70 + fontOffset * 2,
-                  height: 70 + fontOffset * 2,
-                  marginBottom: 15,
-                }}
-              />
-            );
-          }
-          let iconName;
-          if (route.name === "홈") iconName = focused ? "home" : "home-outline";
-          else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
-          else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
-          else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
-          return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
-        },
-      })}
+      screenOptions={({ route }) => {
+        // ✅ 현재 활성 route 감지
+        const routeName = getFocusedRouteNameFromRoute(route) ?? "";
+
+        // ✅ 숨길 스크린 목록
+        const hideTabScreens = ["Onboarding"];
+
+        // ✅ 기본 스타일
+        const tabBarVisible = !hideTabScreens.includes(routeName);
+        const baseTabBarStyle = {
+          backgroundColor: "#F9F9F9",
+          elevation: 0,
+          shadowOpacity: 0,
+          borderTopWidth: 0,
+          paddingBottom: Math.max(8, insets.bottom),
+          height: 70 + Math.max(8, insets.bottom) + fontOffset,
+        };
+
+        return {
+          ...commonTabOptions,
+          headerTitleStyle: {
+            ...commonTabOptions.headerTitleStyle,
+            fontSize: responsiveFontSize(18) + fontOffset,
+          },
+          // ✅ Onboarding일 때만 탭 숨기기
+          tabBarStyle: tabBarVisible ? baseTabBarStyle : { display: "none" },
+          tabBarHideOnKeyboard: true,
+          tabBarLabelStyle: {
+            fontSize: responsiveFontSize(16) + fontOffset,
+            fontFamily: "NotoSansKR",
+            fontWeight: "700",
+            marginBottom: 5,
+          },
+          tabBarIcon: ({ focused, size }) => {
+            const iconColor = focused ? "#14CAC9" : "gray";
+            const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
+            let iconName;
+            if (route.name === "홈") iconName = focused ? "home" : "home-outline";
+            else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
+            else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
+            else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
+            return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
+          },
+        };
+      }}
     >
       <Tab.Screen name="홈" component={HomeStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="주변" component={NearbyStackNavigator} options={{ headerShown: false }} />
@@ -292,6 +302,7 @@ const UserTabs = () => {
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ headerShown: false }} />
     </Tab.Navigator>
+
   );
 };
 
@@ -344,162 +355,6 @@ const TextBtn = ({ label, onPress }) => (
   </TouchableOpacity>
 );
 
-function InlineOnboarding({ onFinish }) {
-  const titleS = {
-    fontFamily: 'NotoSansKR',
-    fontWeight: '700',
-    color: '#17171B',
-    marginTop: -40,
-  };
-  const subS = { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B', lineHeight: 22 };
-
-  return (
-    <Onboarding
-      onDone={onFinish}
-      onSkip={onFinish}
-      titleStyles={titleS}
-      subTitleStyles={subS}
-      containerStyles={{ paddingHorizontal: 20 }}
-      bottomBarColor="#FFFFFF"
-      showDone
-      showNextButton
-      showSkip
-      NextButtonComponent={(props) => <TextBtn label="다음" {...props} />}
-      SkipButtonComponent={(props) => <TextBtn label="건너뛰기" {...props} />}
-      DoneButtonComponent={(props) => <TextBtn label="시작하기" {...props} />}
-      DotComponent={Dot}
-      pages={[
-        {
-          backgroundColor: '#FFFFFF',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding1.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="시작하기 화면 예시"
-            />
-          ),
-          title: '시작하기',
-          subtitle:
-            '이메일 또는 Google로 가입할 수 있어요.\n가입하면 즐겨찾기·챗봇 기능을 사용할 수 있습니다.\n비회원도 앱 기능 대부분을 이용할 수 있어요.',
-        },
-        {
-          backgroundColor: '#F2FFFD',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding2.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="개인설정 화면 예시"
-            />
-          ),
-          title: '개인설정',
-          subtitle: '글자 크기를 조절해 가독성을 높이고,\n즐겨찾기한 역을 한눈에 확인하세요.',
-        },
-        {
-          backgroundColor: '#E8FBF9',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding3.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="가까운 역 안내 화면 예시"
-            />
-          ),
-          title: '가까운 역 안내',
-          subtitle: '현재 위치 기준 가까운 역을 자동으로 보여줍니다.\n거리와 노선 배지를 함께 확인하세요.',
-        },
-        {
-          backgroundColor: '#F2FFFD',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding4.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="역 검색 화면 예시"
-            />
-          ),
-          title: '원하는 역 검색',
-          subtitle: '역 이름을 입력하면 즉시 결과가 나타납니다.\n선택해 상세 정보 또는 길찾기를 진행하세요.',
-        },
-        {
-          backgroundColor: '#E8FBF9',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding5.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="역 선택 시 메뉴 예시"
-            />
-          ),
-          title: '역 선택 시 메뉴',
-          subtitle: '① 역 정보 보기  ② 출발역으로 길찾기  ③ 도착역으로 길찾기',
-        },
-        {
-          backgroundColor: '#F2FFFD',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding6.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="지하철 최단 경로 화면 예시"
-            />
-          ),
-          title: '지하철 최단 경로',
-          subtitle: '배리어프리 경로로 안내합니다.\n소요 시간·환승 횟수와 함께 상세 단계가 제공돼요.',
-        },
-        {
-          backgroundColor: '#E8FBF9',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding7.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="역 정보 보기 화면 예시"
-            />
-          ),
-          title: '역 정보 보기',
-          subtitle: '엘리베이터·에스컬레이터·화장실·리프트 위치 확인.\n자주 쓰는 역은 즐겨찾기에 추가하세요.',
-        },
-        {
-          backgroundColor: '#F2FFFD',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding8.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="출발역으로 길찾기 화면 예시"
-            />
-          ),
-          title: '출발역으로 길찾기',
-          subtitle: '출발역 지정 후, 도착역을 선택하면 경로가 계산돼요.',
-        },
-        {
-          backgroundColor: '#E8FBF9',
-          image: (
-            <Image
-              source={require('./src/assets/onboarding/onboarding9.jpg')}
-              style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
-              resizeMode="contain"
-              accessible
-              accessibilityLabel="도착역으로 길찾기 화면 예시"
-            />
-          ),
-          title: '도착역으로 길찾기',
-          subtitle: '도착역을 지정하면 최적 경로가 표시됩니다.',
-        },
-      ]}
-    />
-  );
-}
 
 
 /* ──────────────────────────────
@@ -529,25 +384,18 @@ const AppContent = () => {
   return (
     <NavigationContainer theme={navTheme}>
       <RootStack.Navigator screenOptions={{ headerShown: false }}>
-        {showOnboarding ? (
-          <RootStack.Screen name="Onboarding">
-            {() => <InlineOnboarding onFinish={() => setShowOnboarding(false)} />}
-          </RootStack.Screen>
-        ) : user ? (
-          <RootStack.Screen name="UserTabs" component={UserTabs} />
-        ) : (
-          <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
-        )}
-
-<RootStack.Screen
-          name="OnboardingModal"
-          component={OnboardingScreen}
-          options={{
-            presentation: "modal", // ✅ 모달 스타일
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+      {showOnboarding ? (
+        <RootStack.Screen
+          name="Onboarding"
+          options={{ headerShown: false }}
+          children={() => <OnboardingScreen onFinish={() => setShowOnboarding(false)} />} // ✅ 정확한 children prop
         />
+      ) : user ? (
+        <RootStack.Screen name="UserTabs" component={UserTabs} />
+      ) : (
+        <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
+      )}
+
         <RootStack.Screen
           name="PathFinderStack"
           component={PathFinderStackNavigator}
