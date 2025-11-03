@@ -32,6 +32,7 @@ import FavoritesScreen from './src/screens/favorites/FavoritesScreen';
 import PolicyScreen from './src/screens/policy/PolicyScreen';
 import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
 import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
+import OnboardingScreen from './src/screens/intro/OnboardingScreen';
 
 // Navigators 정의
 const RootStack = createStackNavigator();
@@ -101,6 +102,7 @@ const MyPageStackNavigator = () => {
       }}
     >
       <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: "내 정보" }} />
+      <MyPageStack.Screen name="Onboarding" component={OnboardingScreen} options={{ headerShown: false }} />
       <MyPageStack.Screen name="AccountManagement" component={AccountManagementScreen} options={{ title: "회원관리" }} />
       <MyPageStack.Screen name="Favorites" component={FavoritesScreen} options={{ title: "즐겨찾기" }} />
       <MyPageStack.Screen name="Policy" component={PolicyScreen} options={{ title: "이용약관" }} />
@@ -349,7 +351,7 @@ function InlineOnboarding({ onFinish }) {
     color: '#17171B',
     marginTop: -40,
   };
-  const subS = { fontFamily: 'NotoSansKR', fontWeight: '500', color: '#17171B', lineHeight: 22 };
+  const subS = { fontFamily: 'NotoSansKR', fontWeight: '700', color: '#17171B', lineHeight: 22 };
 
   return (
     <Onboarding
@@ -536,7 +538,21 @@ const AppContent = () => {
         ) : (
           <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
         )}
-        <RootStack.Screen name="PathFinderStack" component={PathFinderStackNavigator} options={{ headerShown: false }} />
+
+<RootStack.Screen
+          name="OnboardingModal"
+          component={OnboardingScreen}
+          options={{
+            presentation: "modal", // ✅ 모달 스타일
+            headerShown: false,
+            gestureEnabled: true,
+          }}
+        />
+        <RootStack.Screen
+          name="PathFinderStack"
+          component={PathFinderStackNavigator}
+          options={{ headerShown: false }}
+        />
       </RootStack.Navigator>
     </NavigationContainer>
   );

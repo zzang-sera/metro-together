@@ -25,7 +25,7 @@ const MyPageScreen = () => {
   };
 
   const handleUsageGuidePress = () => {
-    Alert.alert("알림", "현재 개발 중인 기능입니다.");
+navigation.navigate("OnboardingModal");
   };
 
   return (
