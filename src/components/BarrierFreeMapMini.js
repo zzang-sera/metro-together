@@ -24,19 +24,6 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     LO: "보관함",
   };
 
-  // ✅ 좌표 필터링
-  useEffect(() => {
-    const clean = normalizeName(stationName);
-    const filtered = Array.isArray(stationCoords)
-      ? stationCoords.filter(
-          (p) =>
-            normalizeName(p.station) === clean &&
-            String(p.type).toUpperCase() === type.toUpperCase()
-        )
-      : [];
-    setCoords(filtered);
-  }, [stationName, type]);
-
   // ✅ 이미지 크기 불러오기
   useEffect(() => {
     if (typeof imageUrl !== "string" || !/^https?:\/\//.test(imageUrl)) {

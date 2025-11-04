@@ -292,7 +292,7 @@ export default function BarrierFreeMapScreen() {
             <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
               {coords.map((p, i) => {
                 const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
-                const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y;
+                const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y+20;
                 return <BubbleMarker key={i} cx={cx} cy={cy} type={p.type} />;
               })}
             </Svg>
