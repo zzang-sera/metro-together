@@ -223,7 +223,12 @@ const GuestTabs = () => {
             e.preventDefault();
             Alert.alert("로그인 필요", "로그인이 필요합니다.", [
               { text: "취소", style: "cancel" },
-              { text: "확인", onPress: () => navigation.getParent()?.navigate("Welcome") },
+              { 
+                text: "확인",
+                onPress: () =>
+                navigation.getParent()?.navigate("AuthScreens", {
+              screen: "Welcome",}),
+              },
             ]);
           },
         }}
@@ -274,7 +279,6 @@ const UserTabs = () => {
             ...commonTabOptions.headerTitleStyle,
             fontSize: responsiveFontSize(18) + fontOffset,
           },
-          // ✅ Onboarding일 때만 탭 숨기기
           tabBarStyle: tabBarVisible ? baseTabBarStyle : { display: "none" },
           tabBarHideOnKeyboard: true,
           tabBarLabelStyle: {
@@ -283,15 +287,28 @@ const UserTabs = () => {
             fontWeight: "700",
             marginBottom: 5,
           },
-          tabBarIcon: ({ focused, size }) => {
-            const iconColor = focused ? "#14CAC9" : "gray";
-            const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
-            let iconName;
-            if (route.name === "홈") iconName = focused ? "home" : "home-outline";
-            else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
-            else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
-            else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
-            return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
+        tabBarIcon: ({ focused, size }) => {
+          const iconColor = focused ? "#14CAC9" : "gray";
+          const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
+          if (route.name === "챗봇") {
+            return (
+              <Image
+                source={require("./src/assets/brand-icon.png")}
+                resizeMode="contain"
+                style={{
+                  width: 70 + fontOffset * 2,
+                  height: 70 + fontOffset * 2,
+                  marginBottom: 15,
+                }}
+              />
+            );
+          }
+          let iconName;
+          if (route.name === "홈") iconName = focused ? "home" : "home-outline";
+          else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
+          else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
+          else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
+          return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
           },
         };
       }}
