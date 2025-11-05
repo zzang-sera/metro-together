@@ -1,10 +1,6 @@
-// ✅ src/api/metro/nursingRoomLocal.js
-// Source:
-//   src/assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json
 
 import rawJson from "../../assets/metro-data/metro/babyroom/서울교통공사_수유실현황_20250924.json";
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -23,12 +19,11 @@ function pickArray(any) {
 function sanitizeName(s = "") {
   if (typeof s !== "string") return "";
   return s
-    .replace(/\s*\(\s*\d+\s*호선\s*\)\s*$/g, "") // (7호선) 제거
-    .replace(/역$/, "") // “역” 제거
+    .replace(/\s*\(\s*\d+\s*호선\s*\)\s*$/g, "") 
+    .replace(/역$/, "") 
     .trim();
 }
 
-/* ---------------------- 키 매핑 ---------------------- */
 const K = {
   seq: "연번",
   line: "호선",
@@ -40,7 +35,6 @@ const K = {
   table: "비품(탁자)",
 };
 
-/* ---------------------- 변환 ---------------------- */
 function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
@@ -58,7 +52,6 @@ function toPretty(raw) {
   };
 }
 
-/* ---------------------- 인덱스 ---------------------- */
 const RAW_ROWS = pickArray(rawJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
@@ -69,7 +62,6 @@ for (const r of PRETTY) {
   INDEX_BY_NAME.set(r.stationName, arr);
 }
 
-/* ---------------------- 공개 API ---------------------- */
 export function getNursingRoomsByName(stationName) {
   const k = sanitizeName(stationName || "");
   if (!k) return [];

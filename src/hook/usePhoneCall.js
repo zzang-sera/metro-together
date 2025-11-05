@@ -2,8 +2,7 @@ import { useCallback } from "react";
 import { Linking, Alert } from "react-native";
 
 /**
- * 전화번호를 받아 전화앱을 여는 훅
- * @param {string} defaultNumber 기본 전화번호
+ * @param {string} defaultNumber 
  */
 export function usePhoneCall(defaultNumber) {
   const makeCall = useCallback(async (number) => {

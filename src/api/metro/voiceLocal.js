@@ -1,8 +1,6 @@
-// ✅ src/api/metro/voiceLocal.js
 import voiceJson from "../../assets/metro-data/metro/voice/서울교통공사 지하철 시각장애인 음성유도기 설치 위치 정보_20250812.json";
 import stationJson from "../../assets/metro-data/metro/station/data-metro-station-1.0.0.json";
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (any?.DATA && Array.isArray(any.DATA)) return any.DATA;
@@ -15,12 +13,10 @@ function pickArray(any) {
   return [];
 }
 
-// "신설동(1)" → "신설동"
 function sanitizeName(name = "") {
   return String(name).replace(/\(.*\)/g, "").trim();
 }
 
-/* ---------------------- 데이터 정규화 ---------------------- */
 const RAW = pickArray(voiceJson);
 const PRETTY = RAW.map((r) => ({
   seq: String(r["연번"] || ""),
@@ -30,7 +26,6 @@ const PRETTY = RAW.map((r) => ({
   location: String(r["설치위치"] || ""),
 }));
 
-/* ---------------------- 인덱스 ---------------------- */
 const INDEX_BY_NAME = new Map();
 const INDEX_BY_EXT = new Map();
 
@@ -47,7 +42,6 @@ for (const r of PRETTY) {
   }
 }
 
-/* ---------------------- stationCode → 외부역번호 ---------------------- */
 const ST_ROWS = pickArray(stationJson);
 const MAP_STCODE_TO_EXT = new Map();
 for (const s of ST_ROWS) {
@@ -56,12 +50,10 @@ for (const s of ST_ROWS) {
   if (stCode && ext) MAP_STCODE_TO_EXT.set(String(stCode), String(ext));
 }
 
-/* ---------------------- 메인 함수 ---------------------- */
 export function getAudioBeaconsForStation(stationName, line = "", stationCode = "") {
   const nameKey = sanitizeName(stationName);
   const ext = MAP_STCODE_TO_EXT.get(String(stationCode));
 
-  // ✅ stationCode 없거나 매칭 안되면 stationName으로 바로 조회
   const result =
     (ext && INDEX_BY_EXT.get(ext)) ||
     INDEX_BY_NAME.get(nameKey) ||

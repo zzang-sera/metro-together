@@ -25,7 +25,6 @@ function ok(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-// ✅ XML 문자열을 간단하게 JSON 객체로 변환하는 함수
 function parseXML(xmlText: string): RawRow[] {
   const items: RawRow[] = [];
   const itemRegex = /<item>([\s\S]*?)<\/item>/g;
@@ -59,7 +58,6 @@ function parseXML(xmlText: string): RawRow[] {
   return items;
 }
 
-// ✅ 1000개 단위로 API 데이터 가져오기
 async function fetchWheelchairChunk(start: number, end: number): Promise<RawRow[]> {
   const url = `${BASE}/${SEOUL_API_KEY}/xml/${SERVICE}/${start}/${end}`;
   const res = await fetch(url);
@@ -73,7 +71,6 @@ async function fetchWheelchairChunk(start: number, end: number): Promise<RawRow[
   return parseXML(text);
 }
 
-// ✅ 전체 데이터 (1~2000 범위)
 async function fetchAllWheelchairs(): Promise<RawRow[]> {
   const chunk1 = await fetchWheelchairChunk(1, 1000);
   const chunk2 = await fetchWheelchairChunk(1001, 2000);

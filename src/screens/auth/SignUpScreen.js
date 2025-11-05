@@ -8,12 +8,10 @@ import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
 
-// 1. 필요한 훅과 유틸리티를 불러옵니다.
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 
 const SignUpScreen = ( ) => {
-  // 2. Context에서 fontOffset 값을 가져옵니다.
   const { fontOffset } = useFontSize();
 
   const {
@@ -31,11 +29,9 @@ const SignUpScreen = ( ) => {
   } = useAuthForm();
 
   const handleSignUp = async () => {
-    // ... 기존 회원가입 로직은 그대로 유지 ...
     console.log("--- 회원가입 버튼 클릭됨 ---");
     console.log("입력된 값:", { name, dob, email, password, confirmPassword, securityAnswer });
 
-    // 오류 메시지 초기화
     setNameError('');
     setDobError('');
     setEmailError('');
@@ -44,7 +40,6 @@ const SignUpScreen = ( ) => {
     setSecurityAnswerError('');
     let isValid = true;
 
-    // 최종 유효성 검사
     if (!name) {
       setNameError('이름을 입력해주세요.');
       isValid = false;
@@ -109,12 +104,10 @@ const SignUpScreen = ( ) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
         <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
           회원가입
         </Text>
         
-        {/* AuthInput과 CustomButton은 내부적으로 글자 크기가 조절되므로 그대로 둡니다. */}
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
         <AuthInput label="이메일 주소" value={email} placeholder="hamkke@example.com" onChangeText={handleEmailChange} error={emailError} keyboardType="email-address" autoCapitalize="none" />

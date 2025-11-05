@@ -2,27 +2,26 @@
 
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useAuth } from './AuthContext'; // 1. AuthContext 훅 가져오기
+import { useAuth } from './AuthContext'; 
 import { getFirestore, doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth } from '../config/firebaseConfig'; // Firebase auth 인스턴스 가져오기
+import { auth } from '../config/firebaseConfig'; 
 
-const FONT_OFFSET_KEY = 'font_offset_anonymous'; // 비로그인 사용자용 키
+const FONT_OFFSET_KEY = 'font_offset_anonymous'; 
 const defaultFontOffset = 0;
 
 export const FontSizeContext = createContext({
   fontOffset: defaultFontOffset,
-  setFontOffset: async (newOffset) => {}, // 이름을 setFontOffset으로 다시 통일
+  setFontOffset: async (newOffset) => {}, 
   isLoading: true,
 });
 
 export const FontSizeProvider = ({ children }) => {
-  const { user, isLoading: isAuthLoading } = useAuth(); // 2. user와 인증 로딩 상태 가져오기
+  const { user, isLoading: isAuthLoading } = useAuth(); 
   const [fontOffset, setFontOffsetState] = useState(defaultFontOffset);
   const [isSettingLoading, setIsSettingLoading] = useState(true);
   const db = getFirestore();
 
   useEffect(() => {
-    // 인증 상태 로딩이 끝나면 설정값 로드를 시작
     if (isAuthLoading) {
       return; 
     }
@@ -30,7 +29,6 @@ export const FontSizeProvider = ({ children }) => {
     const loadSettings = async () => {
       setIsSettingLoading(true);
       if (user) {
-        // 로그인 사용자: Firebase에서 불러오기
         const userDocRef = doc(db, 'users', user.uid);
         const userDoc = await getDoc(userDocRef);
         if (userDoc.exists() && userDoc.data().accessibilityProfile?.fontScale !== undefined) {
@@ -39,7 +37,6 @@ export const FontSizeProvider = ({ children }) => {
           setFontOffsetState(defaultFontOffset);
         }
       } else {
-        // 비로그인 사용자: AsyncStorage에서 불러오기
         const storedOffset = await AsyncStorage.getItem(FONT_OFFSET_KEY);
         setFontOffsetState(storedOffset !== null ? Number(storedOffset) : defaultFontOffset);
       }
@@ -47,13 +44,12 @@ export const FontSizeProvider = ({ children }) => {
     };
 
     loadSettings();
-  }, [user, isAuthLoading]); // user나 인증 로딩 상태가 바뀔 때마다 실행
+  }, [user, isAuthLoading]); 
 
   const setFontOffset = async (newOffset) => {
-    setFontOffsetState(newOffset); // UI 즉시 반영
+    setFontOffsetState(newOffset); 
 
     if (user) {
-      // 로그인 사용자: Firebase에 저장
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(
         userDocRef,
@@ -61,7 +57,6 @@ export const FontSizeProvider = ({ children }) => {
         { merge: true }
       );
     } else {
-      // 비로그인 사용자: AsyncStorage에 저장
       await AsyncStorage.setItem(FONT_OFFSET_KEY, String(newOffset));
     }
   };

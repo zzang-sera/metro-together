@@ -7,12 +7,10 @@ import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
 
-// 1. 필요한 훅과 유틸리티를 불러옵니다.
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 
 const ForgotPasswordScreen = ({ navigation }) => {
-  // 2. Context에서 fontOffset 값을 가져옵니다.
   const { fontOffset } = useFontSize();
   
   const {
@@ -49,7 +47,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
         <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
           비밀번호 찾기
         </Text>
@@ -57,7 +54,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
           가입하신 이메일 주소를 입력하시면{"\n"}비밀번호 재설정 링크를 보내드립니다.
         </Text>
         
-        {/* AuthInput과 CustomButton은 이미 수정되었으므로 그대로 사용합니다. */}
         <AuthInput
           label="이메일 주소"
           value={email}

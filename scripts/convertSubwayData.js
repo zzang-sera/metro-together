@@ -1,20 +1,15 @@
-// scripts/convertSubwayData.js
 const fs = require("fs");
 const path = require("path");
 const proj4 = require("proj4");
 
-// TM(5179) → WGS84(4326) 정의
 proj4.defs(
   "EPSG:5179",
   "+proj=tmerc +lat_0=38 +lon_0=127 +k=1 +x_0=200000 +y_0=500000 +ellps=GRS80 +units=m +no_defs"
 );
 
-// ✅ 네 파일 경로
 const SRC = path.resolve(__dirname, "../src/assets/metro-data/metro/entrance/tnSubwayEntrc.json");
-// ✅ 결과 저장 경로
 const OUT = path.resolve(__dirname, "../src/assets/metro-data/graph/subway_graph.json");
 
-// TM → WGS84
 const convert = (x, y) => {
   const [lon, lat] = proj4("EPSG:5179", "EPSG:4326", [x, y]);
   return { lat, lon };
@@ -22,7 +17,7 @@ const convert = (x, y) => {
 
 function main() {
   if (!fs.existsSync(SRC)) {
-    console.error(`❌ 원본 파일 없음: ${SRC}`);
+    console.error(` 원본 파일 없음: ${SRC}`);
     process.exit(1);
   }
 
@@ -55,7 +50,6 @@ function main() {
     byStation.get(stationId).push({ stationId, exitNo });
   }
 
-  // 같은 역 출입구끼리 연결 (임시 평균 거리)
   const edges = [];
   for (const [stationId, exits] of byStation.entries()) {
     for (let i = 0; i < exits.length; i++) {
@@ -73,7 +67,7 @@ function main() {
   fs.mkdirSync(path.dirname(OUT), { recursive: true });
   fs.writeFileSync(OUT, JSON.stringify(graph, null, 2), "utf8");
 
-  console.log(`✅ subway_graph.json 생성 완료 (${nodes.length} nodes, ${edges.length} edges)`);
+  console.log(`subway_graph.json 생성 완료 (${nodes.length} nodes, ${edges.length} edges)`);
 }
 
 main();

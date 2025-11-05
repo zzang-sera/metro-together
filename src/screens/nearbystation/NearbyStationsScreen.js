@@ -195,7 +195,6 @@ const NearbyStationsScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* 음성안내 시 스크롤 안내 */}
       {isScreenReaderEnabled && nearbyStations.length > 0 && (
         <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
           <Ionicons

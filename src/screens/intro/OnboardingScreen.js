@@ -31,7 +31,6 @@ const TextBtn = ({ label, onPress }) => (
   </TouchableOpacity>
 );
 
-// onFinish 콜백을 App.js에서 넘겨받아 AsyncStorage 플래그를 세팅/종료
 export default function OnboardingScreen({ onFinish }) {
   const navigation = useNavigation(); 
 
@@ -48,8 +47,8 @@ export default function OnboardingScreen({ onFinish }) {
       subTitleStyles={subStyle}
       containerStyles={{ 
         paddingHorizontal: 20,
-        paddingTop: 5,     // 상단 여백
-        paddingBottom: 20,   // 하단 여백
+        paddingTop: 5,     
+        paddingBottom: 20,   
        }}
       bottomBarColor="#FFFFFF"
       showDone

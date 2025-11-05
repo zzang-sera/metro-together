@@ -1,4 +1,3 @@
-// ✅ src/api/metro/metroAPI.js
 import { SUPABASE_URL } from "../../constants/constants";
 import localStationImages from "../../assets/metro-data/metro/station/station_images.json";
 
@@ -83,11 +82,6 @@ export async function getStationImageByName(stationName) {
   }
 }
 
-/**
- * ✅ 휠체어 급속충전 정보
- * - Supabase Edge Function: /wheelchair-charge
- * - 서울 열린데이터 기반
- */
 export async function getWheelchairChargeStatusByName(stationName) {
   if (!stationName) throw new Error("역 이름이 필요합니다.");
 
@@ -114,9 +108,6 @@ export async function getWheelchairChargeStatusByName(stationName) {
     return [];
   }
 }
-/**
- * ✅ 실시간 지하철 공지사항 (역명 필터링 버전)
- */
 export async function getMetroNotices(stationName = "") {
   const url = `${SUPABASE_URL}/functions/v1/metro-notices`;
 
@@ -138,7 +129,6 @@ export async function getMetroNotices(stationName = "") {
       category: r.category || "",
     }));
 
-    // ✅ 특정 역명 입력 시 필터링
     if (stationName) {
       const keyword = stationName.replace(/역$/u, "").trim();
       return all.filter((n) =>
@@ -147,7 +137,6 @@ export async function getMetroNotices(stationName = "") {
       );
     }
 
-    // ✅ 역명 없으면 전체 반환
     return all;
   } catch (e) {
     console.error("🚨 getMetroNotices error:", e);

@@ -13,7 +13,6 @@ const CustomButton = ({
 }) => {
   const { fontOffset } = useFontSize();
 
-  // 1. 'call' 타입 추가
   const getButtonStyles = () => {
     switch (type) {
       case 'outline':
@@ -29,7 +28,6 @@ const CustomButton = ({
     }
   };
 
-  // 2. 'call' 타입 텍스트 스타일 추가 (children 사용 시 직접 적용되진 않음)
   const getTextStyles = () => {
     switch (type) {
       case 'outline':
@@ -73,7 +71,7 @@ const styles = StyleSheet.create({
     height: responsiveWidth(60),
     justifyContent: 'center', 
     alignItems: 'center', 
-    marginBottom: 12, // 기본 간격 (StationDetailScreen에서 16으로 덮어쓸 예정)
+    marginBottom: 12, 
     borderRadius: 40,
     elevation: 2,
     shadowColor: '#1A1E22',
@@ -114,14 +112,13 @@ const styles = StyleSheet.create({
     color: '#17171B', 
   },
 
-  // 3. 'call' 버튼 스타일 정의 (고대비 WCAG 충족 색상)
   callButton: {
-    backgroundColor: '#E6FFFA', // 기존 callButton 배경색
+    backgroundColor: '#E6FFFA', 
     borderWidth: 1.5,
-    borderColor: '#0F766E', // 기존 callButton 텍스트/아이콘색
+    borderColor: '#0F766E', 
   },
   callButtonText: {
-    color: '#17171B', // 기존 callButton 텍스트/아이콘색
+    color: '#17171B', 
   },
 });
 

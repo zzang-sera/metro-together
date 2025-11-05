@@ -30,7 +30,6 @@ interface Facility {
   type: string; // EV or ES
 }
 
-// ✅ 안전한 fetch
 async function safeFetch<T>(url: string): Promise<T | null> {
   try {
     const res = await fetch(url);
@@ -43,7 +42,6 @@ async function safeFetch<T>(url: string): Promise<T | null> {
   }
 }
 
-// ✅ TalkBack-friendly 문장 정리 + 줄바꿈
 function normalizeForTalkBack(text: string): string {
   if (!text) return "";
   let t = text.replace(/\s+/g, " ").trim();
@@ -54,7 +52,6 @@ function normalizeForTalkBack(text: string): string {
   return t;
 }
 
-// ✅ 출입구 보수 안내
 function getClosedExitNotice(facilities: Facility[] = [], stationName: string): string | null {
   const closed = facilities.filter(
     (f) =>
@@ -71,7 +68,6 @@ function getClosedExitNotice(facilities: Facility[] = [], stationName: string): 
   return null;
 }
 
-// ✅ 가장 가까운 시설 찾기
 function findNearestFacility(facilities: Facility[] = [], preferElevator: boolean): Facility | null {
   if (!facilities || facilities.length === 0) return null;
   const available = facilities.filter(
@@ -86,7 +82,6 @@ function findNearestFacility(facilities: Facility[] = [], preferElevator: boolea
   return available[0];
 }
 
-// ✅ 소요 시간 포맷 함수 (1시간 n분)
 function formatTime(seconds: number): string {
   const minutes = Math.round(seconds / 60);
   if (minutes < 60) return `${minutes}분`;
@@ -95,7 +90,6 @@ function formatTime(seconds: number): string {
   return remain > 0 ? `${hours}시간 ${remain}분` : `${hours}시간`;
 }
 
-// ✅ "역" 중복 방지 함수
 function cleanStationName(name: string): string {
   return name.endsWith("역") ? name : `${name}역`;
 }
@@ -143,7 +137,6 @@ Deno.serve(async (req) => {
     const lastLine = paths[paths.length - 1]?.line ?? "";
     const transfers = routeData.transfers ?? 0;
 
-    // ✅ 환승 정보
     const transferInfo: {
       index: number;
       station: string;
@@ -206,7 +199,6 @@ Deno.serve(async (req) => {
     } ${arrClosedNotice ?? ""}`;
     const arrText = normalizeForTalkBack(arrLine);
 
-    // ✅ 휠체어 상태
     let wheelchairStatus = "OK";
     const allFacilities = [...depFacilities, ...arrFacilities];
     const brokenElevators = allFacilities.filter(
@@ -218,7 +210,6 @@ Deno.serve(async (req) => {
         brokenElevators.length === allElevators.length ? "UNAVAILABLE" : "PARTIAL";
     }
 
-    // ✅ "역" 중복 없이 역명 + 호선 표시
     const cleanDep = cleanStationName(dep);
     const cleanArr = cleanStationName(arr);
 
@@ -254,7 +245,7 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    console.error("🧩 pathfinder error:", err);
+    console.error(" pathfinder error:", err);
     return new Response(
       JSON.stringify({
         error: err instanceof Error ? err.message : String(err),

@@ -21,7 +21,6 @@ import { useFontSize } from "../../contexts/FontSizeContext";
 import { fetchSubwayPath } from "../pathfinder/PathFinderScreen";
 import BarrierFreeMapMini from "../../components/BarrierFreeMapMini";
 
-/* ---------------------- 로컬 JSON API ---------------------- */
 import { getFacilityForStation } from "../../api/metro/elevEsLocal";
 import { getToiletsForStation } from "../../api/metro/toiletLocal";
 import { getDisabledToiletsForStation } from "../../api/metro/disabled_toiletLocal";
@@ -30,23 +29,21 @@ import { getAudioBeaconsForStation } from "../../api/metro/voiceLocal";
 import { getNursingRoomsForStation } from "../../api/metro/nursingRoomLocal";
 import { getLockersForStation } from "../../api/metro/lockerLocal";
 
-/* ---------------------- 실시간 API 훅 ---------------------- */
 import { useApiFacilities } from "../../hook/useApiFacilities";
 
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
 
-/* ---------------------- 메뉴 구성 ---------------------- */
 const FAQ_GROUPS = [
   {
     title: "지하철 경로 안내",
-    color: "#B3E5FC", // ✅ 수정됨 (명도 대비 8.79:1)
+    color: "#B3E5FC", 
     items: [{ key: "ROUTE", label: "지하철 최단경로 찾기" }],
   },
   {
     title: "역 이용 및 편의시설 정보",
-    color: "#B2EBF2", // ✅ 수정됨 (명도 대비 8.79:1)
+    color: "#B2EBF2", 
     items: [
       { key: "EV", label: "엘리베이터 위치" },
       { key: "ES", label: "에스컬레이터 위치" },
@@ -61,14 +58,13 @@ const FAQ_GROUPS = [
   },
   {
     title: "실시간 지하철 정보",
-    color: "#C8E6C9", // ✅ 수정됨 (명도 대비 8.79:1)
+    color: "#C8E6C9", 
     items: [
       { key: "NT", label: "실시간 지하철 알림" },
       { key: "CS", label: "불편 신고하기" },
     ],
   },
 ];
-/* ---------------------- 유틸 ---------------------- */
 function normalizeStationName(name) {
   return String(name || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
 }
@@ -81,7 +77,6 @@ function getMapImageUrlFromJson(stationName) {
   return found?.img_link || null;
 }
 
-/* ---------------------- 메인 컴포넌트 ---------------------- */
 export default function ChatBotScreen() {
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();
@@ -96,14 +91,12 @@ export default function ChatBotScreen() {
   const listRef = useRef(null);
   const styles = useMemo(() => createChatbotStyles(fontOffset), [fontOffset]);
 
-  /* ---------------------- 초기 메시지 ---------------------- */
   useEffect(() => {
     append("system", { text: "함께타요 챗봇에 연결합니다" });
     append("bot", { text: "안녕하세요! 어떤 정보를 원하시나요?" });
     append("menu", {});
   }, []);
 
-  /* ---------------------- 메시지 출력 헬퍼 ---------------------- */
   const append = (role, item) => {
     setMessages((prev) => [...prev, { id: String(Date.now() + Math.random()), role, ...item }]);
     setTimeout(() => listRef.current?.scrollToEnd?.({ animated: true }), 60);
@@ -124,11 +117,10 @@ export default function ChatBotScreen() {
       }
     })
     .catch((err) => {
-      console.error("🚨 문자 전송 오류:", err);
+      console.error("문자 전송 오류:", err);
       Alert.alert("오류", "문자 앱을 열 수 없습니다.");
     });
 };
-  /* ---------------------- 실시간 API 훅 ---------------------- */
   const { data: apiData, loading: apiLoading, error: apiError } = useApiFacilities(
     currentStation,
     "",
@@ -136,7 +128,6 @@ export default function ChatBotScreen() {
     facilityType
   );
 
-  /* ---------------------- 공통 데이터 포맷 ---------------------- */
   function formatFacilityList({ type, stationName }) {
     const titleMap = {
       EV: "엘리베이터",
@@ -153,16 +144,15 @@ export default function ChatBotScreen() {
     const title = titleMap[type] || "시설";
     const head = `【${title}】`;
 
-    // ✅ 실시간 지하철 알림
     if (type === "NT") {
-      if (apiLoading) return `${head}\n🚉 실시간 공지를 불러오는 중입니다...`;
-      if (apiError) return `${head}\n⚠️ API 오류 발생: ${apiError}`;
+      if (apiLoading) return `${head}\n 실시간 공지를 불러오는 중입니다...`;
+      if (apiError) return `${head}\n API 오류 발생: ${apiError}`;
       if (!apiData.length) return `${head}\n"${stationName}" 관련 공지가 없습니다.`;
 
       const list = apiData
         .map(
           (n, i) =>
-            `#${i + 1} [${n.line}] ${n.title}\n${n.desc}\n${n.status}\n🕒 ${
+            `#${i + 1} [${n.line}] ${n.title}\n${n.desc}\n${n.status}\n ${
               n.occurred ? n.occurred.replace("T", " ") : ""
             }`
         )
@@ -170,10 +160,9 @@ export default function ChatBotScreen() {
       return `${head}\n${list}`;
     }
 
-    // ✅ 실시간 시설 (엘리베이터, 에스컬레이터 등)
     if (["EV", "ES", "TO", "DT", "WC"].includes(type)) {
       if (apiLoading) return `${head}\n실시간 정보를 불러오는 중입니다...`;
-      if (apiError) return `${head}\n⚠️ API 오류 발생: ${apiError}`;
+      if (apiError) return `${head}\n API 오류 발생: ${apiError}`;
       if (!apiData.length) return `${head}\n${stationName}역의 ${title} 정보가 없습니다.`;
 
       if (type === "WC") {
@@ -197,7 +186,6 @@ export default function ChatBotScreen() {
         .join("\n\n")}`;
     }
 
-    // ✅ 로컬 JSON fallback
     const localFallbacks = {
       EV: getFacilityForStation,
       ES: getFacilityForStation,
@@ -217,13 +205,12 @@ export default function ChatBotScreen() {
     return `${head}\n${rows.map((r, i) => `#${i + 1} ${r.desc || r.title}`).join("\n\n")}`;
   }
 
-  /* ---------------------- 지도 + 정보 출력 ---------------------- */
   const runFacilityMap = async (stationName, type) => {
     setCurrentStation(stationName);
     setFacilityType(type);
 
     if (type === "NT") {
-      appendBot(`🚇 ${stationName}역의 실시간 공지사항을 불러옵니다...`);
+      appendBot(` ${stationName}역의 실시간 공지사항을 불러옵니다...`);
       return;
     }
 
@@ -232,7 +219,6 @@ export default function ChatBotScreen() {
     appendBot(`【${type === "WC" ? "휠체어 급속충전기" : "시설"}】\n실시간 정보를 불러오는 중입니다...`);
   };
 
-  /* ---------------------- API 완료 시 자동 메시지 ---------------------- */
   useEffect(() => {
     if (!facilityType || !currentStation) return;
     if (apiLoading) return;
@@ -242,10 +228,9 @@ export default function ChatBotScreen() {
     append("menuButton", {});
   }, [apiData, apiError, apiLoading]);
 
-/* ---------------------- 경로 탐색 (기존 동작 유지 + 메뉴 다시보기 추가) ---------------------- */
 const runPathSearch = useCallback(
   async (start, end, opts = { wheelchair: false }) => {
-    appendBot(`🚇 ${start} → ${end} ${opts.wheelchair ? "🦽 휠체어 경로" : "최단경로"}를 탐색합니다...`);
+    appendBot(` ${start} → ${end} ${opts.wheelchair ? " 휠체어 경로" : "최단경로"}를 탐색합니다...`);
     setLoading(true);
     try {
       const data = await fetchSubwayPath(start, end, !!opts.wheelchair);
@@ -272,7 +257,7 @@ const runPathSearch = useCallback(
       const steps = [];
       if (sf?.departure?.station) {
         const depDesc = linesToText(sf.departure.displayLines) || sf.departure.text || "";
-        steps.push(`🚉 출발: ${sf.departure.station}\n${depDesc}`.trim());
+        steps.push(` 출발: ${sf.departure.station}\n${depDesc}`.trim());
       }
       for (const info of ti) {
         const idx = info?.index ?? steps.length;
@@ -280,32 +265,29 @@ const runPathSearch = useCallback(
           linesToText(info?.displayLines) ||
           info?.text ||
           (info?.fromLine && info?.toLine ? `${info.fromLine} → ${info.toLine}` : "");
-        steps.push(`🚉 ${idx}회 환승: ${info?.station || ""}\n${desc}`.trim());
+        steps.push(` ${idx}회 환승: ${info?.station || ""}\n${desc}`.trim());
       }
       if (sf?.arrival?.station) {
         const arrDesc = linesToText(sf.arrival.displayLines) || sf.arrival.text || "";
-        steps.push(`🚉 도착: ${sf.arrival.station}\n${arrDesc}`.trim());
+        steps.push(`도착: ${sf.arrival.station}\n${arrDesc}`.trim());
       }
 
       const stepsText = steps.length ? steps.join("\n\n") : "세부 이동 안내가 없습니다.";
-      appendBot(`✅ ${depName} → ${arrName}\n⏱ 소요 시간: ${time} | 🔄 환승 ${transfers}회\n\n${stepsText}`);
+      appendBot(` ${depName} → ${arrName}\n⏱ 소요 시간: ${time} |  환승 ${transfers}회\n\n${stepsText}`);
     } catch (err) {
       console.error("🚨 fetchSubwayPath error:", err);
-      appendBot("⚠️ 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
+      appendBot(" 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
     } finally {
       setLoading(false);
-      append("menuButton", {}); // ✅ 경로 결과 후 “메뉴 다시보기” 버튼 추가
+      append("menuButton", {}); 
     }
   },
   [appendBot]
 );
 
-  /* ---------------------- 메시지 렌더 ---------------------- */
 const MessageBubble = ({ item }) => {
-    // ✅ avatarSize 정의
     const avatarSize = responsiveWidth(40) + fontOffset * 1.5; 
 
-    // ✅ 'system' 롤 스타일 적용
     if (item.role === "system")
       return (
         <View style={styles.systemMessageContainer}>
@@ -314,7 +296,6 @@ const MessageBubble = ({ item }) => {
           </View>
         </View>
       );
-// ✅ 'menuButton' 롤 스타일 적용
     if (item.role === "menuButton")
       return (
         <View style={styles.menuButtonContainer}>
@@ -332,7 +313,6 @@ const MessageBubble = ({ item }) => {
           </TouchableOpacity>
         </View>
       );
-// ✅ 'menu' 롤 스타일 적용
     if (item.role === "menu") {
       return (
         <View style={styles.menuRow}>
@@ -343,7 +323,7 @@ const MessageBubble = ({ item }) => {
                 <View
                   style={[
                     styles.menuHeader,
-                    { backgroundColor: group.color }, // 동적 스타일은 유지
+                    { backgroundColor: group.color }, 
                   ]}
                 >
                   <Text style={styles.menuHeaderText}>{group.title}</Text>
@@ -354,7 +334,7 @@ const MessageBubble = ({ item }) => {
                       key={it.key}
                       style={[
                         styles.menuItem,
-                        i === 0 && styles.menuItemFirst, // 첫 번째 아이템 테두리 제거
+                        i === 0 && styles.menuItemFirst, 
                       ]}
                       onPress={() => {
                         if (it.key === "ROUTE") {
@@ -397,7 +377,6 @@ if (item.role === "user")
     return (
       <View style={[styles.messageRow, styles.botMessageRow]}>
         <View style={styles.avatarContainer}>
-          {/* ✅ avatarSize 적용 */}
           <Image source={BOT_AVATAR} style={{ width: avatarSize, height: avatarSize, borderRadius: avatarSize / 2 }} /> 
           <Text style={styles.botName}>함께타요</Text>
         </View>
@@ -417,7 +396,6 @@ if (item.role === "user")
       </View>
     );
   };
-    /* ---------------------- 입력 처리 ---------------------- */
   const onSend = async (text) => {
     const t = text || input.trim();
     if (!t) return;
@@ -454,7 +432,6 @@ if (item.role === "user")
     appendBot("하단 메뉴에서 항목을 선택해주세요.");
   };
 
-  /* ---------------------- 렌더 ---------------------- */
 return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -473,7 +450,7 @@ return (
         <TextInput
           style={styles.input}
           placeholder="메시지를 입력하세요."
-          placeholderTextColor="#595959" // (플레이스홀더는 기존 유지)
+          placeholderTextColor="#595959" 
           value={input}
           onChangeText={setInput}
           onSubmitEditing={() => onSend()}
@@ -483,7 +460,7 @@ return (
         <TouchableOpacity style={styles.sendButton} onPress={() => onSend()} disabled={loading}>
           <Ionicons
             name="send"
-            size={responsiveWidth(24) + fontOffset / 2} // offset 적용
+            size={responsiveWidth(24) + fontOffset / 2} 
             color={input.trim() ? "#17171B" : "#A8A8A8"}
           />
         </TouchableOpacity>

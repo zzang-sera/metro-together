@@ -8,7 +8,7 @@ import {
   StatusBar,
   Alert,
   ScrollView,
-  AccessibilityInfo, // ✅ AccessibilityInfo 추가
+  AccessibilityInfo, 
 } from "react-native";
 import {
   Ionicons,
@@ -64,7 +64,6 @@ export default function StationDetailScreen() {
   const { fontOffset } = useFontSize();
   const currentUser = auth.currentUser;
 
-  // ✅ 스크린리더 상태 state 추가
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [stationImage, setStationImage] = useState(null);
@@ -76,7 +75,6 @@ export default function StationDetailScreen() {
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
-  // ✅ 스크린리더 상태 감지
   useEffect(() => {
     const checkScreenReader = async () => {
       const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
@@ -108,7 +106,7 @@ export default function StationDetailScreen() {
           }
         }
       } catch (e) {
-        console.error("🚨 getStationImageByName error:", e);
+        console.error(" getStationImageByName error:", e);
         setStationImage(null);
       }
     }
@@ -227,7 +225,6 @@ export default function StationDetailScreen() {
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.headerBtn}
-          // ✅ 뒤로가기 버튼 접근성
           accessibilityRole="button"
           accessibilityLabel="뒤로가기"
         >
@@ -259,7 +256,6 @@ export default function StationDetailScreen() {
                       styles.lineBadgeText,
                       { color: textColor, fontSize: 12 + fontOffset },
                     ]}
-                    // ✅ 호선 번호 접근성
                     accessibilityLabel={`${lineNum}호선`}
                   >
                     {lineNum}
@@ -282,7 +278,6 @@ export default function StationDetailScreen() {
         <TouchableOpacity
           onPress={handleFavoriteToggle}
           style={styles.starBtn}
-          // ✅ 즐겨찾기 버튼 접근성
           accessibilityRole="button"
           accessibilityLabel={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
         >
@@ -310,7 +305,6 @@ export default function StationDetailScreen() {
     { icon: "locker-multiple", label: "보관함", type: "LO" },
   ];
 
-  // ✅ 안내 메시지 스타일
   const noticeBoxStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -318,7 +312,7 @@ export default function StationDetailScreen() {
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginHorizontal: '5%', // buttonListContainer와 동일한 여백
+    marginHorizontal: '5%', 
     marginTop: 16,
     marginBottom: 4, 
   };
@@ -335,7 +329,6 @@ export default function StationDetailScreen() {
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ✅ 음성안내 시 스크롤 안내 */}
         {isScreenReaderEnabled && (
           <View style={noticeBoxStyle} accessibilityRole="alert">
             <Ionicons
@@ -357,7 +350,6 @@ export default function StationDetailScreen() {
               type="call"
               onPress={handleCallPress}
               style={styles.buttonContentLayout}
-              // ✅ 전화 버튼 접근성
               accessibilityLabel={`역무실 전화 걸기, ${phone}`}
               accessibilityHint="탭하면 전화가 연결됩니다."
             >
@@ -403,7 +395,6 @@ export default function StationDetailScreen() {
                   styles.buttonContentLayout,
                   isDisabled && { backgroundColor: "#E0E0E0", borderColor: '#BDBDBD' }
                 ]}
-                // ✅ 시설 버튼 접근성
                 accessibilityLabel={btn.label}
                 accessibilityHint={isDisabled ? "이 역에는 해당 시설 정보가 없습니다." : "탭하여 상세 정보 보기"}
               >
@@ -443,7 +434,7 @@ export default function StationDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  scrollContainer: { paddingBottom: 30, paddingTop: 0 }, // ✅ paddingTop 14 제거
+  scrollContainer: { paddingBottom: 30, paddingTop: 0 }, 
   mintHeader: {
     backgroundColor: BG,
     flexDirection: "row",

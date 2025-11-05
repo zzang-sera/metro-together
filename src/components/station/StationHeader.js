@@ -38,12 +38,10 @@ export default function StationHeader({ stationName, line, stationCode, isFavori
       <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
         <StatusBar barStyle="dark-content" backgroundColor="#F9F9F9" />
 
-        {/* 뒤로가기 버튼 */}
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
           <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} />
         </TouchableOpacity>
 
-        {/* 중앙 영역: 노선 + 역명 */}
         <View style={styles.headerCenter}>
           {line ? (
             <View style={styles.badge}>
@@ -57,7 +55,6 @@ export default function StationHeader({ stationName, line, stationCode, isFavori
           </Text>
         </View>
 
-        {/* 즐겨찾기 버튼 */}
         <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
           <Ionicons
             name={isFavorite ? "star" : "star-outline"}
@@ -75,7 +72,7 @@ export default function StationHeader({ stationName, line, stationCode, isFavori
 
 const styles = StyleSheet.create({
   header: {
-    backgroundColor: "#F9F9F9", // 민트색 제거
+    backgroundColor: "#F9F9F9", 
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

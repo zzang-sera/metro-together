@@ -1,4 +1,4 @@
-// ✅ src/screens/station/FacilitiesSection.js (리팩토링 완료)
+// src/screens/station/FacilitiesSection.js (리팩토링 완료)
 
 import React, { useEffect, useState } from "react";
 import {
@@ -12,7 +12,6 @@ import { Ionicons } from "@expo/vector-icons";
 import { useApiFacilities } from "../../hook/useApiFacilities";
 import { useLocalFacilities } from "../../hook/useLocalFacilities";
 
-/* ------------------ 시설 키 ------------------ */
 export const FAC = {
   ESCALATOR: "escalator",
   ELEVATOR: "elevator",
@@ -25,7 +24,6 @@ export const FAC = {
   AUDIO_GUIDE: "audio_beacon",
 };
 
-/* ------------------ 카테고리 구성 ------------------ */
 const moveFacilities = [
   { key: FAC.ESCALATOR, label: "에스컬레이터\n위치" },
   { key: FAC.ELEVATOR, label: "엘리베이터\n위치" },
@@ -40,7 +38,6 @@ const lifeFacilities = [
   { key: FAC.AUDIO_GUIDE, label: "음성유도기\n위치" },
 ];
 
-/* ------------------ 컴포넌트 ------------------ */
 export default function FacilitiesSection({
   stationName,
   stationCode,
@@ -51,30 +48,25 @@ export default function FacilitiesSection({
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ 로컬/실시간 훅 (둘 다 자동 호출 가능)
   const api = useApiFacilities(stationName, stationCode, line, selected);
   const local = useLocalFacilities(stationName, stationCode, line, selected);
 
-  // ✅ 우선순위: 실시간 성공 → 로컬 fallback
   useEffect(() => {
     if (!selected) return;
     setLoading(true);
 
-    // 1️⃣ 실시간 데이터 우선
     if (!api.loading && api.data.length > 0) {
       setResult(makeFacilityText(api.data, selected));
       setLoading(false);
       return;
     }
 
-    // 2️⃣ 로컬 fallback
     if (!local.loading && local.data.length > 0) {
       setResult(makeFacilityText(local.data, selected));
       setLoading(false);
       return;
     }
 
-    // 3️⃣ 둘 다 없을 때
     if (!api.loading && !local.loading) {
       setResult("해당 시설 정보가 없습니다.");
       setLoading(false);
@@ -109,7 +101,6 @@ export default function FacilitiesSection({
   );
 }
 
-/* ------------------ 내부 유틸 ------------------ */
 function makeFacilityText(data, key) {
   if (!data?.length) return "데이터가 없습니다.";
 
@@ -123,7 +114,6 @@ function makeFacilityText(data, key) {
   return `[${label} 위치]\n${lines.join("\n")}`;
 }
 
-/* ------------------ 하위 컴포넌트 ------------------ */
 function Category({ title, children }) {
   return (
     <View style={{ gap: 10 }}>
@@ -156,7 +146,6 @@ function TileGrid({ items, selected, onPress }) {
   );
 }
 
-/* ------------------ 유틸 ------------------ */
 const labelFor = (key) =>
   ({
     [FAC.ESCALATOR]: "에스컬레이터",
@@ -183,7 +172,6 @@ const emoji = (key) =>
     [FAC.PRIORITY_SEAT]: "💺",
   }[key] || "⬜️");
 
-/* ------------------ 스타일 ------------------ */
 const s = StyleSheet.create({
   sectionTitle: { fontSize: 18, fontWeight: "700", color: "#222" },
   sectionBox: { backgroundColor: "#EAF1F4", borderRadius: 16, padding: 12 },

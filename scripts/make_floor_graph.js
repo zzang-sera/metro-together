@@ -1,4 +1,3 @@
-// scripts/make_floor_graph.js
 import fs from "fs";
 import path from "path";
 import url from "url";
@@ -7,7 +6,6 @@ import proj4 from "proj4";
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
-// 경로 설정
 const IN_ELEV = path.join(
   ROOT,
   "src",
@@ -29,7 +27,6 @@ const IN_STATION = path.join(
 const OUT_DIR = path.join(ROOT, "src", "assets", "metro-data", "metro", "graph");
 const OUT_JSON = path.join(OUT_DIR, "seoul_floor_graph.json");
 
-// 좌표계 정의
 const EPSG4326 = "+proj=longlat +datum=WGS84 +no_defs";
 const EPSG5179 =
   "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
@@ -56,10 +53,8 @@ function parseWKT(wkt) {
   const y = parseFloat(m[2]);
   if (isNaN(x) || isNaN(y)) return null;
 
-  // 위경도 범위면 그대로 사용
   if (x >= 124 && x <= 132 && y >= 33 && y <= 39) return { lng: x, lat: y };
 
-  // 변환 후보
   const cands = [];
   try {
     const [lng, lat] = proj4(EPSG5179, EPSG4326, [x, y]);
@@ -103,7 +98,6 @@ function buildFloorGraph(elevJson, stationList) {
     const coord = parseWKT(row.node_wkt || row.NODE_WKT);
     if (!coord) return;
 
-    // 이름이 없으면 근처 역 자동 매칭
     let stationNameRaw = row.sbwy_stn_nm || row.SBWY_STN_NM || null;
     let stationKey = stationNameRaw ? norm(stationNameRaw) : null;
 
@@ -116,7 +110,7 @@ function buildFloorGraph(elevJson, stationList) {
           bestD = d;
         }
       }
-      if (bestD < 0.0025) { // 약 250m
+      if (bestD < 0.0025) { 
         stationNameRaw = best.name;
         stationKey = best.key;
       }
@@ -155,7 +149,7 @@ function main() {
   ensureDir(OUT_DIR);
   fs.writeFileSync(OUT_JSON, JSON.stringify(graph, null, 2), "utf8");
 
-  console.log(`✅ 저장 완료: ${OUT_JSON}`);
+  console.log(`저장 완료: ${OUT_JSON}`);
   console.log(
     `총 ${Object.keys(graph).length}개 역 / ${
       Object.values(graph).reduce((s, a) => s + a.length, 0)

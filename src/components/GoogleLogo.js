@@ -2,8 +2,7 @@ import React from 'react';
 import Svg, { Path } from 'react-native-svg';
 
 /**
- * Google 공식 G 로고 SVG 컴포넌트
- * @param {object} props - { size: number }
+ * @param {object} props 
  */
 const GoogleLogo = ({ size = 24 }) => (
   <Svg 

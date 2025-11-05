@@ -1,10 +1,6 @@
-// ✅ src/api/metro/disabled_toiletLocal.js
-// Source:
-//   src/assets/metro-data/metro/disabled_toilets/서울교통공사_역사장애인화장실정보_20241127.json
 
 import rawJson from "../../assets/metro-data/metro/disabled_toilets/서울교통공사_역사장애인화장실정보_20241127.json";
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -25,7 +21,6 @@ function sanitizeName(s = "") {
   return s.replace(/\s*\(\s*\d+\s*호선\s*\)\s*$/g, "").replace(/역$/, "").trim();
 }
 
-/* ---------------------- 키 매핑 ---------------------- */
 const K = {
   seq: "연번",
   line: "운영노선명",
@@ -42,7 +37,6 @@ const K = {
   babyTableFemale: "기저귀교환대설치유무-여자장애인화장실",
 };
 
-/* ---------------------- 변환 ---------------------- */
 function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
@@ -65,7 +59,6 @@ function toPretty(raw) {
   };
 }
 
-/* ---------------------- 인덱스 ---------------------- */
 const RAW_ROWS = pickArray(rawJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
@@ -76,7 +69,6 @@ for (const r of PRETTY) {
   INDEX_BY_NAME.set(r.stationName, arr);
 }
 
-/* ---------------------- 공개 API ---------------------- */
 export function getDisabledToiletsByName(stationName) {
   const k = sanitizeName(stationName || "");
   if (!k) return [];

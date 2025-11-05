@@ -28,8 +28,6 @@ const FontSettingModal = ({ visible, onClose }) => {
         accessibilityLabel="닫기"
         accessibilityRole="button"
       >
-        {/* 이곳의 모든 주석을 완전히 삭제했습니다. 
-        */}
         <Pressable style={styles.modalContainer} onPress={() => {}}> 
             <View style={styles.header}>
               <Text style={[styles.modalTitle, { fontSize: responsiveFontSize(18) + fontOffset }]}>

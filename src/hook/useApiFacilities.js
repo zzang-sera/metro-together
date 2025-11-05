@@ -1,17 +1,13 @@
-// ✅ src/hook/useApiFacilities.js
+// src/hook/useApiFacilities.js
 import { useEffect, useState } from "react";
 import { 
   getEscalatorStatusByName,
   getToiletStatusByName,
   getDisabledToiletStatusByName,
   getWheelchairChargeStatusByName,
-  getMetroNotices, // 🚀 실시간 지하철 공지 추가
+  getMetroNotices, 
 } from "../api/metro/metroAPI";
 
-/**
- * ✅ 실시간 API 기반 시설 데이터 훅
- * - EV, ES, TO, DT, WC, NT(공지)
- */
 export function useApiFacilities(stationName, stationCode, line, type) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +23,6 @@ export function useApiFacilities(stationName, stationCode, line, type) {
       try {
         let res = [];
 
-        // ✅ 타입별 API 호출
         if (type === "EV" || type === "ES") {
           res = await getEscalatorStatusByName(stationName, stationCode, type);
         } 
@@ -41,20 +36,16 @@ export function useApiFacilities(stationName, stationCode, line, type) {
           res = await getWheelchairChargeStatusByName(stationName);
         }
         else if (type === "NT") {
-          // 🚨 새로 추가된 실시간 지하철 알림
           res = await getMetroNotices(stationName);
         }
         else {
-          // API 미지원 → 로컬 데이터만
           setData([]);
           setLoading(false);
           return;
         }
 
-        // ✅ 공통 매핑
         const mapped = res.map((r, i) => {
           if (type === "NT") {
-            // 🧩 공지사항 구조 전용
             return {
               id: `${r.line || "notice"}-${i}`,
               title: r.title?.trim() || "제목 없음",
@@ -67,7 +58,6 @@ export function useApiFacilities(stationName, stationCode, line, type) {
             };
           }
 
-          // 🧩 기존 시설 구조
           return {
             id: `${r.stationCode || r.id || stationCode}-${i}`,
             title:

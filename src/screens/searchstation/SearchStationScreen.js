@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react"; // ✅ useEffect 추가
+import React, { useState, useMemo, useEffect } from "react"; 
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   FlatList,
   SafeAreaView,
   TouchableOpacity,
-  AccessibilityInfo, // ✅ AccessibilityInfo 추가
+  AccessibilityInfo, 
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -57,10 +57,8 @@ const SearchStationScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
-  // ✅ 스크린리더 상태 state 추가
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
 
-  // ✅ 스크린리더 상태 감지
   useEffect(() => {
     const checkScreenReader = async () => {
       const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
@@ -98,7 +96,6 @@ const SearchStationScreen = () => {
     return Array.from(map.values());
   }, [searchQuery]);
 
-  // ✅ 안내 메시지 스타일
   const noticeBoxStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -106,7 +103,7 @@ const SearchStationScreen = () => {
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginHorizontal: 16, // searchContainer와 동일한 여백
+    marginHorizontal: 16, 
     marginTop: 0,
     marginBottom: 8,
   };
@@ -126,7 +123,7 @@ const SearchStationScreen = () => {
           name="search"
           size={20 + fontOffset / 2}
           color="#17171B"
-          accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+          accessibilityHidden={true} 
         />
         <TextInput
           style={[
@@ -137,12 +134,11 @@ const SearchStationScreen = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           autoFocus
-          accessibilityLabel="역 이름 검색" // ✅ 입력창 라벨
+          accessibilityLabel="역 이름 검색" 
           accessibilityHint="역 이름 초성을 입력하여 검색할 수 있습니다."
         />
       </View>
 
-      {/* ✅ 음성안내 시 스크롤 안내 */}
       {isScreenReaderEnabled && searchResults.length > 0 && (
         <View style={noticeBoxStyle} accessibilityRole="alert">
           <Ionicons
@@ -174,7 +170,7 @@ const SearchStationScreen = () => {
             <Ionicons
               name="location-outline"
               size={24 + fontOffset / 2}
-              accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+              accessibilityHidden={true} 
             />
             <Text
               style={[
@@ -208,7 +204,7 @@ const SearchStationScreen = () => {
                         styles.lineText,
                         { color: textColor, fontSize: 12 + fontOffset },
                       ]}
-                      accessibilityLabel={`${lineNum}호선`} // ✅ 호선 라벨
+                      accessibilityLabel={`${lineNum}호선`} 
                     >
                       {lineNum}
                     </Text>

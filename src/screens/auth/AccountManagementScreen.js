@@ -25,7 +25,6 @@ const AccountManagementScreen = ({ navigation }) => {
           <Text style={[styles.greetingText, { fontSize: responsiveFontSize(16) + fontOffset }]}> {user?.email || '사용자'}님 반갑습니다.</Text>
         </View>
 
-        {/* --- ⛔️ [제거] '사용법 다시보기' 버튼 제거 --- */}
 
         <View style={styles.infoCard}>
           <View style={styles.cardTitleContainer}>
@@ -40,7 +39,6 @@ const AccountManagementScreen = ({ navigation }) => {
           <View style={styles.cardTitleContainer}>
             <Text style={[styles.cardTitle, { fontSize: responsiveFontSize(16) + fontOffset }]}>계정관리</Text>
           </View>
-          {/* --- ⛔️ [제거] '로그아웃' 메뉴 제거 --- */}
           <MenuRow text="회원탈퇴" onPress={handleDeleteAccount} isDestructive={true} isLast={true} />
         </View>
       </View>
@@ -129,7 +127,7 @@ const styles = StyleSheet.create({
   destructiveText: {
     color: '#ff3b30',
   },
-  arrowIconCircle: {}, // This style seems empty, kept for structure
+  arrowIconCircle: {}, 
 });
 
 export default AccountManagementScreen;

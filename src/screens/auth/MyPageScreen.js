@@ -63,7 +63,7 @@ const MyPageScreen = () => {
       <CustomButton
         title="로그아웃"
         onPress={handleLogout}
-        type="destructive" // 위험/종료를 의미하는 빨간색 버튼
+        type="destructive" 
       />
     </View>
   );

@@ -18,7 +18,6 @@ export const useAuthForm = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [securityAnswerError, setSecurityAnswerError] = useState('');
 
-  // 이메일 유효성 검사 함수
   const validateEmail = (text) => {
     const emailRegex = /\S+@\S+\.\S+/;
     if (text && !emailRegex.test(text)) {
@@ -30,7 +29,6 @@ export const useAuthForm = () => {
     }
   };
 
-  // 비밀번호 유효성 검사 함수
   const validatePassword = (text) => {
     if (text && text.length < 8) {
       setPasswordError('비밀번호는 8자리 이상이어야 합니다.');

@@ -9,7 +9,6 @@ function ok(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-// ✅ 줄바꿈 포함 모든 태그 추출
 function parseTag(xml: string, tag: string): string[] {
   const regex = new RegExp(`<${tag}>([\\s\\S]*?)<\\/${tag}>`, "g");
   return [...xml.matchAll(regex)].map((m) => m[1].trim());
@@ -19,7 +18,6 @@ async function fetchQuickExit(stationName: string) {
   const normalized = stationName.replace(/\s/g, "");
   const results: any[] = [];
 
-  // 순차적으로 100개씩 조회 (최대 9000까지)
   for (let start = 1; start <= 9000; start += 100) {
     const end = start + 99;
     const url = `${BASE}/${SEOUL_API_KEY}/xml/${SERVICE}/${start}/${end}/${encodeURIComponent(
@@ -30,11 +28,10 @@ async function fetchQuickExit(stationName: string) {
     const xml = await res.text();
 
     if (!xml.includes("<response>")) {
-      console.warn("⚠️ Invalid API response:", xml.slice(0, 200));
+      console.warn(" Invalid API response:", xml.slice(0, 200));
       break;
     }
 
-    // <item>별로 분리
     const itemBlocks = xml.split("<item>").slice(1).map((b) => b.split("</item>")[0]);
     if (itemBlocks.length === 0) break;
 
@@ -58,12 +55,10 @@ async function fetchQuickExit(stationName: string) {
     results.push(...batch);
   }
 
-  // 역 이름 필터링 (공백 제거 + 유연 비교)
   const filtered = results.filter(
     (e) => (e.stnNm ?? "").replace(/\s/g, "").includes(normalized),
   );
 
-  // 중복 제거 (역코드 + 출입문 번호 기준)
   const unique = Array.from(
     new Map(filtered.map((e) => [`${e.stnCd}-${e.qckgffVhclDoorNo}`, e])).values(),
   );
@@ -86,7 +81,7 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    console.error("❌ quick-exit error:", err);
+    console.error(" quick-exit error:", err);
     return new Response(
       JSON.stringify({
         error: err instanceof Error ? err.message : String(err),

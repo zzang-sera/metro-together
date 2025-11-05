@@ -1,9 +1,6 @@
-// Data source:
-//   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
 
 import rawJson from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -19,12 +16,10 @@ function pickArray(any) {
   return [];
 }
 
-// 역명 끝의 "(숫자)" 제거
 function sanitizeName(s = "") {
   return typeof s === "string" ? s.replace(/\(\s*\d+\s*\)$/g, "").trim() : "";
 }
 
-// 한글 상태값 변환
 function koStatus(v = "") {
   if (v === "Y" || v === "사용가능") return "사용가능";
   if (v === "N" || v === "중지" || v === "보수중") return "보수중";
@@ -36,7 +31,6 @@ function normalizeLine(line = "") {
   return m ? `${parseInt(m[1], 10)}호선` : String(line || "");
 }
 
-/* ---------------------- 정규화 ---------------------- */
 function toPretty(raw) {
   const stationNameFull =
     raw.stn_nm ?? raw.STN_NM ?? raw.station_nm ?? raw.name ?? raw.stationName ?? "";
@@ -56,7 +50,6 @@ function toPretty(raw) {
   };
 }
 
-/* ---------------------- 인덱스 생성 ---------------------- */
 const RAW_ROWS = pickArray(rawJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
@@ -69,9 +62,6 @@ for (const r of PRETTY) {
   INDEX_BY_NAME.set(key, arr);
 }
 
-/* ---------------------- 공개 API ---------------------- */
-
-// ✅ 역명으로 조회 (EV / ES / WL 등 필터링)
 export function getElevEsByName(stationName, type) {
   const key = sanitizeName(stationName);
   if (!key) return [];
@@ -80,7 +70,6 @@ export function getElevEsByName(stationName, type) {
   return rows.filter((r) => r.kind === type);
 }
 
-// ✅ 화면용 데이터 포맷터
 export function prettifyElevEs(rows, fallbackLine = "") {
   const arr = Array.isArray(rows) ? rows : [];
   return arr.map((r, i) => ({
@@ -97,11 +86,9 @@ export function prettifyElevEs(rows, fallbackLine = "") {
   }));
 }
 
-// ✅ 통합 검색 함수 (ChatBotScreen에서 호출용)
 export function getFacilityForStation(stationName, type) {
   const rows = getElevEsByName(stationName, type);
   return prettifyElevEs(rows);
 }
 
-// ✅ 유틸 export
 export { sanitizeName, koStatus, normalizeLine };

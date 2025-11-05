@@ -9,7 +9,7 @@ const MAX_CARD_HEIGHT = Math.min(260, screenH * 0.45);
 
 export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" }) {
   const [coords, setCoords] = useState([]);
-  const [imgSize, setImgSize] = useState({ width: 1, height: 1 }); // 초기값 1:1 대신, 즉시 계산용
+  const [imgSize, setImgSize] = useState({ width: 1, height: 1 }); 
   const [hasRealSize, setHasRealSize] = useState(false);
   const [parentW, setParentW] = useState(null);
 
@@ -24,7 +24,6 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     LO: "보관함",
   };
 
-  // ✅ 이미지 크기 불러오기
   useEffect(() => {
     if (typeof imageUrl !== "string" || !/^https?:\/\//.test(imageUrl)) {
       setHasRealSize(false);
@@ -42,15 +41,12 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     );
   }, [imageUrl]);
 
-  // ✅ 카드 너비 계산
   const fallbackW = Math.round(screenW * 0.72);
   const cardW = Math.max(140, Math.min(parentW || fallbackW, screenW * 0.85));
 
-  // ✅ 비율 계산 (실제 비율이 오기 전에는 임시 1.6 사용)
   const aspect = hasRealSize ? imgSize.width / imgSize.height : 1.6;
   const cardH = Math.min(cardW / aspect, MAX_CARD_HEIGHT);
 
-  // ✅ 실제 이미지 비율이 오기 전에는 로딩 뷰 표시
   if (!hasRealSize) {
     return (
       <View
@@ -67,17 +63,14 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
     <View
       style={[styles.card, { width: cardW, maxHeight: MAX_CARD_HEIGHT }]}
       onLayout={(e) => setParentW(e.nativeEvent.layout.width)}
-      key={imageUrl} // 이미지 교체시 리렌더 유도
+      key={imageUrl} 
     >
-      {/* 이미지 비율 고정 */}
       <View style={[styles.imageBox, { aspectRatio: aspect }]}>
-        {/* 지도 이미지 */}
         <Image
           source={{ uri: imageUrl }}
           style={StyleSheet.absoluteFill}
           resizeMode="contain"
         />
-        {/* 마커 SVG */}
         <Svg
           pointerEvents="none"
           width="100%"
@@ -109,7 +102,6 @@ export default function BarrierFreeMapMini({ stationName, imageUrl, type = "TO" 
         </Svg>
       </View>
 
-      {/* 캡션 */}
       <Text style={styles.caption}>
         {stationName} {TYPE_LABEL[type] || "시설"} 위치
       </Text>

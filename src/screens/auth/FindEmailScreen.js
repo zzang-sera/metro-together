@@ -7,12 +7,10 @@ import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
 
-// 1. 필요한 훅과 유틸리티를 불러옵니다.
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 
 const FindEmailScreen = ({ navigation }) => {
-  // 2. Context에서 fontOffset 값을 가져옵니다.
   const { fontOffset } = useFontSize();
   
   const {
@@ -52,12 +50,10 @@ const FindEmailScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.container} keyboardVerticalOffset={60}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* 3. 각 Text 컴포넌트에 동적 폰트 크기를 적용합니다. */}
         <Text style={[styles.title, { fontSize: responsiveFontSize(28) + fontOffset }]}>
           이메일 찾기
         </Text>
         
-        {/* AuthInput과 CustomButton은 이미 수정되었으므로 그대로 사용합니다. */}
         <AuthInput label="이름" value={name} onChangeText={setName} error={nameError} />
         <AuthInput label="생년월일" placeholder="8자리 입력 (예: 19900101)" value={dob} onChangeText={setDob} error={dobError} keyboardType="number-pad" />
 
