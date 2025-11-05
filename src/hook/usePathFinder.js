@@ -1,4 +1,3 @@
-// src/hook/usePathFinder.js
 import { useState, useEffect } from "react";
 import { findAccessiblePath } from "../api/metro/pathfinderAPI";
 

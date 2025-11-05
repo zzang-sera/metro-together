@@ -1,4 +1,3 @@
-// src/screens/intro/OnboardingScreen.js
 import React from "react";
 import { Image, Dimensions, View, Text, TouchableOpacity, SafeAreaView } from "react-native";
 import Onboarding from "react-native-onboarding-swiper";

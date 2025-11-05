@@ -1,4 +1,3 @@
-// App.js
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image, Dimensions, Text, TouchableOpacity } from 'react-native';
 import { NavigationContainer, useNavigation, DefaultTheme, getFocusedRouteNameFromRoute } from '@react-navigation/native';
@@ -10,12 +9,9 @@ import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StatusBar } from 'expo-status-bar';
 import Onboarding from 'react-native-onboarding-swiper';
-
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { FontSizeProvider, useFontSize } from "./src/contexts/FontSizeContext";
 import { responsiveFontSize } from "./src/utils/responsive";
-
-// --- Screens ---
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
@@ -34,7 +30,6 @@ import BarrierFreeMapScreen from './src/screens/station/BarrierFreeMapScreen';
 import PathFinderScreen from './src/screens/pathfinder/PathFinderScreen';
 import OnboardingScreen from './src/screens/intro/OnboardingScreen';
 
-// Navigators 정의
 const RootStack = createStackNavigator();
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,9 +40,6 @@ const MainStack = createStackNavigator();
 const HomeStack = createStackNavigator();
 const PathFinderStack = createStackNavigator();
 
-/* ──────────────────────────────
-   공통 옵션
-────────────────────────────── */
 const commonTabOptions = {
   headerShown: true,
   headerTitleAlign: "center",
@@ -64,14 +56,10 @@ const mintHeaderOptions = {
   headerTintColor: "#17171B",
 };
 
-/* ──────────────────────────────
-   MainStack
-────────────────────────────── */
 const MainStackNavigator = () => (
   <MainStack.Navigator
     screenOptions={{
       headerShown: false,
-      // ✅ 접근성 라벨 추가
       headerBackAccessibilityLabel: '뒤로가기',
     }}
   >
@@ -80,9 +68,6 @@ const MainStackNavigator = () => (
   </MainStack.Navigator>
 );
 
-/* ──────────────────────────────
-   각 스택 네비게이터
-────────────────────────────── */
 const HomeStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -90,7 +75,6 @@ const HomeStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -107,7 +91,6 @@ const MyPageStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -128,7 +111,6 @@ const NearbyStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -145,7 +127,6 @@ const SearchStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -162,7 +143,6 @@ const PathFinderStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -173,9 +153,6 @@ const PathFinderStackNavigator = () => {
   );
 };
 
-/* ──────────────────────────────
-   Guest Tabs
-────────────────────────────── */
 const GuestTabs = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
@@ -213,7 +190,6 @@ const GuestTabs = () => {
           else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
           return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
         },
-        // ✅ 탭 네비게이터에도 추가 (탭 내 스택에 적용됨)
         headerBackAccessibilityLabel: '뒤로가기',
       })}
     >
@@ -256,9 +232,6 @@ const GuestTabs = () => {
   );
 };
 
-/* ──────────────────────────────
-   User Tabs
-────────────────────────────── */
 const UserTabs = () => {
   const insets = useSafeAreaInsets();
   const { fontOffset } = useFontSize();
@@ -275,13 +248,8 @@ const UserTabs = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => {
-        // ✅ 현재 활성 route 감지
         const routeName = getFocusedRouteNameFromRoute(route) ?? "";
-
-        // ✅ 숨길 스크린 목록
         const hideTabScreens = ["Onboarding"];
-
-        // ✅ 기본 스타일
         const tabBarVisible = !hideTabScreens.includes(routeName);
         const baseTabBarStyle = {
           backgroundColor: "#F9F9F9",
@@ -329,7 +297,6 @@ const UserTabs = () => {
             else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
             return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
           },
-          // ✅ 탭 네비게이터에도 추가 (탭 내 스택에 적용됨)
           headerBackAccessibilityLabel: '뒤로가기',
         };
       }}
@@ -343,9 +310,6 @@ const UserTabs = () => {
   );
 };
 
-/* ──────────────────────────────
-   Auth Stack
-────────────────────────────── */
 const AuthStackNavigator = () => {
   const { fontOffset } = useFontSize();
   return (
@@ -354,7 +318,6 @@ const AuthStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
-        // ✅ 접근성 라벨 추가
         headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
@@ -368,9 +331,6 @@ const AuthStackNavigator = () => {
   );
 };
 
-/* ──────────────────────────────
-   Onboarding
-────────────────────────────── */
 const { width: W, height: H } = Dimensions.get('window');
 const IMG_W = Math.min(320, W * 0.82);
 const IMG_H = Math.min(IMG_W * 1.95, H * 0.62);
@@ -394,9 +354,6 @@ const TextBtn = ({ label, onPress }) => (
   </TouchableOpacity>
 );
 
-/* ──────────────────────────────
-   Root Component
-────────────────────────────── */
 const navTheme = {
   ...DefaultTheme,
   colors: { ...DefaultTheme.colors, background: '#F9F9F9' },
@@ -423,7 +380,6 @@ const AppContent = () => {
       <RootStack.Navigator
         screenOptions={{
           headerShown: false,
-          // ✅ 접근성 라벨 추가
           headerBackAccessibilityLabel: '뒤로가기',
         }}
       >
@@ -431,7 +387,7 @@ const AppContent = () => {
           <RootStack.Screen
             name="Onboarding"
             options={{ headerShown: false }}
-            children={() => <OnboardingScreen onFinish={() => setShowOnboarding(false)} />} // ✅ 정확한 children prop
+            children={() => <OnboardingScreen onFinish={() => setShowOnboarding(false)} />}
           />
         ) : user ? (
           <RootStack.Screen name="UserTabs" component={UserTabs} />

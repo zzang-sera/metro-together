@@ -1,4 +1,3 @@
-//src/screens/auth/ForgotPasswordScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useAuthForm } from '../../hook/useAuthForm';

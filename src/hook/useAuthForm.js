@@ -1,4 +1,3 @@
-// src/hook/useAuthForm.js
 import { useState } from 'react';
 export const SECURITY_QUESTION = "당신이 다닌 첫 번째 학교 이름은 무엇입니까?";
 

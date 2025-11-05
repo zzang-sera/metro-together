@@ -21,9 +21,9 @@ const CustomButton = ({
         return [styles.buttonBase, styles.primaryButton];
       case 'destructive':
         return [styles.buttonBase, styles.destructiveButton];
-      case 'call': // 'call' 타입 추가
+      case 'call':
         return [styles.buttonBase, styles.callButton];
-      default: // 'feature'
+      default: 
         return [styles.buttonBase, styles.featureButton];
     }
   };
@@ -36,9 +36,9 @@ const CustomButton = ({
         return [styles.textBase, styles.primaryButtonText];
       case 'destructive':
         return [styles.textBase, styles.destructiveButtonText];
-      case 'call': // 'call' 텍스트 타입 추가
+      case 'call':
         return [styles.textBase, styles.callButtonText];
-      default: // 'feature'
+      default:
         return [styles.textBase, styles.featureButtonText];
     }
   };

@@ -1,4 +1,3 @@
-// src/firebase/config.js
 import Constants from "expo-constants";
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";

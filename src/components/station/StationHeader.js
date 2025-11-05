@@ -1,4 +1,3 @@
-// src/components/station/StationHeader.js
 import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, StatusBar, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";

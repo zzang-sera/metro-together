@@ -1,4 +1,3 @@
-// src/components/station/StationInfoCard.js
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { responsiveFontSize } from "../../utils/responsive";

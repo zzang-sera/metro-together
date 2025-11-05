@@ -1,4 +1,3 @@
-// src/constants/constants.js
 export const SUPABASE_URL = "https://utqfwkhxacqhgjjalpby.supabase.co";
 export const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV0cWZ3a2h4YWNxaGdqamFscGJ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAyNTk4OTksImV4cCI6MjA3NTgzNTg5OX0.w3GS_v6HG3aOgDRldZM3JteHMt4dwkEKRZ8HRK7Jlnc";
 export const SEOUL_OPEN_API_KEY = process.env.EXPO_PUBLIC_SEOUL_API_KEY;

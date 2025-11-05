@@ -1,6 +1,6 @@
 
 import liftJson from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
-import phoneJson from "../../assets/metro-data/metro/tel/서울교통공사_역주소 및 전화번호_20250820 (1).json"; // ✅ 추가됨
+import phoneJson from "../../assets/metro-data/metro/tel/서울교통공사_역주소 및 전화번호_20250820 (1).json";
 
 function pickArray(any) {
   if (Array.isArray(any)) return any;
@@ -88,7 +88,7 @@ function toPretty(raw) {
 const RAW_ROWS = pickArray(liftJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
-const INDEX_BY_NAME = new Map(); // stationName → rows[]
+const INDEX_BY_NAME = new Map();
 for (const r of PRETTY) {
   const key = r.stationName;
   const arr = INDEX_BY_NAME.get(key) || [];

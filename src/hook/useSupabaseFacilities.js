@@ -1,4 +1,3 @@
-// src/hook/useSupabaseFacilities.js
 import { useEffect, useState } from "react";
 import { supabase } from "../config/supabaseClient";
 

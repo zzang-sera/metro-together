@@ -1,4 +1,3 @@
-// src/screens/chatbot/ChatBotScreen.js
 import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   View,

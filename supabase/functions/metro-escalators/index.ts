@@ -52,7 +52,7 @@ Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
     const stationName = url.searchParams.get("stationName") ?? "";
-    const type = url.searchParams.get("type") ?? ""; // EV / ES
+    const type = url.searchParams.get("type") ?? "";
 
     if (!ok(SEOUL_API_KEY)) throw new Error("Missing SEOUL_OPEN_API_KEY");
     if (!ok(stationName)) throw new Error("stationName is required");

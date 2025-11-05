@@ -1,4 +1,3 @@
-// src/screens/main/MainScreen.js
 import React, { useState } from 'react';
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

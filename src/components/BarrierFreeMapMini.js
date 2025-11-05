@@ -1,4 +1,3 @@
-// ✅ src/components/BarrierFreeMapMini.js
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Dimensions, Image, ActivityIndicator } from "react-native";
 import Svg, { Circle, Text as SvgText } from "react-native-svg";

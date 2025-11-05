@@ -1,7 +1,5 @@
-// supabase/functions/metro-station-images/index.ts
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 
-/** ✅ XML을 수동으로 JSON으로 파싱하는 함수 */
 function parseXmlToJson(xml: string) {
   const items = xml.split(/<row>/).slice(1);
   const extract = (text: string, tag: string) => {
@@ -32,23 +30,20 @@ serve(async (req) => {
     const response = await fetch(apiUrl);
     const xml = await response.text();
 
-    // ✅ XML에서 결과코드 확인
     if (xml.includes("<CODE>ERROR")) {
       console.error("⚠️ 서울 열린데이터 오류:", xml.slice(0, 100));
       throw new Error("서울 열린데이터 오류: " + xml.slice(0, 200));
     }
 
-    // ✅ XML → JSON 변환
     const data = parseXmlToJson(xml);
 
-    // ✅ 한글 매칭 (normalize)
     const filtered = stationName
       ? data.filter((r) =>
           r.station?.normalize("NFC").includes(stationName.normalize("NFC"))
         )
       : data;
 
-    console.log(`✅ 반환된 데이터 수: ${filtered.length}`);
+    console.log(`반환된 데이터 수: ${filtered.length}`);
 
     return new Response(JSON.stringify(filtered), {
       headers: { "Content-Type": "application/json; charset=utf-8" },

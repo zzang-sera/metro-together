@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
   lineBadgeText: { fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold", textAlign: "center" },
   starBtn: { padding: 6 },
-  buttonListContainer: { width: "100%", paddingHorizontal: "5%", marginTop: 16 }, // ✅ marginTop 추가
+  buttonListContainer: { width: "100%", paddingHorizontal: "5%", marginTop: 16 },
 
   buttonContentLayout: {
     flexDirection: "row",

@@ -1,5 +1,3 @@
-// src/contexts/FontSizeContext.js (최종 수정 코드)
-
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from './AuthContext'; 

@@ -1,5 +1,3 @@
-// src/utils/responsive.js
-
 import { Dimensions, PixelRatio } from 'react-native';
 
 const FIGMA_WIDTH = 375;

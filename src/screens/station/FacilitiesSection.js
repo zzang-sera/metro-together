@@ -1,5 +1,3 @@
-// src/screens/station/FacilitiesSection.js (리팩토링 완료)
-
 import React, { useEffect, useState } from "react";
 import {
   View,

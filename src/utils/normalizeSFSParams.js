@@ -1,4 +1,3 @@
-// src/utils/normalizeSFSParams.js
 export function normalizeSFSParams(raw = {}) {
   const nameRaw = raw.name ?? raw.stationName ?? raw.title ?? raw.label ?? '';
   const lineRaw = raw.line ?? raw.lineName ?? raw.route ?? '';

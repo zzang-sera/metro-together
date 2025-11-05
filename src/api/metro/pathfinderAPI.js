@@ -19,7 +19,7 @@ export async function findAccessiblePath(start, end, options = {}) {
 
     return data;
   } catch (err) {
-    console.error("🚨 PathFinder API Error:", err);
+    console.error(" PathFinder API Error:", err);
     throw err;
   }
 }

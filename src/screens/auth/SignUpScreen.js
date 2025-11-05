@@ -1,4 +1,3 @@
-//src/screens/auth/SignUpScreen.js
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';

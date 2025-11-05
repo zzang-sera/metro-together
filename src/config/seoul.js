@@ -1,4 +1,3 @@
-// src/config/seoul.js
 import Constants from 'expo-constants';
 
 const EXTRA = Constants.expoConfig?.extra ?? Constants.manifest?.extra ?? {};

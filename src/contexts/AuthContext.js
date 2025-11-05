@@ -1,8 +1,6 @@
-// src/contexts/AuthContext.js
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig'; // 기존 firebase 설정 파일
+import { auth } from '../config/firebaseConfig';
 
 const AuthContext = createContext();
 

@@ -1,4 +1,3 @@
-//src/screens/policy/PolicyScreen.js
 import React from 'react';
 import { ScrollView, Text, StyleSheet } from 'react-native';
 import { useRoute } from '@react-navigation/native';
