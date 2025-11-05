@@ -22,7 +22,6 @@ function parseStationName(stn_nm) {
   return { name, line };
 }
 
-// 인덱스 구성
 const byCode = new Map();
 const byName = new Map();
 const byLineName = new Map();

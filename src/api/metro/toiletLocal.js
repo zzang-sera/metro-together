@@ -1,10 +1,6 @@
-// ✅ src/api/metro/toiletLocal.js
-// Source:
-//   src/assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json
 
 import rawJson from "../../assets/metro-data/metro/toilets/서울교통공사_역사공중화장실정보_20241127.json";
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -25,7 +21,6 @@ function sanitizeName(s = "") {
   return s.replace(/\s*\(\s*\d+\s*호선\s*\)\s*$/g, "").replace(/역$/, "").trim();
 }
 
-/* ---------------------- 키 매핑 ---------------------- */
 const K = {
   seq: "연번",
   line: "운영노선명",
@@ -41,7 +36,6 @@ const K = {
   bell: "비상벨 설치유무",
 };
 
-/* ---------------------- 변환 ---------------------- */
 function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
@@ -70,7 +64,6 @@ function toPretty(raw) {
   };
 }
 
-/* ---------------------- 인덱스 ---------------------- */
 const RAW_ROWS = pickArray(rawJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
@@ -82,7 +75,6 @@ for (const r of PRETTY) {
   INDEX_BY_NAME.set(key, arr);
 }
 
-/* ---------------------- 공개 API ---------------------- */
 export function getToiletsByName(stationName) {
   const k = sanitizeName(stationName || "");
   if (!k) return [];

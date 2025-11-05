@@ -7,13 +7,6 @@ import { getWheelchairLiftsForStation } from "../api/metro/wheelchairLiftLocal";
 import { getDisabledToiletsForStation } from "../api/metro/disabled_toiletLocal";
 import { getToiletsForStation } from "../api/metro/toiletLocal";
 
-/**
- * ✅ 로컬 지하철 시설 정보를 불러오는 훅
- * - 실시간 API 실패 시 로컬 JSON으로 폴백
- * - EV / ES → esEvLocal.js 사용 (통합 JSON 기반)
- * - WC(휠체어 급속충전)는 API 전용 → 빈 배열 반환
- * - 서울역 예외 처리 (항상 “서울역”으로 통일)
- */
 export function useLocalFacilities(stationName, stationCode, line, type) {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,25 +20,24 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
       try {
         let result = [];
 
-        // ✅ “서울” → “서울역” 강제 통일
         let cleanName = stationName.trim();
         if (cleanName === "서울") cleanName = "서울역";
 
         switch (type) {
-          case "EV": // ✅ 엘리베이터 → esEvLocal.js 사용
-          case "ES": // ✅ 에스컬레이터 → esEvLocal.js 사용
+          case "EV": 
+          case "ES": 
             result = getFacilityForStation(cleanName, type);
             break;
 
-          case "LO": // 물품보관함
+          case "LO": 
             result = await getLockersForStation(cleanName, line, stationCode);
             break;
 
-          case "NU": // 수유실
+          case "NU": 
             result = await getNursingRoomsForStation(cleanName, line, stationCode);
             break;
 
-          case "VO": { // 음성유도기 (역명+stationCode 병용)
+          case "VO": { 
             const byCode = await getAudioBeaconsForStation(cleanName, line, stationCode);
             if (byCode.length > 0) {
               result = byCode;
@@ -56,19 +48,19 @@ export function useLocalFacilities(stationName, stationCode, line, type) {
             break;
           }
 
-          case "WL": // 휠체어 리프트
+          case "WL": 
             result = await getWheelchairLiftsForStation(cleanName, line, stationCode);
             break;
 
-          case "DT": // 장애인 화장실
+          case "DT": 
             result = await getDisabledToiletsForStation(cleanName, line, stationCode);
             break;
 
-          case "TO": // 일반 화장실
+          case "TO": 
             result = await getToiletsForStation(cleanName, line, stationCode);
             break;
 
-          case "WC": // ✅ 휠체어 급속충전 (API 전용)
+          case "WC": 
             result = [];
             break;
 

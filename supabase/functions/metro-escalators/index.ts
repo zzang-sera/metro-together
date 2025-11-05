@@ -12,7 +12,7 @@ type RawRow = {
   OPR_SEC?: string;
   INSTL_PSTN?: string;
   USE_YN?: string;
-  ELVTR_SE?: string; // EV / ES
+  ELVTR_SE?: string; 
 };
 
 function ok(v: unknown): v is string {
@@ -24,7 +24,6 @@ async function fetchStationsChunk(start: number, end: number): Promise<RawRow[]>
   const res = await fetch(url);
   const text = await res.text();
 
-  // 🔎 XML 응답일 경우 오류로 처리
   if (text.trim().startsWith("<")) {
     console.error("⚠️ Received XML (check API key or quota):", text.slice(0, 100));
     throw new Error("Seoul API returned XML (invalid key or request too large)");
@@ -35,7 +34,6 @@ async function fetchStationsChunk(start: number, end: number): Promise<RawRow[]>
   return Array.isArray(rows) ? rows : [];
 }
 
-// ✅ 전체 데이터 가져오기 (1~2000 범위)
 async function fetchAllStations(): Promise<RawRow[]> {
   const chunk1 = await fetchStationsChunk(1, 1000);
   const chunk2 = await fetchStationsChunk(1001, 2000);
@@ -65,10 +63,8 @@ Deno.serve(async (req) => {
     const filtered = allData.filter((r) => {
       const name = (r.STN_NM ?? "").replace(/\s/g, "");
 
-      // 사당, 사당(2), 사당(4)
       if (name === target || name.startsWith(target + "(")) return true;
 
-      // 동대문 vs 동대문역사문화공원 구분
       if (name === target) return true;
       return false;
     });

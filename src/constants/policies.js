@@ -1,6 +1,6 @@
 // src/constants/policies.js
 
-// 서비스 이용약관 (예시)
+// 서비스 이용약관 
 export const TERMS_OF_SERVICE = `
 제1조 (목적)
 이 약관은 Metro-Together(이하 "회사")가 제공하는 Metro-Together 서비스(이하 "서비스")의 이용과 관련하여 회사와 회원의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.
@@ -18,7 +18,7 @@ export const TERMS_OF_SERVICE = `
 (실제 서비스에서는 각 조항에 대한 상세 내용이 필요합니다.)
 `;
 
-// 위치기반 서비스 이용약관 (예시)
+// 위치기반 서비스 이용약관 
 export const LOCATION_POLICY = `
 제1조 (목적)
 본 약관은 Metro-Together(이하 "회사")가 제공하는 위치기반서비스(이하 "서비스")를 이용함에 있어 회사와 회원의 권리 및 의무, 기타 제반사항을 정함을 목적으로 합니다.
@@ -36,7 +36,7 @@ export const LOCATION_POLICY = `
 (실제 서비스에서는 각 조항에 대한 상세 내용이 필요합니다.)
 `;
 
-// 개인정보 처리방침 (예시)
+// 개인정보 처리방침 
 export const PRIVACY_POLICY = `
 Metro-Together(이하 '회사')는 개인정보보호법에 따라 이용자의 개인정보 및 권익을 보호하고 개인정보와 관련한 이용자의 고충을 원활하게 처리할 수 있도록 다음과 같은 처리방침을 두고 있습니다.
 

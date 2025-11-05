@@ -1,11 +1,7 @@
-// ✅ src/api/metro/wheelchairLiftLocal.js
-// Source:
-//   src/assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json
 
 import liftJson from "../../assets/metro-data/metro/wheelchairLift/서울교통공사_휠체어리프트 설치현황_20250310.json";
 import phoneJson from "../../assets/metro-data/metro/tel/서울교통공사_역주소 및 전화번호_20250820 (1).json"; // ✅ 추가됨
 
-/* ---------------------- 유틸 ---------------------- */
 function pickArray(any) {
   if (Array.isArray(any)) return any;
   if (Array.isArray(any?.DATA)) return any.DATA;
@@ -21,14 +17,12 @@ function pickArray(any) {
   return [];
 }
 
-// "신설동(1)" / "신설동 (1)" → "신설동"
 function sanitizeName(s = "") {
   return typeof s === "string"
     ? s.replace(/\s*\(\s*\d+\s*\)\s*$/g, "").replace(/역$/, "").trim()
     : "";
 }
 
-/* ---------------------- 전화번호 매핑 ---------------------- */
 const PHONE_MAP = new Map();
 if (Array.isArray(phoneJson)) {
   for (const p of phoneJson) {
@@ -37,7 +31,6 @@ if (Array.isArray(phoneJson)) {
   }
 }
 
-/* ---------------------- 키 맵 ---------------------- */
 const K = {
   seq: "연번",
   line: "호선",
@@ -57,7 +50,6 @@ const K = {
   date: "데이터 기준일자",
 };
 
-/* ---------------------- 변환 ---------------------- */
 function toPretty(raw) {
   const stationNameFull = String(raw[K.name] ?? "").trim();
   const stationName = sanitizeName(stationNameFull);
@@ -73,7 +65,6 @@ function toPretty(raw) {
   const startTxt = [sGround, sLevel ? `${sLevel}층` : "", sDetail].filter(Boolean).join(" ");
   const endTxt = [eGround, eLevel ? `${eLevel}층` : "", eDetail].filter(Boolean).join(" ");
 
-  // ✅ 역 전화번호 우선 사용
   const phone = PHONE_MAP.get(stationName) || "서울교통공사 고객센터 1577-1234";
 
   return {
@@ -94,7 +85,6 @@ function toPretty(raw) {
   };
 }
 
-/* ---------------------- 인덱스 ---------------------- */
 const RAW_ROWS = pickArray(liftJson);
 const PRETTY = RAW_ROWS.map(toPretty);
 
@@ -106,7 +96,6 @@ for (const r of PRETTY) {
   INDEX_BY_NAME.set(key, arr);
 }
 
-/* ---------------------- 공개 API ---------------------- */
 export function getWheelchairLiftsByName(stationName) {
   const k = sanitizeName(stationName || "");
   if (!k) return [];

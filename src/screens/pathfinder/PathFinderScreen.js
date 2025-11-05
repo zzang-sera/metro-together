@@ -12,7 +12,7 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-  Alert, // ✅ Alert를 react-native에서 import 합니다.
+  Alert, 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
@@ -60,7 +60,7 @@ export async function fetchSubwayPath(dep, arr, wheelchair = false) {
 const PathFinderScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
-  const route = useRoute(); // ✅ 추가됨
+  const route = useRoute(); 
 
   const [dep, setDep] = useState('');
   const [arr, setArr] = useState('');
@@ -74,7 +74,6 @@ const PathFinderScreen = () => {
   const depInputRef = useRef(null);
   const arrInputRef = useRef(null);
 
-  // ✅ 추가: 다른 화면에서 넘어온 출발/도착역 자동 세팅
   useEffect(() => {
     if (route.params?.selectedDep) {
       setDep(route.params.selectedDep);
@@ -84,7 +83,6 @@ const PathFinderScreen = () => {
     }
   }, [route.params]);
 
-  // ✅ “서울” → “서울역” 표시
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
     if (!q) return [];
@@ -123,12 +121,10 @@ const PathFinderScreen = () => {
 
   const handleFindPath = async () => {
     if (!dep.trim() || !arr.trim()) {
-      // ✅ alert()를 Alert.alert()로 변경
       Alert.alert('안내 메시지', '출발역과 도착역을 모두 입력해주세요.');
       return;
     }
     if (dep.trim() === arr.trim()) {
-      // ✅ alert()를 Alert.alert()로 변경
       Alert.alert('안내 메시지', '출발역과 도착역이 같습니다. 다른 역을 선택해주세요.');
       return;
     }
@@ -139,7 +135,6 @@ const PathFinderScreen = () => {
       const data = await fetchSubwayPath(dep, arr, wheelchair);
       setPathData(data);
     } catch (e) {
-      // ✅ alert()를 Alert.alert()로 변경
       Alert.alert('안내 메시지', '경로를 불러오는 중 문제가 발생했습니다.');
       console.error(e);
     } finally {
@@ -149,7 +144,6 @@ const PathFinderScreen = () => {
 
   return (
     <View style={styles.container}>
-      {/* 안내 영역 */}
       <View style={styles.fixedHeader}>
         {pathData === null && (
           <View style={styles.noticeBox} accessibilityRole="alert">
@@ -158,7 +152,7 @@ const PathFinderScreen = () => {
               size={responsiveFontSize(24)}
               color="#0B5FFF"
               style={{ marginRight: 8 }}
-              accessibilityLabel="정보" // ✅ 접근성 라벨 추가
+              accessibilityLabel="정보" 
             />
             <Text
               style={[
@@ -171,10 +165,8 @@ const PathFinderScreen = () => {
           </View>
         )}
 
-        {/* 입력창 */}
         <View style={styles.searchBoxContainer}>
           <View style={styles.inputWrapper}>
-            {/* 출발역 입력 */}
             <View style={styles.inputContainer}>
               <Text
                 style={[
@@ -210,7 +202,6 @@ const PathFinderScreen = () => {
 
             <View style={styles.divider} />
 
-            {/* 도착역 입력 */}
             <View style={styles.inputContainer}>
               <Text
                 style={[
@@ -248,8 +239,8 @@ const PathFinderScreen = () => {
           <TouchableOpacity
             onPress={swapStations}
             style={styles.swapButton}
-            accessibilityRole="button" // ✅ 역할 추가
-            accessibilityLabel="출발역과 도착역 교환" // ✅ 라벨 추가
+            accessibilityRole="button" 
+            accessibilityLabel="출발역과 도착역 교환" 
           >
             <MaterialCommunityIcons
               name="swap-vertical"
@@ -259,7 +250,6 @@ const PathFinderScreen = () => {
           </TouchableOpacity>
         </View>
 
-        {/* 휠체어 체크 */}
         <TouchableOpacity
           activeOpacity={0.8}
           style={styles.checkboxContainer}
@@ -267,14 +257,14 @@ const PathFinderScreen = () => {
             setWheelchair(!wheelchair);
             setPathData(null);
           }}
-          accessibilityRole="checkbox" // ✅ 역할 추가
-          accessibilityState={{ checked: wheelchair }} // ✅ 상태 추가
+          accessibilityRole="checkbox" 
+          accessibilityState={{ checked: wheelchair }} 
         >
           <Ionicons
             name={wheelchair ? 'checkbox-outline' : 'square-outline'}
             size={26 + fontOffset / 2}
             color={wheelchair ? '#14CAC9' : '#999'}
-            accessibilityHidden={true} // ✅ 아이콘 자체는 숨김
+            accessibilityHidden={true} 
           />
           <Text
             style={[
@@ -291,7 +281,6 @@ const PathFinderScreen = () => {
         )}
       </View>
 
-      {/* 결과 영역 */}
       <ScrollView
         style={styles.scrollArea}
         keyboardShouldPersistTaps="handled"
@@ -308,7 +297,6 @@ const PathFinderScreen = () => {
         )}
       </ScrollView>
 
-      {/* 검색결과 드롭다운 */}
       {focusedField && searchResults.length > 0 && listTopPosition > 0 && (
         <FlatList
           data={searchResults}
@@ -325,7 +313,7 @@ const PathFinderScreen = () => {
                 size={24 + fontOffset / 1.5}
                 color="#17171B"
                 style={{ marginRight: 10 }}
-                accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+                accessibilityHidden={true} 
               />
               <Text
                 style={[
@@ -358,7 +346,6 @@ const PathFinderScreen = () => {
                           styles.lineText,
                           { color: textColor, fontSize: 12 + fontOffset / 2.5 },
                         ]}
-                        // ✅ "2" 대신 "2호선"으로 읽도록 라벨 추가
                         accessibilityLabel={`${line.replace('호선', '')}호선`}
                       >
                         {line.replace('호선', '')}

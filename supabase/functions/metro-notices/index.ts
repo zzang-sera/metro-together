@@ -22,7 +22,6 @@ function ok(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-/* ---------------------- XML → JSON 변환 ---------------------- */
 function extract(tag: string, xml: string): string {
   const regex = new RegExp(`<${tag}>(.*?)<\\/${tag}>`, "s");
   const match = xml.match(regex);
@@ -53,7 +52,6 @@ function parseXml(xmlText: string): RawItem[] {
   return items;
 }
 
-/* ---------------------- 공지 다중 페이지 로드 ---------------------- */
 async function fetchNoticesChunk(start: number, end: number): Promise<RawItem[]> {
   const url = `${BASE}/${SEOUL_API_KEY}/xml/${SERVICE}/${start}/${end}/`;
   const res = await fetch(url);
@@ -69,7 +67,7 @@ async function fetchNoticesChunk(start: number, end: number): Promise<RawItem[]>
 
 async function fetchAllNotices(): Promise<RawItem[]> {
   const chunks: RawItem[] = [];
-  const pageSize = 500; // API 1회 최대 1000개까지 가능, 500으로 안정적으로 나눔
+  const pageSize = 500; 
 
   for (let start = 1; start <= 2000; start += pageSize) {
     const end = start + pageSize - 1;
@@ -81,7 +79,6 @@ async function fetchAllNotices(): Promise<RawItem[]> {
   return chunks;
 }
 
-/* ---------------------- 메인 ---------------------- */
 Deno.serve(async (req) => {
   try {
     if (!ok(SEOUL_API_KEY)) throw new Error("Missing SEOUL_OPEN_API_KEY");
@@ -103,7 +100,6 @@ Deno.serve(async (req) => {
       category: r.noftSeCd || "",
     }));
 
-    // ⚙️ limit이 있을 경우에만 잘라서 반환
     const sliced = limit ? mapped.slice(0, limit) : mapped;
 
     return new Response(JSON.stringify(sliced), {
@@ -111,7 +107,7 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    console.error("🚨 metro-notices error:", err);
+    console.error(" metro-notices error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { headers: { "Content-Type": "application/json" }, status: 500 },

@@ -53,15 +53,14 @@ export const styles = StyleSheet.create({
     marginTop: 16,
   },
 
-  // ✅✅✅ --- 여기에 Google 버튼 스타일 2개 추가 --- ✅✅✅
   googleButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12, // 아이콘과 텍스트 사이 간격
+    gap: 12, 
   },
   googleButtonText: {
-    color: '#1f1f1f', // 공식 CSS 텍스트 색상
+    color: '#1f1f1f', 
     fontWeight: '700', 
     fontFamily: 'NotoSansKR',
     paddingBottom: 9,
@@ -97,7 +96,7 @@ export const styles = StyleSheet.create({
     width: '100%',
     height: 56,
     backgroundColor: '#FFFFFF',
-    borderRadius: 40, // 12 -> 40
+    borderRadius: 40,
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
     elevation: 2,
@@ -143,10 +142,10 @@ export const styles = StyleSheet.create({
     width: '100%',
     minHeight: 56,
     backgroundColor: '#FFFFFF',
-    borderRadius: 40, // 12 -> 40
+    borderRadius: 40, 
     borderWidth: 1.5,
     borderColor: '#E0E0E0',
-    paddingHorizontal: 20, // 여백 조정
+    paddingHorizontal: 20, 
     paddingVertical: 18,
     justifyContent: 'center',
     elevation: 2,

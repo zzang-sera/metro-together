@@ -1,5 +1,3 @@
-// 📍 NearbyStationsScreen_test.js
-// ✅ 테스트용: GPS 비활성화 + 다중호선 포함 + 서울역 표시 + 데이터는 “서울”로 전달
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -20,16 +18,13 @@ import {
 } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 
-// ✅ 노선 정보
 const lineData = lineJson.DATA;
 
-// 🚇 노선별 색상 반환
 function getLineColor(lineNum) {
   const lineInfo = lineData.find((l) => l.line === lineNum);
   return lineInfo ? lineInfo.color : '#666666';
 }
 
-// ⚪ 배경 대비 텍스트 색상
 function getTextColorForBackground(hexColor) {
   if (!hexColor) return '#FFFFFF';
   const r = parseInt(hexColor.substr(1, 2), 16);
@@ -39,7 +34,6 @@ function getTextColorForBackground(hexColor) {
   return luminance > 0.5 ? '#17171B' : '#FFFFFF';
 }
 
-// ✅ 테스트용 더미 주변역 데이터
 const dummyStations = [
   {
     name: '서울',
@@ -84,7 +78,6 @@ const NearbyStationsScreen = () => {
   const [nearbyStations, setNearbyStations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // ✅ 실제 GPS 대신 더미데이터 로드
   useEffect(() => {
     setIsLoading(true);
     setTimeout(() => {
@@ -109,7 +102,6 @@ const NearbyStationsScreen = () => {
   const renderStationItem = ({ item }) => {
     const distanceKm = item.distance.toFixed(1);
 
-    // ✅ “서울” → 표시만 “서울역”
     const displayName = item.name === '서울' ? '서울역' : item.name;
     const realName = item.name === '서울역' ? '서울' : item.name;
 
@@ -121,14 +113,13 @@ const NearbyStationsScreen = () => {
           navigation.navigate('MainStack', {
             screen: 'StationDetail',
             params: {
-              stationName: realName, // ✅ 데이터는 “서울”
+              stationName: realName, 
               lines: item.lines,
             },
           })
         }
       >
         <View style={styles.leftContent}>
-          {/* ✅ 호선 뱃지: 2개씩 줄맞춤 */}
           <View style={styles.lineContainer}>
             {Array.from({ length: Math.ceil(item.lines.length / 2) }).map((_, rowIndex) => {
               const pair = item.lines.slice(rowIndex * 2, rowIndex * 2 + 2);
@@ -167,14 +158,13 @@ const NearbyStationsScreen = () => {
           </View>
         </View>
 
-        {/* ✅ 지도 버튼: BarrierFreeMap 연결 시 실제 데이터 “서울” 전달 */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <TouchableOpacity
             onPress={() =>
               navigation.navigate('MainStack', {
                 screen: 'BarrierFreeMap',
                 params: {
-                  stationName: realName, // ✅ 데이터는 “서울”
+                  stationName: realName, 
                   lines: item.lines,
                   lat: item.lat,
                   lng: item.lng,

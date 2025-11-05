@@ -186,7 +186,6 @@ const FavoritesScreen = () => {
             )}
           </View>
 
-          {/* ✅ numberOfLines, ellipsizeMode 제거 */}
           <Text
             style={[
               styles.stationName,
@@ -224,7 +223,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center', // 세로 중앙 정렬
+    alignItems: 'center', 
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
     borderRadius: 40,
@@ -236,8 +235,8 @@ const styles = StyleSheet.create({
   },
   leftContent: {
       flexDirection: 'row',
-      alignItems: 'center', // 세로 중앙 정렬
-      flexShrink: 1, // 역 이름이 길 때 전체 영역이 밀리지 않도록 함
+      alignItems: 'center', 
+      flexShrink: 1, 
       marginRight: responsiveWidth(15), 
    },
   lineContainer: {

@@ -65,7 +65,6 @@ const LoginScreen = ({ navigation }) => {
           onPress={handleLogin}
         />
 
-        {/* --- 👇 [수정] 불필요한 View를 제거하고 버튼들을 직접 나열 --- */}
         <CustomButton
           type="outline"
           title="회원가입"

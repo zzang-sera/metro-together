@@ -9,7 +9,7 @@ import {
   PanResponder,
   Dimensions,
   Alert,
-  AccessibilityInfo, // ✅ AccessibilityInfo 추가
+  AccessibilityInfo, 
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
@@ -29,7 +29,6 @@ const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
 const IMG_ORIGINAL_HEIGHT = 3375;
 
-// ✅ 아이콘 모음
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
   ES: require("../../assets/function-icon/Escalator.png"),
@@ -42,7 +41,6 @@ const ICONS = {
   LO: require("../../assets/function-icon/Lost and Found.png"),
 };
 
-// ✅ 시설 라벨 정의
 const TYPE_LABEL = {
   EV: "엘리베이터",
   ES: "에스컬레이터",
@@ -66,14 +64,12 @@ function BubbleMarker({ cx, cy, type }) {
   const iconY = rectY + (BUBBLE_HEIGHT - ICON_SIZE) / 2;
   const tailPath = `M 0 0 L -6 -2 L 6 -2 Z`;
   const iconSrc = ICONS[type] || ICONS["EV"];
-  // ✅ 스크린리더가 읽을 라벨
   const label = TYPE_LABEL[type] || "시설";
 
   return (
     <G
       x={cx}
       y={cy}
-      // ✅ SVG 아이콘에 접근성 라벨 및 역할 추가
       accessibilityLabel={label}
       accessibilityRole="image"
     >
@@ -111,15 +107,12 @@ export default function BarrierFreeMapScreen() {
   const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
     route.params || {};
 
-  // ✅ 스크린리더 상태 state 추가
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
 
-  // ... (전화 훅)
   const realStationName = stationName === "서울역" ? "서울" : stationName;
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
-  // ... (전화 핸들러)
   const handleCallPress = () => {
     if (!phone) {
       Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
@@ -136,7 +129,6 @@ export default function BarrierFreeMapScreen() {
     );
   };
 
-  // ... (헤더 설정)
   useLayoutEffect(() => {
     const label = TYPE_LABEL[type] || "무장애 안내";
     navigation.setOptions({
@@ -151,11 +143,10 @@ export default function BarrierFreeMapScreen() {
         fontSize: responsiveFontSize(18) + fontOffset,
         color: "#17171B",
       },
-      headerBackAccessibilityLabel: '뒤로가기', // ✅ 뒤로가기 버튼 라벨
+      headerBackAccessibilityLabel: '뒤로가기', 
     });
   }, [navigation, type, fontOffset]);
 
-  // ... (cleanName, useState, 훅)
   const cleanName = (() => {
     if (!stationName) return "";
     let name = stationName.replace(/\(.*\)/g, "").trim();
@@ -174,7 +165,6 @@ export default function BarrierFreeMapScreen() {
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
-  // ✅ 스크린리더 상태 감지 useEffect
   useEffect(() => {
     const checkScreenReader = async () => {
       const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
@@ -232,7 +222,6 @@ export default function BarrierFreeMapScreen() {
     if (!api.loading && !local.loading) setLoading(false);
   }, [type, api, local]);
 
-  // ... (PanResponder 로직)
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
@@ -275,7 +264,6 @@ export default function BarrierFreeMapScreen() {
     })
   ).current;
 
-  // ... (로딩 뷰)
   if (coords.length === 0 && loading) {
     return (
       <View style={styles.center}>
@@ -287,7 +275,6 @@ export default function BarrierFreeMapScreen() {
     );
   }
 
-  // ✅ 안내 메시지 스타일 (styles 파일 수정이 불가하여 내부에 정의)
   const noticeBoxStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -307,7 +294,6 @@ export default function BarrierFreeMapScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      {/* 지도 */}
       {coords.length > 0 && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
           <Animated.View
@@ -334,7 +320,6 @@ export default function BarrierFreeMapScreen() {
                 }
                 setOffset({ x: offsetX, y: offsetY });
               }}
-              // ✅ 지도 이미지에 대한 설명
               accessibilityLabel={`${stationName} ${TYPE_LABEL[type]} 안내도`}
             />
 
@@ -349,9 +334,7 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
-      {/* ✅ 안내 메시지 컨테이너 (지도 아래로 이동) */}
       <View>
-        {/* 항상 안내 */}
         <View style={noticeBoxStyle}>
           <Ionicons
             name="information-circle-outline"
@@ -365,7 +348,6 @@ export default function BarrierFreeMapScreen() {
           </Text>
         </View>
 
-        {/* 음성안내 시 메시지 */}
         {isScreenReaderEnabled && (
           <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
             <Ionicons
@@ -383,7 +365,6 @@ export default function BarrierFreeMapScreen() {
       </View>
 
 
-      {/* ✅ 휠체어 리프트(WL) 전용 전화 버튼 */}
       {type === "WL" && phone && (
         <View style={styles.buttonContainer}>
           <CustomButton
@@ -419,7 +400,6 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
-      {/* 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
           <View style={styles.center}>

@@ -12,9 +12,6 @@ import { db, auth } from '../config/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
-/**
- * 이메일과 비밀번호로 새로운 사용자를 생성합니다. (회원가입)
- */
 export const signUp = async (email, password) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -24,9 +21,6 @@ export const signUp = async (email, password) => {
   }
 };
 
-/**
- * 이메일과 비밀번호로 사용자를 로그인시킵니다.
- */
 export const signIn = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
@@ -36,9 +30,6 @@ export const signIn = async (email, password) => {
   }
 };
 
-/**
- * Google 계정을 사용하여 사용자를 로그인시킵니다. (개발 빌드용)
- */
 export const signInWithGoogle = async () => {
   try {
     const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
@@ -51,7 +42,6 @@ export const signInWithGoogle = async () => {
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     
-    // 멋쟁이님 코드에서 정상 작동하던 `userInfo.data.idToken`을 그대로 사용합니다.
     const idToken = userInfo.data.idToken;
     if (!idToken) {
       throw new Error("Google로부터 유효한 idToken을 받지 못했습니다.");
@@ -83,9 +73,6 @@ export const signInWithGoogle = async () => {
   }
 };
 
-/**
- * 현재 로그인된 사용자를 로그아웃시킵니다.
- */
 export const logout = async () => {
   try {
     await signOut(auth);
@@ -95,12 +82,9 @@ export const logout = async () => {
   }
 };
 
-/**
- * 비밀번호 재설정 이메일을 발송합니다.
- */
 export const resetPassword = async (email) => {
   try {
-    auth.languageCode = 'ko'; // 이메일을 한국어로 보내도록 설정
+    auth.languageCode = 'ko'; 
     await sendPasswordResetEmail(auth, email);
     return { success: true, error: null };
   } catch (error) {
@@ -108,9 +92,6 @@ export const resetPassword = async (email) => {
   }
 };
 
-/**
- * 현재 로그인된 사용자의 계정을 삭제합니다.
- */
 export const deleteAccount = async () => {
     try {
         const user = auth.currentUser;

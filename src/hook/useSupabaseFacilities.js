@@ -2,14 +2,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../config/supabaseClient";
 
-/**
- * Supabase에서 엘리베이터 위치/거리 정보를 불러온다.
- * 기대 스키마 (테이블명: elevators 예시):
- * id: bigint, station: text, line: text, exit: text, distance: numeric(선택),
- * lat: float8, lng: float8
- */
 export function useSupabaseFacilities(stationName, line, type = "EV") {
-  const [data, setData] = useState([]);     // [{ id, station, line, exit, distance?, lat, lng }]
+  const [data, setData] = useState([]);     
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,7 +16,6 @@ export function useSupabaseFacilities(stationName, line, type = "EV") {
       setLoading(true);
       setError(null);
       try {
-        // 필요시 테이블명 변경 가능
         const { data: rows, error: err } = await supabase
           .from("elevators")
           .select("id, station, line, exit, distance, lat, lng")

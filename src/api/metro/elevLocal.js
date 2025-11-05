@@ -1,11 +1,5 @@
-// src/api/metro/elevLocal.js
-// Data source:
-//   src/assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json
-
-// ✅ RN/Expo(Metro)는 JSON을 기본 import로 읽을 수 있음 (assert 불필요)
 import elevJson from "../../assets/metro-data/metro/elevator/서울교통공사_교통약자_이용시설_승강기_가동현황.json";
 
-/* ---------------------- 유틸 ---------------------- */
 
 function pickArray(any) {
   if (Array.isArray(any)) return any;
@@ -22,7 +16,6 @@ function pickArray(any) {
   return [];
 }
 
-// 역명 끝의 "(숫자)" 제거
 function sanitizeName(s = "") {
   return typeof s === "string" ? s.replace(/\(\s*\d+\s*\)$/g, "").trim() : "";
 }
@@ -33,7 +26,6 @@ function koStatus(v = "") {
   return v || "-";
 }
 
-/* ---------------------- 정규화 ---------------------- */
 
 function toPretty(raw) {
   const stationCode = String(
@@ -54,11 +46,10 @@ function toPretty(raw) {
   return { stationCode, stationName, facilityName, section, gate, status, kind, line };
 }
 
-/* ---------------------- 인덱스 (모듈 로드시 1회) ---------------------- */
 
 const RAW_ROWS = pickArray(elevJson);
-const INDEX_BY_CODE = new Map(); // stationCode → raw[]
-const INDEX_BY_NAME = new Map(); // stationName(sanitized) → raw[]
+const INDEX_BY_CODE = new Map(); 
+const INDEX_BY_NAME = new Map(); 
 
 for (const r of RAW_ROWS) {
   const code = String(
@@ -80,9 +71,6 @@ for (const r of RAW_ROWS) {
   }
 }
 
-/* ---------------------- 공개 API ---------------------- */
-
-// 코드로 조회 (raw 배열 반환)
 export async function getElevByCode(code) {
   const k = String(code || "").trim();
   if (!k) return [];
@@ -90,7 +78,6 @@ export async function getElevByCode(code) {
   return rows.slice();
 }
 
-// 역명으로 조회 (raw 배열 반환) — 역명은 괄호 숫자 제거 후 비교
 export async function getElevByName(name) {
   const k = sanitizeName(name || "");
   if (!k) return [];
@@ -98,13 +85,11 @@ export async function getElevByName(name) {
   return rows.slice();
 }
 
-// 화면 바인딩용 표준 스키마로 변환
 export function prettify(rows) {
   const arr = Array.isArray(rows) ? rows : [];
   return arr.map(toPretty);
 }
 
-// 편의: 단일 쿼리로 검색 + prettify (코드/역명 자동 판별)
 export function searchElev(query) {
   const q = String(query || "").trim();
   if (!q) return [];
@@ -112,7 +97,6 @@ export function searchElev(query) {
   return prettify(INDEX_BY_NAME.get(sanitizeName(q)) || []);
 }
 
-// 레거시 호환: 코드로 조회해 간단 키로 매핑 (StationFacilitiesScreen 등에서 사용)
 export function getElevatorsByCode(stnCd) {
   const k = String(stnCd || "").trim();
   const rows = INDEX_BY_CODE.get(k) || [];

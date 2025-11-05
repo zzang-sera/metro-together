@@ -9,12 +9,6 @@ import { useFontSize } from "../../contexts/FontSizeContext";
 const MINT = "#21C9C6";
 const INK = "#003F40";
 
-/**
- * ✅ StationFacilityIcons
- * 역 상세 화면(StationDetailScreen)에서 시설 아이콘들을 표시
- * - 아이콘을 누르면 StationFacilitiesScreen으로 이동
- * - type 파라미터로 어떤 시설인지 구분
- */
 export default function StationFacilityIcons({ stationCode, stationName, line }) {
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();

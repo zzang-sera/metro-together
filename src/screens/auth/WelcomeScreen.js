@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-// 1. ScrollView와 Image를 import 합니다.
 import { View, Text, Alert, SafeAreaView, Image, ScrollView } from 'react-native'; 
 import { styles } from '../../styles/authStyles';
 import { signInWithGoogle } from '../../api/auth';
@@ -8,7 +7,6 @@ import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 import FontSettingModal from '../../components/FontSettingModal';
 
-// 2. ✅ 새로 만든 GoogleLogo를 import 합니다.
 import GoogleLogo from '../../components/GoogleLogo'; 
 
 const WelcomeScreen = ({ navigation }) => {
@@ -38,7 +36,6 @@ const WelcomeScreen = ({ navigation }) => {
           justifyContent: 'space-between' 
         }}
       >
-      {/* 3. ✅ <ScrollView>와 <View> 사이 공백 제거 */}
       <View>
           <View style={styles.header}>
             <Image 
@@ -82,22 +79,18 @@ const WelcomeScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('Login')}
           />
           
-          {/* 4. ✅ "Google로 시작하기" 버튼 수정 */}
           <CustomButton
-            type="outline" // 흰색 배경
+            type="outline" 
             onPress={handleGoogleLogin}
-            // 5. ✅ 공식 CSS의 색상/배경으로 덮어쓰기
             style={{ 
-              borderColor: '#747775',      // 공식 테두리 색
-              backgroundColor: '#FFFFFF',  // 공식 배경색
+              borderColor: '#747775',      
+              backgroundColor: '#FFFFFF',  
             }} 
           >
-            {/* 6. ✅ title 대신 children으로 로고 + 텍스트 전달 */}
             <View style={styles.googleButtonContent}>
-              {/* 7. ✅ GoogleLogo 컴포넌트 사용 (텍스트 크기에 맞춰서 로고 크기 조절) */}
               <GoogleLogo size={responsiveFontSize(22) + (fontOffset / 2)} /> 
               <Text style={[
-                styles.googleButtonText, // 8. ✅ (authStyles.js에 추가할 스타일)
+                styles.googleButtonText, 
                 { fontSize: responsiveFontSize(16) + fontOffset }
               ]}>
                 Google로 시작하기

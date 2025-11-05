@@ -1,16 +1,14 @@
 import { StyleSheet, Platform } from 'react-native';
 import { responsiveWidth, responsiveHeight, responsiveFontSize } from '../utils/responsive';
 
-// fontOffset을 인자로 받아 스타일 객체를 생성하는 함수
 export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
-  // --- 전체 레이아웃 ---
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
   },
   chatListContent: {
     paddingVertical: responsiveHeight(16),
-    paddingBottom: responsiveHeight(80) + fontOffset * 2, // 마지막 메시지 보이도록 바닥 여백
+    paddingBottom: responsiveHeight(80) + fontOffset * 2, 
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -19,7 +17,6 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     alignItems: 'center',
   },
 
-  // --- 메시지 종류별 스타일 ---
   messageRow: {
     flexDirection: 'row',
     marginVertical: responsiveHeight(8),
@@ -30,7 +27,7 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
   },
   botMessageRow: {
     justifyContent: 'flex-start',
-    alignItems: 'flex-end', // 아바타와 말풍선 하단 정렬
+    alignItems: 'flex-end', 
   },
   avatarContainer: {
     marginRight: responsiveWidth(8),
@@ -38,38 +35,37 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     flexShrink: 0,
   },
   avatar: {
-    // width, height, borderRadius는 JSX에서 동적으로 설정
   },
   botName: {
     marginTop: responsiveHeight(4),
-    fontSize: responsiveFontSize(12) + fontOffset, // 폰트 크기 적용
+    fontSize: responsiveFontSize(12) + fontOffset, 
     fontWeight: '700',
     color: '#17171B',
     fontFamily: 'NotoSansKR',
   },
   botBubbleContainer: {
-    flex: 1, // 남은 공간 차지
+    flex: 1, 
   },
   bubble: {
-    paddingHorizontal: responsiveWidth(14) + fontOffset / 2, // 패딩 조절
-    paddingVertical: responsiveHeight(10) + fontOffset / 3, // 패딩 조절
+    paddingHorizontal: responsiveWidth(14) + fontOffset / 2, 
+    paddingVertical: responsiveHeight(10) + fontOffset / 3, 
     borderRadius: responsiveWidth(18),
     maxWidth: '95%',
   },
   botBubble: {
     backgroundColor: '#E2E6EA',
-    borderBottomLeftRadius: 0, // 뾰족한 부분 방향 변경
+    borderBottomLeftRadius: 0, 
     alignSelf: 'flex-start',
   },
   userBubble: {
     backgroundColor: '#14CAC9',
-    borderBottomRightRadius: 0, // 뾰족한 부분 방향 변경
+    borderBottomRightRadius: 0, 
     alignSelf: 'flex-end',
   },
   messageText: {
     fontFamily: 'NotoSansKR',
-    fontSize: responsiveFontSize(15) + fontOffset, // 폰트 크기 적용
-    lineHeight: responsiveHeight(22) + fontOffset * 1.4, // 줄 간격 조절
+    fontSize: responsiveFontSize(15) + fontOffset, 
+    lineHeight: responsiveHeight(22) + fontOffset * 1.4, 
   },
   botText: {
     color: '#17171B',
@@ -80,7 +76,6 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     fontWeight: '700',
   },
 
-  // --- 시스템 메시지 (연결) ---
   systemMessageContainer: {
     alignItems: 'center',
     marginVertical: responsiveHeight(10),
@@ -88,17 +83,16 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
   systemBubble: {
     backgroundColor: '#E2E6EA',
     borderRadius: responsiveWidth(20),
-    paddingVertical: responsiveHeight(6) + fontOffset / 4, // 패딩 조절
-    paddingHorizontal: responsiveWidth(12) + fontOffset / 2, // 패딩 조절
+    paddingVertical: responsiveHeight(6) + fontOffset / 4, 
+    paddingHorizontal: responsiveWidth(12) + fontOffset / 2, 
   },
   systemText: {
     fontFamily: 'NotoSansKR',
-    fontSize: responsiveFontSize(12) + fontOffset, // 폰트 크기 적용
+    fontSize: responsiveFontSize(12) + fontOffset, 
     color: '#17171B', 
     fontWeight: '700',
   },
 
-  /* ---------------------- ✅ 메뉴 (FAQ, 메뉴 다시보기) ---------------------- */
   menuButtonContainer: {
     flexDirection: "row",
     paddingHorizontal: responsiveWidth(16),
@@ -174,10 +168,8 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     fontFamily: "NotoSansKR",
     fontSize: responsiveFontSize(15) + fontOffset, 
   },
-  /* ---------------------- 메뉴 끝 ---------------------- */
 
 
-  // --- 지도 Placeholder ---
   mapPlaceholder: {
     width: responsiveWidth(240),
     height: responsiveWidth(180),
@@ -193,7 +185,6 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     color: '#17171B',
   },
 
-  // --- 빠른 응답 버튼 ---
   quickReplyContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -218,7 +209,6 @@ export const createChatbotStyles = (fontOffset = 0) => StyleSheet.create({
     fontWeight: '700',
   },
 
-  // --- 하단 입력창 ---
   inputBar: {
     flexDirection: 'row',
     alignItems: 'center',

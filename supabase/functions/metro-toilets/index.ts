@@ -19,7 +19,6 @@ interface ToiletRow {
   inout: string;
 }
 
-/** ✅ 간단한 XML → JSON 변환기 (DOMParser 없이) */
 function parseXmlToJson(xml: string): ToiletRow[] {
   const items = xml.split(/<item>/).slice(1);
   const extract = (text: string, tag: string) => {
@@ -47,7 +46,6 @@ function ok(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-/** ✅ 구간별 요청 */
 async function fetchChunk(start: number, end: number): Promise<ToiletRow[]> {
   const url = `${BASE}/${SEOUL_API_KEY}/xml/${SERVICE}/${start}/${end}/`;
   const res = await fetch(url);
@@ -60,7 +58,6 @@ async function fetchChunk(start: number, end: number): Promise<ToiletRow[]> {
   return parseXmlToJson(xml);
 }
 
-/** ✅ 전체 데이터 요청 (1~500 범위) */
 async function fetchAllToilets(): Promise<ToiletRow[]> {
   const chunks = await Promise.all([
     fetchChunk(1, 200),
@@ -77,7 +74,6 @@ async function fetchAllToilets(): Promise<ToiletRow[]> {
   return chunks.flat();
 }
 
-/** ✅ Deno Edge Function entry */
 Deno.serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -101,7 +97,7 @@ Deno.serve(async (req) => {
       status: 200,
     });
   } catch (err) {
-    console.error("🚨 Edge function error:", err);
+    console.error(" Edge function error:", err);
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : String(err) }),
       { headers: { "Content-Type": "application/json" }, status: 500 },
