@@ -6,8 +6,9 @@ import {
   StyleSheet,
   SafeAreaView,
   StatusBar,
-  Alert, 
+  Alert,
   ScrollView,
+  AccessibilityInfo, // ✅ AccessibilityInfo 추가
 } from "react-native";
 import {
   Ionicons,
@@ -63,6 +64,8 @@ export default function StationDetailScreen() {
   const { fontOffset } = useFontSize();
   const currentUser = auth.currentUser;
 
+  // ✅ 스크린리더 상태 state 추가
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [stationImage, setStationImage] = useState(null);
   const [facilityAvailability, setFacilityAvailability] = useState({});
@@ -72,6 +75,26 @@ export default function StationDetailScreen() {
 
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
+
+  // ✅ 스크린리더 상태 감지
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (isEnabled) => {
+        setIsScreenReaderEnabled(isEnabled);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     async function loadImage() {
@@ -191,7 +214,7 @@ export default function StationDetailScreen() {
       `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
       [
         { text: "취소", style: "cancel" },
-        { text: "전화 걸기", onPress: () => makeCall(phone) }, 
+        { text: "전화 걸기", onPress: () => makeCall(phone) },
       ],
       { cancelable: true }
     );
@@ -201,8 +224,14 @@ export default function StationDetailScreen() {
     () => (
       <View style={[styles.mintHeader, { paddingTop: insets.top + 6 }]}>
         <StatusBar barStyle="dark-content" backgroundColor={BG} />
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
-          <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.headerBtn}
+          // ✅ 뒤로가기 버튼 접근성
+          accessibilityRole="button"
+          accessibilityLabel="뒤로가기"
+        >
+          <Ionicons name="chevron-back" size={24 + fontOffset / 2} color={INK} accessibilityHidden={true} />
         </TouchableOpacity>
 
         <View style={styles.headerCenter}>
@@ -211,6 +240,7 @@ export default function StationDetailScreen() {
               const color = getLineColor(line);
               const textColor = getTextColorForBackground(color);
               const dynamicIconSize = BASE_ICON_SIZE + fontOffset;
+              const lineNum = line.replace("호선", "");
               return (
                 <View
                   key={line}
@@ -229,8 +259,10 @@ export default function StationDetailScreen() {
                       styles.lineBadgeText,
                       { color: textColor, fontSize: 12 + fontOffset },
                     ]}
+                    // ✅ 호선 번호 접근성
+                    accessibilityLabel={`${lineNum}호선`}
                   >
-                    {line.replace("호선", "")}
+                    {lineNum}
                   </Text>
                 </View>
               );
@@ -247,11 +279,18 @@ export default function StationDetailScreen() {
           </Text>
         </View>
 
-        <TouchableOpacity onPress={handleFavoriteToggle} style={styles.starBtn}>
+        <TouchableOpacity
+          onPress={handleFavoriteToggle}
+          style={styles.starBtn}
+          // ✅ 즐겨찾기 버튼 접근성
+          accessibilityRole="button"
+          accessibilityLabel={isFavorite ? "즐겨찾기 해제" : "즐겨찾기 추가"}
+        >
           <Ionicons
             name={isFavorite ? "star" : "star-outline"}
             size={24 + fontOffset / 2}
             color={isFavorite ? "#FFD700" : INK}
+            accessibilityHidden={true}
           />
         </TouchableOpacity>
       </View>
@@ -271,39 +310,80 @@ export default function StationDetailScreen() {
     { icon: "locker-multiple", label: "보관함", type: "LO" },
   ];
 
+  // ✅ 안내 메시지 스타일
+  const noticeBoxStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: '5%', // buttonListContainer와 동일한 여백
+    marginTop: 16,
+    marginBottom: 4, 
+  };
+  
+  const noticeTextStyle = {
+    flex: 1,
+    color: '#17171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR',
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {Header}
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* ✅ 음성안내 시 스크롤 안내 */}
+        {isScreenReaderEnabled && (
+          <View style={noticeBoxStyle} accessibilityRole="alert">
+            <Ionicons
+              name="information-circle-outline"
+              size={responsiveFontSize(22) + fontOffset / 2}
+              color="#0B5FFF"
+              style={{ marginRight: 8 }}
+              accessibilityHidden={true}
+            />
+            <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+              화면을 내리거나 올리려면 두 손가락으로 미세요.
+            </Text>
+          </View>
+        )}
+
         <View style={styles.buttonListContainer}>
           {phone && (
             <CustomButton
               type="call"
               onPress={handleCallPress}
               style={styles.buttonContentLayout}
+              // ✅ 전화 버튼 접근성
+              accessibilityLabel={`역무실 전화 걸기, ${phone}`}
+              accessibilityHint="탭하면 전화가 연결됩니다."
             >
               <View style={styles.buttonLeft}>
                 <MaterialCommunityIcons
                   name="phone"
                   size={responsiveFontSize(26) + fontOffset}
-                  color={INK} 
+                  color={INK}
+                  accessibilityHidden={true}
                 />
                 <Text
                   style={[
-                    styles.iconLabel, 
+                    styles.iconLabel,
                     {
                       fontSize: responsiveFontSize(16) + fontOffset,
                     },
                   ]}
                 >
-                  전화 걸기 
+                  전화 걸기
                 </Text>
               </View>
               <Ionicons
                 name="chevron-forward"
                 size={responsiveFontSize(20) + fontOffset}
-                color={INK} 
+                color={INK}
+                accessibilityHidden={true}
               />
             </CustomButton>
           )}
@@ -323,12 +403,16 @@ export default function StationDetailScreen() {
                   styles.buttonContentLayout,
                   isDisabled && { backgroundColor: "#E0E0E0", borderColor: '#BDBDBD' }
                 ]}
+                // ✅ 시설 버튼 접근성
+                accessibilityLabel={btn.label}
+                accessibilityHint={isDisabled ? "이 역에는 해당 시설 정보가 없습니다." : "탭하여 상세 정보 보기"}
               >
                 <View style={styles.buttonLeft}>
                   <IconPack
                     name={btn.icon}
                     size={responsiveFontSize(26) + fontOffset}
                     color={isDisabled ? "#9E9E9E" : INK}
+                    accessibilityHidden={true}
                   />
                   <Text
                     style={[
@@ -346,6 +430,7 @@ export default function StationDetailScreen() {
                   name="chevron-forward"
                   size={responsiveFontSize(20) + fontOffset}
                   color={isDisabled ? "#9E9E9E" : INK}
+                  accessibilityHidden={true}
                 />
               </CustomButton>
             );
@@ -358,7 +443,7 @@ export default function StationDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG },
-  scrollContainer: { paddingBottom: 30, paddingTop: 14 },
+  scrollContainer: { paddingBottom: 30, paddingTop: 0 }, // ✅ paddingTop 14 제거
   mintHeader: {
     backgroundColor: BG,
     flexDirection: "row",
@@ -389,16 +474,16 @@ const styles = StyleSheet.create({
   lineBadgeText: { fontWeight: "bold" },
   headerTitle: { color: INK, fontWeight: "bold", textAlign: "center" },
   starBtn: { padding: 6 },
-  buttonListContainer: { width: "100%", paddingHorizontal: "5%" },
+  buttonListContainer: { width: "100%", paddingHorizontal: "5%", marginTop: 16 }, // ✅ marginTop 추가
 
   buttonContentLayout: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20, 
-    marginBottom: 16, 
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
 
   buttonLeft: { flexDirection: "row", alignItems: "center", gap: 16 },
-  iconLabel: { color: INK, fontWeight: "bold" }, 
+  iconLabel: { color: INK, fontWeight: "bold" },
 });

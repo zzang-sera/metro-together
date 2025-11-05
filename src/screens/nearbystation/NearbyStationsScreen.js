@@ -6,6 +6,7 @@ import {
   FlatList,
   ActivityIndicator,
   TouchableOpacity,
+  AccessibilityInfo, 
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import * as Location from "expo-location";
@@ -63,6 +64,26 @@ const NearbyStationsScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (isEnabled) => {
+        setIsScreenReaderEnabled(isEnabled);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -125,6 +146,7 @@ const NearbyStationsScreen = () => {
             styles.loadingText,
             { fontSize: responsiveFontSize(16) + fontOffset },
           ]}
+          accessibilityRole="alert" 
         >
           주변 역을 찾고 있습니다...
         </Text>
@@ -140,6 +162,7 @@ const NearbyStationsScreen = () => {
             styles.errorText,
             { fontSize: responsiveFontSize(16) + fontOffset },
           ]}
+          accessibilityRole="alert" 
         >
           {errorMsg}
         </Text>
@@ -152,8 +175,42 @@ const NearbyStationsScreen = () => {
     setModalVisible(true);
   };
 
+  const noticeBoxStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: responsiveWidth(16),
+  };
+  
+  const noticeTextStyle = {
+    flex: 1,
+    color: '#17171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR', 
+  };
+
+
   return (
     <View style={styles.container}>
+      {/* 음성안내 시 스크롤 안내 */}
+      {isScreenReaderEnabled && nearbyStations.length > 0 && (
+        <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
+          <Ionicons
+            name="information-circle-outline"
+            size={responsiveFontSize(22) + fontOffset / 2}
+            color="#0B5FFF"
+            style={{ marginRight: 8 }}
+            accessibilityHidden={true}
+          />
+          <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            화면을 내리거나 올리려면 두 손가락으로 미세요.
+          </Text>
+        </View>
+      )}
+
       <FlatList
         data={nearbyStations}
         keyExtractor={(item) => `${item.name}-${item.lines.join("-")}`}
@@ -164,13 +221,15 @@ const NearbyStationsScreen = () => {
             onPress={() => handleStationPress(item)}
             accessibilityLabel={`${item.name} 역, ${item.distance.toFixed(
               1
-            )} 킬로미터 거리`}
+            )} 킬로미터 거리, ${item.lines.join(", ")}`} 
+            accessibilityHint="탭하여 출발/도착 설정 또는 역 정보 보기" 
           >
             <View style={styles.leftContent}>
               <View style={styles.lineContainer}>
                 {item.lines.map((line) => {
                   const color = getLineColor(line);
                   const textColor = getTextColorForBackground(color);
+                  const lineNum = line.replace("호선", ""); 
                   return (
                     <View
                       key={line}
@@ -190,8 +249,9 @@ const NearbyStationsScreen = () => {
                           styles.lineBadgeText,
                           { color: textColor, fontSize: 12 + fontOffset },
                         ]}
+                        accessibilityLabel={`${lineNum}호선`} 
                       >
-                        {line.replace("호선", "")}
+                        {lineNum}
                       </Text>
                     </View>
                   );
@@ -220,6 +280,7 @@ const NearbyStationsScreen = () => {
               name="chevron-forward"
               size={28 + fontOffset}
               color="#595959"
+              accessibilityHidden={true} 
             />
           </TouchableOpacity>
         )}
@@ -273,8 +334,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: responsiveWidth(16),
     marginVertical: responsiveHeight(6),
+    marginHorizontal: responsiveWidth(16), 
     borderRadius: 40,
     elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   leftContent: { flexDirection: "row", alignItems: "center" },
   lineContainer: { flexDirection: "row", marginRight: 10, gap: 6 },

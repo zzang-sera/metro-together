@@ -8,7 +8,8 @@ import {
   ScrollView,
   PanResponder,
   Dimensions,
-  Alert, // 1. Alert import 확인
+  Alert,
+  AccessibilityInfo, // ✅ AccessibilityInfo 추가
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
@@ -22,14 +23,12 @@ import { usePhoneCall } from "../../hook/usePhoneCall";
 import stationCoords from "../../assets/metro-data/metro/station/station_coords.json";
 import styles, { colors } from "../../styles/BarrierFreeMapScreen.styles";
 
-// CustomButton import
 import CustomButton from "../../components/CustomButton";
 
 const { width: screenW, height: screenH } = Dimensions.get("window");
 const IMG_ORIGINAL_WIDTH = 3376;
 const IMG_ORIGINAL_HEIGHT = 3375;
 
-// ... (ICONS, TYPE_LABEL, BubbleMarker, extractDetail 함수는 동일)
 // ✅ 아이콘 모음
 const ICONS = {
   EV: require("../../assets/function-icon/Elevator_for_all.png"),
@@ -67,9 +66,17 @@ function BubbleMarker({ cx, cy, type }) {
   const iconY = rectY + (BUBBLE_HEIGHT - ICON_SIZE) / 2;
   const tailPath = `M 0 0 L -6 -2 L 6 -2 Z`;
   const iconSrc = ICONS[type] || ICONS["EV"];
+  // ✅ 스크린리더가 읽을 라벨
+  const label = TYPE_LABEL[type] || "시설";
 
   return (
-    <G x={cx} y={cy}>
+    <G
+      x={cx}
+      y={cy}
+      // ✅ SVG 아이콘에 접근성 라벨 및 역할 추가
+      accessibilityLabel={label}
+      accessibilityRole="image"
+    >
       <Rect
         x={-halfW}
         y={rectY}
@@ -104,30 +111,32 @@ export default function BarrierFreeMapScreen() {
   const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
     route.params || {};
 
-  // ✅ 전화 관련 훅
+  // ✅ 스크린리더 상태 state 추가
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+
+  // ... (전화 훅)
   const realStationName = stationName === "서울역" ? "서울" : stationName;
   const { phone } = useLocalPhoneNumber(realStationName);
   const { makeCall } = usePhoneCall();
 
-  // ✅ 전화 버튼 핸들러 (추천안 적용)
+  // ... (전화 핸들러)
   const handleCallPress = () => {
     if (!phone) {
       Alert.alert("안내", "이 역의 전화번호 정보를 찾을 수 없습니다.");
       return;
     }
-    // 2. 전화번호 확인 Alert 추가
     Alert.alert(
       "전화 연결",
       `${phone}\n\n이 번호로 전화를 거시겠습니까?`,
       [
         { text: "취소", style: "cancel" },
-        { text: "전화 걸기", onPress: () => makeCall(phone) }, // 확인 시에만 makeCall(phone) 실행
+        { text: "전화 걸기", onPress: () => makeCall(phone) },
       ],
       { cancelable: true }
     );
   };
 
-  // ✅ 헤더 설정
+  // ... (헤더 설정)
   useLayoutEffect(() => {
     const label = TYPE_LABEL[type] || "무장애 안내";
     navigation.setOptions({
@@ -142,10 +151,11 @@ export default function BarrierFreeMapScreen() {
         fontSize: responsiveFontSize(18) + fontOffset,
         color: "#17171B",
       },
+      headerBackAccessibilityLabel: '뒤로가기', // ✅ 뒤로가기 버튼 라벨
     });
   }, [navigation, type, fontOffset]);
 
-  // ... (cleanName, useState, 훅, useEffect 등 나머지 로직은 동일)
+  // ... (cleanName, useState, 훅)
   const cleanName = (() => {
     if (!stationName) return "";
     let name = stationName.replace(/\(.*\)/g, "").trim();
@@ -163,6 +173,26 @@ export default function BarrierFreeMapScreen() {
 
   const [imgLayout, setImgLayout] = useState({ width: 1, height: 1 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+
+  // ✅ 스크린리더 상태 감지 useEffect
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (isEnabled) => {
+        setIsScreenReaderEnabled(isEnabled);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -202,6 +232,7 @@ export default function BarrierFreeMapScreen() {
     if (!api.loading && !local.loading) setLoading(false);
   }, [type, api, local]);
 
+  // ... (PanResponder 로직)
   const scale = useRef(new Animated.Value(1)).current;
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const baseScale = useRef(1);
@@ -256,10 +287,26 @@ export default function BarrierFreeMapScreen() {
     );
   }
 
+  // ✅ 안내 메시지 스타일 (styles 파일 수정이 불가하여 내부에 정의)
+  const noticeBoxStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: 20, 
+  };
+  
+  const noticeTextStyle = {
+    flex: 1,
+    color: '#17171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR', 
+  };
+
   return (
     <ScrollView style={styles.container}>
-      
-
       {/* 지도 */}
       {coords.length > 0 && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
@@ -287,6 +334,8 @@ export default function BarrierFreeMapScreen() {
                 }
                 setOffset({ x: offsetX, y: offsetY });
               }}
+              // ✅ 지도 이미지에 대한 설명
+              accessibilityLabel={`${stationName} ${TYPE_LABEL[type]} 안내도`}
             />
 
             <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
@@ -300,6 +349,40 @@ export default function BarrierFreeMapScreen() {
         </View>
       )}
 
+      {/* ✅ 안내 메시지 컨테이너 (지도 아래로 이동) */}
+      <View>
+        {/* 항상 안내 */}
+        <View style={noticeBoxStyle}>
+          <Ionicons
+            name="information-circle-outline"
+            size={responsiveFontSize(22) + fontOffset / 2}
+            color="#0B5FFF"
+            style={{ marginRight: 8 }}
+            accessibilityHidden={true}
+          />
+          <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            두 손가락으로 지도를 확대/축소 할 수 있습니다.
+          </Text>
+        </View>
+
+        {/* 음성안내 시 메시지 */}
+        {isScreenReaderEnabled && (
+          <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
+            <Ionicons
+              name="information-circle-outline"
+              size={responsiveFontSize(22) + fontOffset / 2}
+              color="#0B5FFF"
+              style={{ marginRight: 8 }}
+              accessibilityHidden={true}
+            />
+            <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+              화면을 내리거나 올리려면 두 손가락으로 미세요.
+            </Text>
+          </View>
+        )}
+      </View>
+
+
       {/* ✅ 휠체어 리프트(WL) 전용 전화 버튼 */}
       {type === "WL" && phone && (
         <View style={styles.buttonContainer}>
@@ -307,12 +390,15 @@ export default function BarrierFreeMapScreen() {
             type="call"
             onPress={handleCallPress}
             style={styles.buttonContentLayout}
+            accessibilityLabel={`휠체어 리프트 이용 전화 걸기, ${phone}`}
+            accessibilityHint="탭하면 전화가 연결됩니다."
           >
             <View style={styles.buttonLeft}>
               <MaterialCommunityIcons
                 name="phone"
                 size={responsiveFontSize(26) + fontOffset}
-                color={colors.text} 
+                color={colors.text}
+                accessibilityHidden={true} 
               />
               <Text
                 style={[
@@ -320,13 +406,14 @@ export default function BarrierFreeMapScreen() {
                   { fontSize: responsiveFontSize(16) + fontOffset },
                 ]}
               >
-                전화 걸기 {/* 3. ({phone}) 제거 */}
+                전화 걸기
               </Text>
             </View>
             <Ionicons
               name="chevron-forward"
               size={responsiveFontSize(20) + fontOffset}
-              color={colors.text} 
+              color={colors.text}
+              accessibilityHidden={true} 
             />
           </CustomButton>
         </View>
@@ -335,7 +422,6 @@ export default function BarrierFreeMapScreen() {
       {/* 리스트 */}
       <View style={styles.listContainer}>
         {loading ? (
-          // ... (로딩 뷰)
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} size="large" />
             <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
@@ -343,12 +429,12 @@ export default function BarrierFreeMapScreen() {
             </Text>
           </View>
         ) : facilities.length === 0 ? (
-          // ... (데이터 없음 뷰)
-          <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
-            해당 시설 정보가 없습니다.
-          </Text>
+          <View style={styles.center}>
+            <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+              해당 시설 정보가 없습니다.
+            </Text>
+          </View>
         ) : (
-          // ... (시설 목록 맵)
           facilities.map((item, idx) => {
             const isApi = dataSource === "API";
             const cardStyle = [
@@ -357,9 +443,13 @@ export default function BarrierFreeMapScreen() {
             ];
 
             return (
-              <View key={idx} style={cardStyle}>
+              <View key={idx} style={cardStyle} accessible={true}> 
                 <View style={styles.cardHeader}>
-                  <Image source={ICONS[type] || ICONS["EV"]} style={styles.cardIcon} />
+                  <Image
+                    source={ICONS[type] || ICONS["EV"]}
+                    style={styles.cardIcon}
+                    accessibilityHidden={true} 
+                  />
                   <Text
                     style={[
                       styles.facilityTitle,
