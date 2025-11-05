@@ -1,6 +1,11 @@
-// src/screens/pathfinder/PathResultView.js
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react'; // useState, useEffect 추가
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  AccessibilityInfo, // AccessibilityInfo 추가
+} from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { responsiveFontSize } from '../../utils/responsive';
@@ -65,15 +70,30 @@ const JourneyStep = ({
       const textColor = getTextColorForBackground(color);
       return (
         <View style={[styles.timelineIconLine, { backgroundColor: color }]}>
-          <Text style={[styles.timelineIconLineText, { color: textColor, fontSize: 18 + fontOffset / 2 }]}>
+          <Text
+            style={[styles.timelineIconLineText, { color: textColor, fontSize: 18 + fontOffset / 2 }]}
+            // ✅ "2" 대신 "2호선"으로 읽도록 라벨 추가
+            accessibilityLabel={`${lineNumber}호선`}
+          >
             {lineNumber}
           </Text>
         </View>
       );
     } else {
+      // ✅ 아이콘에 대한 접근성 라벨 추가
+      let iconLabel = '경로 단계';
+      if (defaultIconName === 'train-outline') iconLabel = '출발';
+      if (defaultIconName === 'swap-horizontal-outline') iconLabel = '환승';
+      if (defaultIconName === 'flag-outline') iconLabel = '도착';
+
       return (
         <View style={styles.timelineIcon}>
-          <Ionicons name={defaultIconName} size={24 + fontOffset / 2} color="#FFFFFF" />
+          <Ionicons
+            name={defaultIconName}
+            size={24 + fontOffset / 2}
+            color="#FFFFFF"
+            accessibilityLabel={iconLabel}
+          />
         </View>
       );
     }
@@ -120,6 +140,30 @@ const PathResultView = ({ data }) => {
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();
 
+  // ✅ 스크린리더 활성화 상태를 저장할 state
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+
+  // ✅ 컴포넌트 마운트 시 스크린리더 상태 확인
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+
+    // 스크린리더 상태 변경 감지 리스너
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (isEnabled) => {
+        setIsScreenReaderEnabled(isEnabled);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   if (!data) {
     return (
       <View style={styles.centered}>
@@ -157,6 +201,8 @@ const PathResultView = ({ data }) => {
             lines: lineNum ? [lineNum] : [],
           });
         }}
+        // ✅ 버튼의 역할을 명시
+        accessibilityRole="button"
       >
         <View
           style={[
@@ -164,23 +210,56 @@ const PathResultView = ({ data }) => {
             { backgroundColor: color, width: iconSize, height: iconSize, borderRadius: iconSize / 2 },
           ]}
         >
-          <Text style={[styles.stationButtonIconText, { color: textColor, fontSize: 13 + fontOffset / 3 }]}>
+          <Text
+            style={[styles.stationButtonIconText, { color: textColor, fontSize: 13 + fontOffset / 3 }]}
+            // ✅ "2" 대신 "2호선"으로 읽도록 라벨 추가
+            accessibilityLabel={lineNum ? `${lineNum.replace('호선', '')}호선` : '알 수 없음'}
+          >
             {lineNum?.replace('호선', '') || '?'}
           </Text>
         </View>
         <Text style={[styles.stationButtonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
           {title}
         </Text>
-        <Ionicons name="chevron-forward" size={20 + fontOffset / 2} color="#888888" />
+        <Ionicons
+          name="chevron-forward"
+          size={20 + fontOffset / 2}
+          color="#888888"
+          accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+        />
       </TouchableOpacity>
     );
   };
 
   return (
     <View style={styles.scrollContainer}>
+      {/* ✅ 스크린리더 사용자용 안내 메시지 */}
+      {isScreenReaderEnabled && (
+        <View style={styles.noticeBox} accessibilityRole="alert">
+          <Ionicons
+            name="information-circle-outline"
+            size={responsiveFontSize(22) + fontOffset / 2}
+            color="#0B5FFF"
+            style={{ marginRight: 8 }}
+            accessibilityHidden={true} // 장식용 아이콘
+          />
+          <Text style={[styles.noticeText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            화면을 내리려면 두 손가락으로 화면을 미세요.
+          </Text>
+        </View>
+      )}
+
       {/* 요약 카드 */}
-      <View style={styles.summaryCard}>
-        <Text style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]}>
+      <View
+        style={styles.summaryCard}
+        // ✅ 요약 카드 전체에 대한 접근성 라벨
+        accessibilityLabel={`
+          요약: ${routeSummary?.departure}에서 ${routeSummary?.arrival}까지.
+          소요 시간: ${routeSummary?.estimatedTime || '정보 없음'}.
+          환승: ${routeSummary?.transfers || 0}회.
+        `}
+      >
+        <Text style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]} accessibilityHidden={true}>
           {routeSummary?.departure} → {routeSummary?.arrival}
         </Text>
 
@@ -243,6 +322,22 @@ const PathResultView = ({ data }) => {
 
 const styles = StyleSheet.create({
   scrollContainer: { paddingBottom: 50 },
+  // ✅ 추가된 스타일: 스크롤 안내
+  noticeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 16, // 요약 카드와 간격
+  },
+  noticeText: {
+    flex: 1,
+    color: '#17171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR', // 폰트가 있다면 적용됩니다.
+  },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
   errorText: {
     color: 'red',

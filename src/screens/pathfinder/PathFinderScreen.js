@@ -12,6 +12,7 @@ import {
   ScrollView,
   Platform,
   StatusBar,
+  Alert, // ✅ Alert를 react-native에서 import 합니다.
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
@@ -22,7 +23,7 @@ import stationJson from '../../assets/metro-data/metro/station/data-metro-statio
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder'; 
+export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder';
 const allStations = stationJson.DATA;
 const lineData = lineJson.DATA;
 
@@ -122,11 +123,13 @@ const PathFinderScreen = () => {
 
   const handleFindPath = async () => {
     if (!dep.trim() || !arr.trim()) {
-      alert('출발역과 도착역을 모두 입력해주세요.');
+      // ✅ alert()를 Alert.alert()로 변경
+      Alert.alert('안내 메시지', '출발역과 도착역을 모두 입력해주세요.');
       return;
     }
     if (dep.trim() === arr.trim()) {
-      alert('출발역과 도착역이 같습니다. 다른 역을 선택해주세요.');
+      // ✅ alert()를 Alert.alert()로 변경
+      Alert.alert('안내 메시지', '출발역과 도착역이 같습니다. 다른 역을 선택해주세요.');
       return;
     }
     Keyboard.dismiss();
@@ -136,7 +139,8 @@ const PathFinderScreen = () => {
       const data = await fetchSubwayPath(dep, arr, wheelchair);
       setPathData(data);
     } catch (e) {
-      alert('경로를 불러오는 중 문제가 발생했습니다.');
+      // ✅ alert()를 Alert.alert()로 변경
+      Alert.alert('안내 메시지', '경로를 불러오는 중 문제가 발생했습니다.');
       console.error(e);
     } finally {
       setIsLoading(false);
@@ -154,6 +158,7 @@ const PathFinderScreen = () => {
               size={responsiveFontSize(24)}
               color="#0B5FFF"
               style={{ marginRight: 8 }}
+              accessibilityLabel="정보" // ✅ 접근성 라벨 추가
             />
             <Text
               style={[
@@ -240,10 +245,15 @@ const PathFinderScreen = () => {
             </View>
           </View>
 
-          <TouchableOpacity onPress={swapStations} style={styles.swapButton}>
+          <TouchableOpacity
+            onPress={swapStations}
+            style={styles.swapButton}
+            accessibilityRole="button" // ✅ 역할 추가
+            accessibilityLabel="출발역과 도착역 교환" // ✅ 라벨 추가
+          >
             <MaterialCommunityIcons
               name="swap-vertical"
-              size={40 + fontOffset }
+              size={40 + fontOffset}
               color="#17171B"
             />
           </TouchableOpacity>
@@ -257,11 +267,14 @@ const PathFinderScreen = () => {
             setWheelchair(!wheelchair);
             setPathData(null);
           }}
+          accessibilityRole="checkbox" // ✅ 역할 추가
+          accessibilityState={{ checked: wheelchair }} // ✅ 상태 추가
         >
           <Ionicons
             name={wheelchair ? 'checkbox-outline' : 'square-outline'}
             size={26 + fontOffset / 2}
             color={wheelchair ? '#14CAC9' : '#999'}
+            accessibilityHidden={true} // ✅ 아이콘 자체는 숨김
           />
           <Text
             style={[
@@ -312,6 +325,7 @@ const PathFinderScreen = () => {
                 size={24 + fontOffset / 1.5}
                 color="#17171B"
                 style={{ marginRight: 10 }}
+                accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
               />
               <Text
                 style={[
@@ -344,6 +358,8 @@ const PathFinderScreen = () => {
                           styles.lineText,
                           { color: textColor, fontSize: 12 + fontOffset / 2.5 },
                         ]}
+                        // ✅ "2" 대신 "2호선"으로 읽도록 라벨 추가
+                        accessibilityLabel={`${line.replace('호선', '')}호선`}
                       >
                         {line.replace('호선', '')}
                       </Text>

@@ -1,7 +1,7 @@
 // App.js
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, Alert, Image, Dimensions, Text, TouchableOpacity } from 'react-native';
-import { NavigationContainer, useNavigation, DefaultTheme, getFocusedRouteNameFromRoute  } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, DefaultTheme, getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -68,7 +68,13 @@ const mintHeaderOptions = {
    MainStack
 ────────────────────────────── */
 const MainStackNavigator = () => (
-  <MainStack.Navigator screenOptions={{ headerShown: false }}>
+  <MainStack.Navigator
+    screenOptions={{
+      headerShown: false,
+      // ✅ 접근성 라벨 추가
+      headerBackAccessibilityLabel: '뒤로가기',
+    }}
+  >
     <MainStack.Screen name="StationDetail" component={StationDetailScreen} />
     <MainStack.Screen name="BarrierFreeMap" component={BarrierFreeMapScreen} />
   </MainStack.Navigator>
@@ -84,6 +90,8 @@ const HomeStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <HomeStack.Screen name="HomeMain" component={MainScreen} options={{ title: '홈' }} />
@@ -99,6 +107,8 @@ const MyPageStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <MyPageStack.Screen name="MyPageMain" component={MyPageScreen} options={{ title: "내 정보" }} />
@@ -118,6 +128,8 @@ const NearbyStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <NearbyStack.Screen name="NearbyHome" component={NearbyStationsScreen} options={{ title: '가까운 역 목록' }} />
@@ -133,6 +145,8 @@ const SearchStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <SearchStack.Screen name="SearchHome" component={SearchStationScreen} options={{ title: "역 검색" }} />
@@ -148,6 +162,8 @@ const PathFinderStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <PathFinderStack.Screen name="PathFinderHome" component={PathFinderScreen} options={{ title: '지하철 최단 경로' }} />
@@ -197,6 +213,8 @@ const GuestTabs = () => {
           else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
           return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
         },
+        // ✅ 탭 네비게이터에도 추가 (탭 내 스택에 적용됨)
+        headerBackAccessibilityLabel: '뒤로가기',
       })}
     >
       <Tab.Screen
@@ -208,7 +226,7 @@ const GuestTabs = () => {
             e.preventDefault();
             navigation.getParent()?.navigate("AuthScreens", {
               screen: "Welcome",
-              });
+            });
           },
         }}
       />
@@ -223,11 +241,12 @@ const GuestTabs = () => {
             e.preventDefault();
             Alert.alert("로그인 필요", "로그인이 필요합니다.", [
               { text: "취소", style: "cancel" },
-              { 
+              {
                 text: "확인",
                 onPress: () =>
-                navigation.getParent()?.navigate("AuthScreens", {
-              screen: "Welcome",}),
+                  navigation.getParent()?.navigate("AuthScreens", {
+                    screen: "Welcome",
+                  }),
               },
             ]);
           },
@@ -287,29 +306,31 @@ const UserTabs = () => {
             fontWeight: "700",
             marginBottom: 5,
           },
-        tabBarIcon: ({ focused, size }) => {
-          const iconColor = focused ? "#14CAC9" : "gray";
-          const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
-          if (route.name === "챗봇") {
-            return (
-              <Image
-                source={require("./src/assets/brand-icon.png")}
-                resizeMode="contain"
-                style={{
-                  width: 70 + fontOffset * 2,
-                  height: 70 + fontOffset * 2,
-                  marginBottom: 15,
-                }}
-              />
-            );
-          }
-          let iconName;
-          if (route.name === "홈") iconName = focused ? "home" : "home-outline";
-          else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
-          else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
-          else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
-          return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
+          tabBarIcon: ({ focused, size }) => {
+            const iconColor = focused ? "#14CAC9" : "gray";
+            const iconSize = size + (fontOffset > 0 ? fontOffset / 2 : fontOffset);
+            if (route.name === "챗봇") {
+              return (
+                <Image
+                  source={require("./src/assets/brand-icon.png")}
+                  resizeMode="contain"
+                  style={{
+                    width: 70 + fontOffset * 2,
+                    height: 70 + fontOffset * 2,
+                    marginBottom: 15,
+                  }}
+                />
+              );
+            }
+            let iconName;
+            if (route.name === "홈") iconName = focused ? "home" : "home-outline";
+            else if (route.name === "주변") iconName = focused ? "navigate-circle" : "navigate-circle-outline";
+            else if (route.name === "검색") iconName = focused ? "search" : "search-outline";
+            else if (route.name === "마이") iconName = focused ? "person" : "person-outline";
+            return <Ionicons name={iconName} size={iconSize} color={iconColor} />;
           },
+          // ✅ 탭 네비게이터에도 추가 (탭 내 스택에 적용됨)
+          headerBackAccessibilityLabel: '뒤로가기',
         };
       }}
     >
@@ -319,7 +340,6 @@ const UserTabs = () => {
       <Tab.Screen name="검색" component={SearchStackNavigator} options={{ headerShown: false }} />
       <Tab.Screen name="마이" component={MyPageStackNavigator} options={{ headerShown: false }} />
     </Tab.Navigator>
-
   );
 };
 
@@ -334,6 +354,8 @@ const AuthStackNavigator = () => {
       screenOptions={{
         ...mintHeaderOptions,
         headerTitleStyle: { ...mintHeaderOptions.headerTitleStyle, fontSize: responsiveFontSize(18) + fontOffset },
+        // ✅ 접근성 라벨 추가
+        headerBackAccessibilityLabel: '뒤로가기',
       }}
     >
       <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
@@ -372,8 +394,6 @@ const TextBtn = ({ label, onPress }) => (
   </TouchableOpacity>
 );
 
-
-
 /* ──────────────────────────────
    Root Component
 ────────────────────────────── */
@@ -400,18 +420,24 @@ const AppContent = () => {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <RootStack.Navigator screenOptions={{ headerShown: false }}>
-      {showOnboarding ? (
-        <RootStack.Screen
-          name="Onboarding"
-          options={{ headerShown: false }}
-          children={() => <OnboardingScreen onFinish={() => setShowOnboarding(false)} />} // ✅ 정확한 children prop
-        />
-      ) : user ? (
-        <RootStack.Screen name="UserTabs" component={UserTabs} />
-      ) : (
-        <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
-      )}
+      <RootStack.Navigator
+        screenOptions={{
+          headerShown: false,
+          // ✅ 접근성 라벨 추가
+          headerBackAccessibilityLabel: '뒤로가기',
+        }}
+      >
+        {showOnboarding ? (
+          <RootStack.Screen
+            name="Onboarding"
+            options={{ headerShown: false }}
+            children={() => <OnboardingScreen onFinish={() => setShowOnboarding(false)} />} // ✅ 정확한 children prop
+          />
+        ) : user ? (
+          <RootStack.Screen name="UserTabs" component={UserTabs} />
+        ) : (
+          <RootStack.Screen name="AuthScreens" component={AuthStackNavigator} />
+        )}
 
         <RootStack.Screen
           name="PathFinderStack"

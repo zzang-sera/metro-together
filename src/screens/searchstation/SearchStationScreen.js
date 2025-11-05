@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react"; // ✅ useEffect 추가
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   FlatList,
   SafeAreaView,
   TouchableOpacity,
+  AccessibilityInfo, // ✅ AccessibilityInfo 추가
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
@@ -56,6 +57,28 @@ const SearchStationScreen = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedStation, setSelectedStation] = useState(null);
+  // ✅ 스크린리더 상태 state 추가
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+
+  // ✅ 스크린리더 상태 감지
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(isEnabled);
+    };
+    checkScreenReader();
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (isEnabled) => {
+        setIsScreenReaderEnabled(isEnabled);
+      }
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
@@ -75,10 +98,36 @@ const SearchStationScreen = () => {
     return Array.from(map.values());
   }, [searchQuery]);
 
+  // ✅ 안내 메시지 스타일
+  const noticeBoxStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E8F0FE',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginHorizontal: 16, // searchContainer와 동일한 여백
+    marginTop: 0,
+    marginBottom: 8,
+  };
+  
+  const noticeTextStyle = {
+    flex: 1,
+    color: '#17171B',
+    fontWeight: '700',
+    fontFamily: 'NotoSansKR', 
+  };
+
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20 + fontOffset / 2} color="#17171B" />
+        <Ionicons
+          name="search"
+          size={20 + fontOffset / 2}
+          color="#17171B"
+          accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+        />
         <TextInput
           style={[
             styles.input,
@@ -88,8 +137,26 @@ const SearchStationScreen = () => {
           value={searchQuery}
           onChangeText={setSearchQuery}
           autoFocus
+          accessibilityLabel="역 이름 검색" // ✅ 입력창 라벨
+          accessibilityHint="역 이름 초성을 입력하여 검색할 수 있습니다."
         />
       </View>
+
+      {/* ✅ 음성안내 시 스크롤 안내 */}
+      {isScreenReaderEnabled && searchResults.length > 0 && (
+        <View style={noticeBoxStyle} accessibilityRole="alert">
+          <Ionicons
+            name="information-circle-outline"
+            size={responsiveFontSize(22) + fontOffset / 2}
+            color="#0B5FFF"
+            style={{ marginRight: 8 }}
+            accessibilityHidden={true}
+          />
+          <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            화면을 내리거나 올리려면 두 손가락으로 미세요.
+          </Text>
+        </View>
+      )}
 
       <FlatList
         data={searchResults}
@@ -102,8 +169,13 @@ const SearchStationScreen = () => {
               setModalVisible(true);
             }}
             accessibilityLabel={`${item.name} 역, ${item.lines.join(", ")}`}
+            accessibilityHint="탭하여 출발/도착 설정 또는 역 정보 보기"
           >
-            <Ionicons name="location-outline" size={24 + fontOffset / 2} />
+            <Ionicons
+              name="location-outline"
+              size={24 + fontOffset / 2}
+              accessibilityHidden={true} // ✅ 장식용 아이콘 숨김
+            />
             <Text
               style={[
                 styles.stationName,
@@ -116,6 +188,7 @@ const SearchStationScreen = () => {
               {item.lines.map((l) => {
                 const color = getLineColor(l);
                 const textColor = getTextColorForBackground(color);
+                const lineNum = l.replace("호선", "");
                 return (
                   <View
                     key={l}
@@ -135,8 +208,9 @@ const SearchStationScreen = () => {
                         styles.lineText,
                         { color: textColor, fontSize: 12 + fontOffset },
                       ]}
+                      accessibilityLabel={`${lineNum}호선`} // ✅ 호선 라벨
                     >
-                      {l.replace("호선", "")}
+                      {lineNum}
                     </Text>
                   </View>
                 );
