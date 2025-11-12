@@ -197,10 +197,20 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
+  const isTest = false; // 테스트 모드 
+
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
     setLoading(true);
 
+if (isTest) {
+    if (!local.loading) {
+      setFacilities(local.data || []);
+      setDataSource("LOCAL");
+      setLoading(false);
+    }
+    return;
+  }
     if (apiSupported) {
       if (!api.loading && api.data.length > 0) {
         setFacilities(api.data);
@@ -347,7 +357,25 @@ export default function BarrierFreeMapScreen() {
             두 손가락으로 지도를 확대/축소 할 수 있습니다.
           </Text>
         </View>
-
+{dataSource === "LOCAL" && (
+    <View
+      style={[
+        noticeBoxStyle,
+        { backgroundColor: "#FFF3CD", borderColor: "#FFD966", borderWidth: 1.2, marginTop: 8 },
+      ]}
+      accessibilityRole="alert"
+    >
+      <Ionicons
+        name="alert-circle-outline"
+        size={responsiveFontSize(22) + fontOffset / 2}
+        style={{ marginRight: 8 }}
+        accessibilityHidden={true}
+      />
+      <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+        실시간 정보가 아닙니다. 자세한 정보는 역으로 문의해주세요.
+      </Text>
+    </View>
+  )}
         {isScreenReaderEnabled && (
           <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
             <Ionicons
@@ -417,18 +445,29 @@ export default function BarrierFreeMapScreen() {
         ) : (
           facilities.map((item, idx) => {
             const isApi = dataSource === "API";
+
+            const isUnavailable =
+              isApi &&
+              ["EV", "ES"].includes(type) &&
+              item.status &&
+              /보수중/i.test(item.status);
+
             const cardStyle = [
               styles.card,
-              isApi ? { borderColor: colors.primary } : styles.cardBorderLocal,
+              isUnavailable
+                ? { borderColor: "#D32F2F", borderWidth: 2.5 } 
+                : isApi
+                ? { borderColor: colors.primary }
+                : styles.cardBorderLocal,
             ];
 
             return (
-              <View key={idx} style={cardStyle} accessible={true}> 
+              <View key={idx} style={cardStyle} accessible={true}>
                 <View style={styles.cardHeader}>
                   <Image
                     source={ICONS[type] || ICONS["EV"]}
                     style={styles.cardIcon}
-                    accessibilityHidden={true} 
+                    accessibilityHidden={true}
                   />
                   <Text
                     style={[
@@ -445,7 +484,8 @@ export default function BarrierFreeMapScreen() {
                     styles.facilityDesc,
                     {
                       fontSize: responsiveFontSize(15) + fontOffset,
-                      lineHeight: (responsiveFontSize(15) + fontOffset) * 1.47,
+                      lineHeight:
+                        (responsiveFontSize(15) + fontOffset) * 1.47,
                     },
                   ]}
                 >
@@ -456,7 +496,9 @@ export default function BarrierFreeMapScreen() {
                   <Text
                     style={{
                       textAlign: "right",
-                      color: colors.textSecondary,
+                      color: isUnavailable
+                        ? "#D32F2F"
+                        : colors.textSecondary, 
                       fontSize: responsiveFontSize(13) + fontOffset,
                       fontWeight: "700",
                     }}
@@ -470,5 +512,5 @@ export default function BarrierFreeMapScreen() {
         )}
       </View>
     </ScrollView>
-  );
+     );
 }
