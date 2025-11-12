@@ -30,7 +30,10 @@ import { getLockersForStation } from "../../api/metro/lockerLocal";
 
 import { useApiFacilities } from "../../hook/useApiFacilities";
 
+
 import stationImages from "../../assets/metro-data/metro/station/station_images.json";
+
+const SUPABASE_URL = "https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder";
 
 const BOT_AVATAR = require("../../assets/brand-icon.png");
 
@@ -146,7 +149,7 @@ export default function ChatBotScreen() {
     if (type === "NT") {
       if (apiLoading) return `${head}\n 실시간 공지를 불러오는 중입니다...`;
       if (apiError) return `${head}\n API 오류 발생: ${apiError}`;
-      if (!apiData.length) return `${head}\n"${stationName}" 관련 공지가 없습니다.`;
+      if (!apiData.length) return `${head}\n 오늘의 "${stationName}"역 공지가 없습니다.`;
 
       const list = apiData
         .map(
@@ -229,61 +232,62 @@ export default function ChatBotScreen() {
 
 const runPathSearch = useCallback(
   async (start, end, opts = { wheelchair: false }) => {
-    appendBot(` ${start} → ${end} ${opts.wheelchair ? " 휠체어 경로" : "최단경로"}를 탐색합니다...`);
+    appendBot(`${start} → ${end} ${opts.wheelchair ? "휠체어 경로" : "최단경로"}를 탐색 중입니다...`);
     setLoading(true);
+
     try {
-      const data = await fetchSubwayPath(start, end, !!opts.wheelchair);
+      const url = `${SUPABASE_URL}?dep=${encodeURIComponent(start)}&arr=${encodeURIComponent(end)}&wheelchair=${opts.wheelchair}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-      const depRaw = data?.routeSummary?.departure ?? data?.dep ?? data?.start ?? start;
-      const arrRaw = data?.routeSummary?.arrival ?? data?.arr ?? data?.end ?? end;
+      if (data?.error) throw new Error(data.error);
 
-      const clean = (s) => String(s || "").replace(/\(.*?\)/g, "").replace(/역\s*$/u, "").trim();
-      const depName = clean(depRaw) || start;
-      const arrName = clean(arrRaw) || end;
+      const { routeSummary, transferInfo, stationFacilities } = data;
 
-      const time =
-        data?.routeSummary?.estimatedTime ??
-        data?.totalTime ?? data?.duration ?? data?.time ?? "?";
-      const transfers =
-        data?.routeSummary?.transfers ??
-        data?.transfers ?? data?.transferCount ?? 0;
+      const departure = routeSummary?.departure || start;
+      const arrival = routeSummary?.arrival || end;
+      const estimatedTime = routeSummary?.estimatedTime || "정보 없음";
+      const transfers = routeSummary?.transfers || 0;
 
-      const sf = data?.stationFacilities || {};
-      const ti = Array.isArray(data?.transferInfo) ? data.transferInfo : [];
-      const linesToText = (v) =>
-        Array.isArray(v) ? v.join("\n") : (typeof v === "string" ? v : "");
+      let steps = [];
 
-      const steps = [];
-      if (sf?.departure?.station) {
-        const depDesc = linesToText(sf.departure.displayLines) || sf.departure.text || "";
-        steps.push(` 출발: ${sf.departure.station}\n${depDesc}`.trim());
-      }
-      for (const info of ti) {
-        const idx = info?.index ?? steps.length;
+      if (stationFacilities?.departure) {
         const desc =
-          linesToText(info?.displayLines) ||
-          info?.text ||
-          (info?.fromLine && info?.toLine ? `${info.fromLine} → ${info.toLine}` : "");
-        steps.push(` ${idx}회 환승: ${info?.station || ""}\n${desc}`.trim());
-      }
-      if (sf?.arrival?.station) {
-        const arrDesc = linesToText(sf.arrival.displayLines) || sf.arrival.text || "";
-        steps.push(`도착: ${sf.arrival.station}\n${arrDesc}`.trim());
+          stationFacilities.departure.displayLines ||
+          stationFacilities.departure.text ||
+          "";
+        steps.push(`출발: ${stationFacilities.departure.station}\n${desc}`);
       }
 
-      const stepsText = steps.length ? steps.join("\n\n") : "세부 이동 안내가 없습니다.";
-      appendBot(` ${depName} → ${arrName}\n⏱ 소요 시간: ${time} |  환승 ${transfers}회\n\n${stepsText}`);
+      if (Array.isArray(transferInfo)) {
+        transferInfo.forEach((info, i) => {
+          const desc = info.displayLines || info.text || "";
+          steps.push(`${i + 1}회 환승: ${info.station}\n${desc}`);
+        });
+      }
+
+      if (stationFacilities?.arrival) {
+        const desc =
+          stationFacilities.arrival.displayLines ||
+          stationFacilities.arrival.text ||
+          "";
+        steps.push(`도착: ${stationFacilities.arrival.station}\n${desc}`);
+      }
+
+      appendBot(
+        `${departure} → ${arrival}\n⏱ 소요 시간: ${estimatedTime} | 환승 ${transfers}회\n\n${steps.join("\n\n")}`
+      );
     } catch (err) {
-      console.error("🚨 fetchSubwayPath error:", err);
-      appendBot(" 경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
+      console.error("경로 탐색 오류:", err);
+      appendBot("경로 탐색 중 오류가 발생했습니다. 역명을 다시 확인해주세요.");
     } finally {
       setLoading(false);
-      append("menuButton", {}); 
+      append("menuButton", {});
     }
   },
   [appendBot]
 );
-
 const MessageBubble = ({ item }) => {
     const avatarSize = responsiveWidth(40) + fontOffset * 1.5; 
 
@@ -388,8 +392,18 @@ if (item.role === "user")
                 type={item.mapProps?.type}
               />
             ) : (
-              <Text style={[styles.messageText, styles.botText]}>{item.text}</Text>
-            )}
+            <Text style={[styles.messageText, styles.botText]}>
+              {item.text
+                ?.replace(/,/g, "") 
+                ?.replace(/⚠️/g, "\n⚠️")              
+                ?.split("\n")                    
+                .map((line, idx) => (
+                  <Text key={idx}>
+                    {line}
+                    {"\n"}
+                  </Text>
+                ))}
+            </Text>            )}
           </View>
         </View>
       </View>

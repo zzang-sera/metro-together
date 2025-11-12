@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, Alert, ScrollView, KeyboardAvoidingView, Platform, View } from 'react-native';
 import { useAuthForm, SECURITY_QUESTION } from '../../hook/useAuthForm';
-import { findUserByInfo } from '../../api/user'; 
+import { findUserByDetails } from '../../api/user'; 
 import AuthInput from '../../components/AuthInput';
 import { styles } from '../../styles/authStyles';
 import CustomButton from '../../components/CustomButton';
@@ -33,7 +33,7 @@ const FindEmailScreen = ({ navigation }) => {
     if (!securityAnswer) { setSecurityAnswerError('질문에 대한 답변을 입력해주세요.'); isValid = false; }
     if (!isValid) return;
 
-    const { email, error } = await findUserByInfo(name, dob, securityAnswer);
+    const { email, error } = await findUserByDetails(name, dob, securityAnswer);
 
     if (error === 'NOT_FOUND') {
       Alert.alert('이메일 찾기 실패', '입력하신 정보와 일치하는 사용자가 없습니다.');
