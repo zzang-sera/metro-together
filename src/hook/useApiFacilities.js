@@ -37,11 +37,11 @@ export function useApiFacilities(stationName, stationCode, line, type) {
         else if (type === "NT") {
           res = await getMetroNotices(stationName);
 
-            const now = new Date();
+          const now = new Date();
           const kstOffset = 9 * 60 * 60 * 1000;
           const kstNow = new Date(now.getTime() + kstOffset);
-          const todayStr = kstNow.toISOString().slice(0, 10); 
-
+          //const todayStr = kstNow.toISOString().slice(0, 10); 
+          const todayStr = "2025-11-01";//테스트용
           res = res.filter((r) => {
             if (!r.occurred) return false;
             const occurredDate = r.occurred.split("T")[0];
