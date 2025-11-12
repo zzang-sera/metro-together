@@ -36,12 +36,24 @@ export function useApiFacilities(stationName, stationCode, line, type) {
         }
         else if (type === "NT") {
           res = await getMetroNotices(stationName);
+
+            const now = new Date();
+          const kstOffset = 9 * 60 * 60 * 1000;
+          const kstNow = new Date(now.getTime() + kstOffset);
+          const todayStr = kstNow.toISOString().slice(0, 10); 
+
+          res = res.filter((r) => {
+            if (!r.occurred) return false;
+            const occurredDate = r.occurred.split("T")[0];
+            return occurredDate === todayStr;
+          });
         }
         else {
           setData([]);
           setLoading(false);
           return;
         }
+
 
         const mapped = res.map((r, i) => {
           if (type === "NT") {

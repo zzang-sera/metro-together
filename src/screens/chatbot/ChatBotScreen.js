@@ -146,7 +146,7 @@ export default function ChatBotScreen() {
     if (type === "NT") {
       if (apiLoading) return `${head}\n 실시간 공지를 불러오는 중입니다...`;
       if (apiError) return `${head}\n API 오류 발생: ${apiError}`;
-      if (!apiData.length) return `${head}\n"${stationName}" 관련 공지가 없습니다.`;
+      if (!apiData.length) return `${head}\n 오늘의 "${stationName}" 공지가 없습니다.`;
 
       const list = apiData
         .map(
