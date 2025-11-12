@@ -122,11 +122,11 @@ export default function OnboardingScreen({ onFinish }) {
           backgroundColor: "#E8FBF9",
           image: (
             <Image
-              source={require("../../assets/onboarding/onboarding5.jpg")}
+              source={require("../../assets/onboarding/onboarding6.jpg")}
               style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
               resizeMode="contain"
               accessible
-              accessibilityLabel="역 선택 메뉴 예시"
+              accessibilityLabel="지하철 최단 경로 예시"
             />
           ),
           title: "지하철 최단 경로",
@@ -137,7 +137,7 @@ export default function OnboardingScreen({ onFinish }) {
           backgroundColor: "#F2FFFD",
           image: (
             <Image
-              source={require("../../assets/onboarding/onboarding6.jpg")}
+              source={require("../../assets/onboarding/onboarding5.jpg")}
               style={{ width: IMG_W, height: IMG_H, borderRadius: 20 }}
               resizeMode="contain"
               accessible
