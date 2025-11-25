@@ -22,10 +22,10 @@ function UserTypeSelectorButton() {
 
   const descText =
     userType === USER_TYPES.WHEELCHAIR
-      ? "휠체어 경로가 기본값으로 적용됩니다."
+      ? "길찾기 시, 휠체어 경로가 제공됩니다."
       : userType === USER_TYPES.VISUAL
-      ? "시각 의존도를 최소화한 화면 구성이 우선 적용됩니다."
-      : "기본 지하철 이용 모드입니다.";
+      ? "음성 안내 최적화 화면입니다."
+      : "기본 이용 모드입니다.";
 
   const handleSelect = async (type) => {
     await setUserType(type);
@@ -66,8 +66,8 @@ function UserTypeSelectorButton() {
                 { fontSize: responsiveFontSize(14) + fontOffset },
               ]}
             >
-              본인에게 맞는 이용자 유형을 선택하면{'\n'}
-              앱이 환경을 자동으로 조정합니다.
+              이용자 유형을 선택하면{'\n'}
+              앱이 최적 환경으로 설정됩니다.
             </Text>
 
             <View style={{ gap: 8 }}>
@@ -100,7 +100,7 @@ function UserTypeSelectorButton() {
               <Text
                 style={[
                   styles.currentDesc,
-                  { fontSize: responsiveFontSize(12) + fontOffset },
+                  { fontSize: responsiveFontSize(14) + fontOffset },
                 ]}
               >
                 {descText}
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   modalDesc: {
     fontFamily: "NotoSansKR",
     fontWeight: "700",
-    color: "#555555",
+    color: "#17171B",
     marginBottom: 16,
     lineHeight: 20,
   },
@@ -162,8 +162,8 @@ const styles = StyleSheet.create({
   currentDesc: {
     fontFamily: "NotoSansKR",
     fontWeight: "700",
-    color: "#666666",
-    lineHeight: 18,
+    color: "#17171B",
+    lineHeight: 22,
   },
 });
 
