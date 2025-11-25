@@ -1,17 +1,19 @@
-//src/screens/pathfinder/PathResultView.js
-import React, { useState, useEffect } from 'react'; 
+// src/screens/pathfinder/PathResultView.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
-  AccessibilityInfo, 
+  AccessibilityInfo,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { responsiveFontSize } from '../../utils/responsive';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
+import { useUserType } from '../../contexts/UserTypeContext';
+import { USER_TYPES } from '../../constants/userType';
 
 const lineData = lineJson.DATA;
 
@@ -45,8 +47,22 @@ const InfoItem = ({
   return (
     <View style={styles.infoItem}>
       <IconComponent name={icon} size={baseIconSize + fontOffset / 2} color={iconColor} />
-      <Text style={[styles.infoLabel, { fontSize: responsiveFontSize(15) + fontOffset }]}>{label}:</Text>
-      <Text style={[styles.infoValue, { fontSize: responsiveFontSize(15) + fontOffset }]}>{value}</Text>
+      <Text
+        style={[
+          styles.infoLabel,
+          { fontSize: responsiveFontSize(15) + fontOffset },
+        ]}
+      >
+        {label}:
+      </Text>
+      <Text
+        style={[
+          styles.infoValue,
+          { fontSize: responsiveFontSize(15) + fontOffset },
+        ]}
+      >
+        {value}
+      </Text>
     </View>
   );
 };
@@ -72,7 +88,10 @@ const JourneyStep = ({
       return (
         <View style={[styles.timelineIconLine, { backgroundColor: color }]}>
           <Text
-            style={[styles.timelineIconLineText, { color: textColor, fontSize: 18 + fontOffset / 2 }]}
+            style={[
+              styles.timelineIconLineText,
+              { color: textColor, fontSize: 18 + fontOffset / 2 },
+            ]}
             accessibilityLabel={`${lineNumber}호선`}
           >
             {lineNumber}
@@ -106,15 +125,35 @@ const JourneyStep = ({
         {!isLast && <View style={styles.timelineTrackBottom} />}
       </View>
       <View style={styles.stepContent}>
-        <Text style={[styles.stepTitle, { fontSize: responsiveFontSize(17) + fontOffset }]}>{title}</Text>
+        <Text
+          style={[
+            styles.stepTitle,
+            { fontSize: responsiveFontSize(17) + fontOffset },
+          ]}
+        >
+          {title}
+        </Text>
         {isDescriptionArray ? (
           description.map((line, index) => (
-            <Text key={index} style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>
+            <Text
+              key={index}
+              style={[
+                styles.stepDescription,
+                { fontSize: responsiveFontSize(14) + fontOffset },
+              ]}
+            >
               {line}
             </Text>
           ))
         ) : (
-          <Text style={[styles.stepDescription, { fontSize: responsiveFontSize(14) + fontOffset }]}>{description}</Text>
+          <Text
+            style={[
+              styles.stepDescription,
+              { fontSize: responsiveFontSize(14) + fontOffset },
+            ]}
+          >
+            {description}
+          </Text>
         )}
       </View>
     </View>
@@ -135,30 +174,50 @@ const cleanStationName = (rawName) => {
     .trim();
 };
 
-const PathResultView = ({ data }) => {
+const PathResultView = ({ data, userType: propUserType, isScreenReaderEnabled: propScreenReaderEnabled }) => {
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();
+  const { userType: ctxUserType } = useUserType();
 
-  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
+  const effectiveUserType = propUserType || ctxUserType || USER_TYPES.DEFAULT;
+  const isVisualUser = effectiveUserType === USER_TYPES.VISUAL;
+
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(
+    propScreenReaderEnabled ?? false
+  );
+
+  useEffect(() => {
+    // prop으로 넘어온 값이 있으면 우선 반영
+    if (typeof propScreenReaderEnabled === 'boolean') {
+      setIsScreenReaderEnabled(propScreenReaderEnabled);
+    }
+  }, [propScreenReaderEnabled]);
 
   useEffect(() => {
     const checkScreenReader = async () => {
-      const isEnabled = await AccessibilityInfo.isScreenReaderEnabled();
-      setIsScreenReaderEnabled(isEnabled);
+      const enabled = await AccessibilityInfo.isScreenReaderEnabled();
+      // prop보다 OS 실제 상태가 우선이라면 여기서 덮어쓸 수도 있음
+      setIsScreenReaderEnabled((prev) =>
+        typeof propScreenReaderEnabled === 'boolean' ? propScreenReaderEnabled : enabled
+      );
     };
     checkScreenReader();
 
     const subscription = AccessibilityInfo.addEventListener(
       'screenReaderChanged',
-      (isEnabled) => {
-        setIsScreenReaderEnabled(isEnabled);
+      (enabled) => {
+        setIsScreenReaderEnabled(
+          typeof propScreenReaderEnabled === 'boolean' ? propScreenReaderEnabled : enabled
+        );
       }
     );
 
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [propScreenReaderEnabled]);
+
+  const visualTextMode = isVisualUser && isScreenReaderEnabled;
 
   if (!data) {
     return (
@@ -175,7 +234,9 @@ const PathResultView = ({ data }) => {
 
   const findStationCodeBy = (name, line) => {
     const clean = (s) => s.replace(/역\s*$/u, '').trim();
-    const found = allStations.find((s) => clean(s.name) === clean(name) && s.line === line);
+    const found = allStations.find(
+      (s) => clean(s.name) === clean(name) && s.line === line
+    );
     return found ? found.station_cd : null;
   };
 
@@ -188,7 +249,7 @@ const PathResultView = ({ data }) => {
     return (
       <TouchableOpacity
         key={cleanName}
-        style={[styles.stationButton, { borderColor: color }]}
+        style={styles.stationButton}
         onPress={() => {
           const code = findStationCodeBy(cleanName, lineNum);
           navigation.navigate('StationDetail', {
@@ -202,29 +263,158 @@ const PathResultView = ({ data }) => {
         <View
           style={[
             styles.stationButtonIcon,
-            { backgroundColor: color, width: iconSize, height: iconSize, borderRadius: iconSize / 2 },
+            {
+              backgroundColor: color,
+              width: iconSize,
+              height: iconSize,
+              borderRadius: iconSize / 2,
+            },
           ]}
         >
           <Text
-            style={[styles.stationButtonIconText, { color: textColor, fontSize: 13 + fontOffset / 3 }]}
-            accessibilityLabel={lineNum ? `${lineNum.replace('호선', '')}호선` : '알 수 없음'}
+            style={[
+              styles.stationButtonIconText,
+              { color: textColor, fontSize: 13 + fontOffset / 3 },
+            ]}
+            accessibilityLabel={
+              lineNum ? `${lineNum.replace('호선', '')}호선` : '알 수 없음'
+            }
           >
             {lineNum?.replace('호선', '') || '?'}
           </Text>
         </View>
-        <Text style={[styles.stationButtonText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+        <Text
+          style={[
+            styles.stationButtonText,
+            { fontSize: responsiveFontSize(16) + fontOffset },
+          ]}
+        >
           {title}
         </Text>
         <Ionicons
           name="chevron-forward"
           size={20 + fontOffset / 2}
           color="#888888"
-          accessibilityHidden={true} 
+          accessibilityHidden={true}
         />
       </TouchableOpacity>
     );
   };
 
+  // 🔹 시각 약자 + 스크린리더 ON: 텍스트 전용 모드
+  if (visualTextMode) {
+    const parts = [];
+
+    if (routeSummary?.departure && routeSummary?.arrival) {
+      parts.push(
+        `경로: ${routeSummary.departure}에서 ${routeSummary.arrival}까지 이동합니다.`
+      );
+    }
+
+    if (routeSummary?.estimatedTime) {
+      parts.push(`예상 소요 시간은 ${routeSummary.estimatedTime}입니다.`);
+    }
+
+    const transfersCountText =
+      typeof routeSummary?.transfers === 'number'
+        ? routeSummary.transfers === 0
+          ? '환승 없이 이동합니다.'
+          : `환승은 총 ${routeSummary.transfers}회입니다.`
+        : '';
+
+    if (transfersCountText) {
+      parts.push(transfersCountText);
+    }
+
+    if (stationFacilities?.departure) {
+      parts.push(
+        `출발역 안내: ${stationFacilities.departure.station}. ${
+          stationFacilities.departure.text ||
+          (Array.isArray(stationFacilities.departure.displayLines)
+            ? stationFacilities.departure.displayLines.join(' ')
+            : stationFacilities.departure.displayLines || '')
+        }`
+      );
+    }
+
+    if (Array.isArray(transferInfo) && transferInfo.length > 0) {
+      transferInfo.forEach((info, idx) => {
+        parts.push(
+          `환승 ${info.index}회차: ${info.station}. ${
+            info.text ||
+            (Array.isArray(info.displayLines)
+              ? info.displayLines.join(' ')
+              : info.displayLines || '')
+          }`
+        );
+      });
+    }
+
+    if (stationFacilities?.arrival) {
+      parts.push(
+        `도착역 안내: ${stationFacilities.arrival.station}. ${
+          stationFacilities.arrival.text ||
+          (Array.isArray(stationFacilities.arrival.displayLines)
+            ? stationFacilities.arrival.displayLines.join(' ')
+            : stationFacilities.arrival.displayLines || '')
+        }`
+      );
+    }
+
+    const combinedText = parts.filter(Boolean).join('\n\n');
+
+    return (
+      <View style={styles.scrollContainer}>
+        <View style={styles.noticeBox} accessibilityRole="alert">
+          <Ionicons
+            name="information-circle-outline"
+            size={responsiveFontSize(22) + fontOffset / 2}
+            color="#0B5FFF"
+            style={{ marginRight: 8 }}
+            accessibilityHidden={true}
+          />
+          <Text
+            style={[
+              styles.noticeText,
+              { fontSize: responsiveFontSize(16) + fontOffset },
+            ]}
+          >
+            시각 약자 모드로, 스크린리더가 읽기 쉬운 텍스트 형태로 경로를 안내합니다.
+          </Text>
+        </View>
+
+        <View
+          style={styles.summaryCard}
+          accessibilityLabel={combinedText}
+          accessible={true}
+        >
+          <Text
+            style={[
+              styles.summaryTitle,
+              { fontSize: responsiveFontSize(20) + fontOffset },
+            ]}
+          >
+            경로 요약
+          </Text>
+
+          <Text
+            style={{
+              marginTop: 12,
+              fontFamily: 'NotoSansKR',
+              fontWeight: '700',
+              color: '#17171B',
+              fontSize: responsiveFontSize(16) + fontOffset,
+              lineHeight: (responsiveFontSize(16) + fontOffset) * 1.5,
+            }}
+          >
+            {combinedText}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
+  // 🔹 일반 모드 (기존 UI 유지)
   return (
     <View style={styles.scrollContainer}>
       {isScreenReaderEnabled && (
@@ -234,9 +424,14 @@ const PathResultView = ({ data }) => {
             size={responsiveFontSize(22) + fontOffset / 2}
             color="#0B5FFF"
             style={{ marginRight: 8 }}
-            accessibilityHidden={true} 
+            accessibilityHidden={true}
           />
-          <Text style={[styles.noticeText, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+          <Text
+            style={[
+              styles.noticeText,
+              { fontSize: responsiveFontSize(16) + fontOffset },
+            ]}
+          >
             화면을 내리려면 두 손가락으로 화면을 미세요.
           </Text>
         </View>
@@ -250,19 +445,38 @@ const PathResultView = ({ data }) => {
           환승: ${routeSummary?.transfers || 0}회.
         `}
       >
-        <Text style={[styles.summaryTitle, { fontSize: responsiveFontSize(20) + fontOffset }]} accessibilityHidden={true}>
+        <Text
+          style={[
+            styles.summaryTitle,
+            { fontSize: responsiveFontSize(20) + fontOffset },
+          ]}
+          accessibilityHidden={true}
+        >
           {routeSummary?.departure} → {routeSummary?.arrival}
         </Text>
 
-        <InfoItem iconComponent={Ionicons} icon="time" label="소요 시간" value={routeSummary?.estimatedTime || '정보 없음'} />
-        <InfoItem iconComponent={MaterialCommunityIcons} icon="swap-horizontal-bold" label="환승" value={`${routeSummary?.transfers || 0}회`} />
+        <InfoItem
+          iconComponent={Ionicons}
+          icon="time"
+          label="소요 시간"
+          value={routeSummary?.estimatedTime || '정보 없음'}
+        />
+        <InfoItem
+          iconComponent={MaterialCommunityIcons}
+          icon="swap-horizontal-bold"
+          label="환승"
+          value={`${routeSummary?.transfers || 0}회`}
+        />
       </View>
 
       {stationFacilities?.departure && (
         <JourneyStep
           icon="train-outline"
           title={`출발: ${stationFacilities.departure.station}`}
-          description={stationFacilities.departure.displayLines || stationFacilities.departure.text}
+          description={
+            stationFacilities.departure.displayLines ||
+            stationFacilities.departure.text
+          }
           lineNum={departureLine}
           isFirst
         />
@@ -282,7 +496,9 @@ const PathResultView = ({ data }) => {
         <JourneyStep
           icon="flag-outline"
           title={`도착: ${stationFacilities.arrival.station}`}
-          description={stationFacilities.arrival.displayLines || stationFacilities.arrival.text}
+          description={
+            stationFacilities.arrival.displayLines || stationFacilities.arrival.text
+          }
           lineNum={arrivalLine}
           isLast
         />
@@ -295,8 +511,12 @@ const PathResultView = ({ data }) => {
             stationFacilities.departure.station,
             departureLine
           )}
-        {transferInfo?.map((info, idx) =>
-          renderStationButton(`${cleanStationName(info.station)}역 정보 보기`, info.station, info.toLine)
+        {transferInfo?.map((info) =>
+          renderStationButton(
+            `${cleanStationName(info.station)}역 정보 보기`,
+            info.station,
+            info.toLine
+          )
         )}
         {stationFacilities?.arrival &&
           renderStationButton(
@@ -318,15 +538,20 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginBottom: 16, 
+    marginBottom: 16,
   },
   noticeText: {
     flex: 1,
     color: '#17171B',
     fontWeight: '700',
-    fontFamily: 'NotoSansKR', 
+    fontFamily: 'NotoSansKR',
   },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 50 },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
   errorText: {
     color: 'red',
     fontWeight: '700',
@@ -348,21 +573,52 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   infoItem: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  infoLabel: { fontWeight: '700', color: '#595959', marginLeft: 8, marginRight: 4 },
+  infoLabel: {
+    fontWeight: '700',
+    color: '#595959',
+    marginLeft: 8,
+    marginRight: 4,
+  },
   infoValue: { fontWeight: '700', color: '#17171B', flex: 1 },
+
   stepContainer: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 8 },
   stepIconContainer: { width: 40, alignItems: 'center', marginRight: 12, paddingTop: 4 },
   timelineIconLine: {
-    width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1, borderColor: '#DDD',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#DDD',
   },
   timelineIconLineText: { fontWeight: '700' },
-  timelineIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#14CAC9', justifyContent: 'center', alignItems: 'center' },
-  timelineTrackTop: { position: 'absolute', width: 3, backgroundColor: '#DDD', top: 0, height: 4 },
-  timelineTrackBottom: { position: 'absolute', width: 3, backgroundColor: '#DDD', top: 44, height: '100%' },
+  timelineIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#14CAC9',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  timelineTrackTop: {
+    position: 'absolute',
+    width: 3,
+    backgroundColor: '#DDD',
+    top: 0,
+    height: 4,
+  },
+  timelineTrackBottom: {
+    position: 'absolute',
+    width: 3,
+    backgroundColor: '#DDD',
+    top: 44,
+    height: '100%',
+  },
   stepContent: { flex: 1, paddingVertical: 4, paddingBottom: 16 },
   stepTitle: { fontWeight: '700', color: '#17171B', marginBottom: 4 },
   stepDescription: { color: '#333', fontWeight: '700', marginBottom: 4 },
+
   stationButtonContainer: { marginTop: 20, marginBottom: 40 },
   stationButton: {
     flexDirection: 'row',
@@ -379,7 +635,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
-  stationButtonIcon: { justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  stationButtonIcon: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
   stationButtonIconText: { fontWeight: 'bold', textAlign: 'center' },
   stationButtonText: { flex: 1, fontWeight: '700', color: '#17171B' },
 });
