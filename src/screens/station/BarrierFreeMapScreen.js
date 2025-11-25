@@ -1,4 +1,4 @@
-//src/screens/station/BarrierFreeMapScreen.js
+// src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import {
   View,
@@ -10,7 +10,7 @@ import {
   PanResponder,
   Dimensions,
   Alert,
-  AccessibilityInfo, 
+  AccessibilityInfo,
 } from "react-native";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import Svg, { Rect, Path, G, Image as SvgImage } from "react-native-svg";
@@ -68,12 +68,7 @@ function BubbleMarker({ cx, cy, type }) {
   const label = TYPE_LABEL[type] || "시설";
 
   return (
-    <G
-      x={cx}
-      y={cy}
-      accessibilityLabel={label}
-      accessibilityRole="image"
-    >
+    <G x={cx} y={cy} accessibilityLabel={label} accessibilityRole="image">
       <Rect
         x={-halfW}
         y={rectY}
@@ -100,13 +95,73 @@ function extractDetail(item, type) {
   return [name, base, loc, extra].filter(Boolean).join(" · ");
 }
 
+/**
+ * 스크린리더용 문장 패턴 생성
+ * 예) "강남역 1번 출구 앞 엘리베이터. 현재 정상 운행 중입니다."
+ */
+function buildAccessibleFacilitySentence(item, type, stationName) {
+  const facilityLabel = TYPE_LABEL[type] || "시설";
+
+  const station =
+    stationName ||
+    item?.stationName ||
+    "";
+
+  // 위치 텍스트 추출 (location > desc 첫 문장 > 빈 문자열)
+  let location = "";
+  if (item?.location) {
+    location = item.location;
+  } else if (item?.desc) {
+    const firstSentence = item.desc.split(/[\.]/)[0];
+    location = firstSentence.trim();
+  }
+
+  // 상태 텍스트 추출 (✅ EV / ES 에서만 사용)
+  const rawStatus = item?.status || item?.operation || "";
+
+  let statusSentence = "";
+  if (type === "EV" || type === "ES") {
+    if (!rawStatus) {
+      // 상태가 아예 없으면 그냥 설치 안내 정도로
+      statusSentence = "현재 상태 정보가 제공되지 않습니다.";
+    } else if (/보수|점검|중단|고장|불가|불능/i.test(rawStatus)) {
+      statusSentence = `${rawStatus}으로 이용이 어려울 수 있습니다.`;
+    } else if (/정상|운행|가능|사용 가능/i.test(rawStatus)) {
+      statusSentence = "현재 정상 운행 중입니다.";
+    } else {
+      statusSentence = `상태: ${rawStatus}입니다.`;
+    }
+  }
+  // 🔹 EV/ES가 아니면 statusSentence는 빈 문자열 그대로 유지 → 상태 문장 없음
+
+  // 앞부분 문장 구성
+  const pieces = [];
+  if (station) pieces.push(`${station}역`);
+  if (location) {
+    pieces.push(location);
+  }
+
+  const prefix = pieces.length > 0 ? pieces.join(" ") : facilityLabel;
+
+  // 최종 문장
+  if (statusSentence) {
+    return `${prefix} ${facilityLabel}. ${statusSentence}`;
+  }
+  // 🔹 상태 문장 없이 위치+종류만
+  return `${prefix} ${facilityLabel}.`;
+}
+
 
 export default function BarrierFreeMapScreen() {
   const route = useRoute();
   const navigation = useNavigation();
   const { fontOffset } = useFontSize();
-  const { stationName = "서울역", stationCode = "", type = "EV", imageUrl = null } =
-    route.params || {};
+  const {
+    stationName = "서울역",
+    stationCode = "",
+    type = "EV",
+    imageUrl = null,
+  } = route.params || {};
 
   const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
 
@@ -144,7 +199,7 @@ export default function BarrierFreeMapScreen() {
         fontSize: responsiveFontSize(18) + fontOffset,
         color: "#17171B",
       },
-      headerBackAccessibilityLabel: '뒤로가기', 
+      headerBackAccessibilityLabel: "뒤로가기",
     });
   }, [navigation, type, fontOffset]);
 
@@ -174,7 +229,7 @@ export default function BarrierFreeMapScreen() {
     checkScreenReader();
 
     const subscription = AccessibilityInfo.addEventListener(
-      'screenReaderChanged',
+      "screenReaderChanged",
       (isEnabled) => {
         setIsScreenReaderEnabled(isEnabled);
       }
@@ -198,20 +253,21 @@ export default function BarrierFreeMapScreen() {
     }
   }, [cleanName, type]);
 
-  const isTest = false; // 테스트 모드 
+  const isTest = false; // 테스트 모드
 
   useEffect(() => {
     const apiSupported = ["EV", "ES", "TO", "DT", "WC"].includes(type);
     setLoading(true);
 
-if (isTest) {
-    if (!local.loading) {
-      setFacilities(local.data || []);
-      setDataSource("LOCAL");
-      setLoading(false);
+    if (isTest) {
+      if (!local.loading) {
+        setFacilities(local.data || []);
+        setDataSource("LOCAL");
+        setLoading(false);
+      }
+      return;
     }
-    return;
-  }
+
     if (apiSupported) {
       if (!api.loading && api.data.length > 0) {
         setFacilities(api.data);
@@ -258,10 +314,9 @@ if (isTest) {
             }).start();
           }
         } else if (touches.length === 1) {
-          Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false })(
-            evt,
-            gestureState
-          );
+          Animated.event([null, { dx: pan.x, dy: pan.y }], {
+            useNativeDriver: false,
+          })(evt, gestureState);
         }
       },
       onPanResponderRelease: () => {
@@ -287,28 +342,32 @@ if (isTest) {
   }
 
   const noticeBoxStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#E8F0FE',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E8F0FE",
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginHorizontal: 20, 
+    marginHorizontal: 20,
   };
-  
+
   const noticeTextStyle = {
     flex: 1,
-    color: '#17171B',
-    fontWeight: '700',
-    fontFamily: 'NotoSansKR', 
+    color: "#17171B",
+    fontWeight: "700",
+    fontFamily: "NotoSansKR",
   };
 
   return (
     <ScrollView style={styles.container}>
-      {coords.length > 0 && (
+      {/* ✅ 스크린리더가 켜져 있으면 지도 섹션 전체 숨김 */}
+      {!isScreenReaderEnabled && coords.length > 0 && (
         <View style={styles.imageContainer} {...panResponder.panHandlers}>
           <Animated.View
-            style={[styles.mapWrapper, { transform: [...pan.getTranslateTransform(), { scale }] }]}
+            style={[
+              styles.mapWrapper,
+            { transform: [...pan.getTranslateTransform(), { scale }] },
+            ]}
           >
             <Image
               source={{ uri: imageUrl }}
@@ -334,10 +393,19 @@ if (isTest) {
               accessibilityLabel={`${stationName} ${TYPE_LABEL[type]} 안내도`}
             />
 
-            <Svg style={[styles.overlay, { width: imgLayout.width, height: imgLayout.height }]}>
+            <Svg
+              style={[
+                styles.overlay,
+                { width: imgLayout.width, height: imgLayout.height },
+              ]}
+            >
               {coords.map((p, i) => {
-                const cx = (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
-                const cy = (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height + offset.y+20;
+                const cx =
+                  (p.x / IMG_ORIGINAL_WIDTH) * imgLayout.width + offset.x;
+                const cy =
+                  (p.y / IMG_ORIGINAL_HEIGHT) * imgLayout.height +
+                  offset.y +
+                  20;
                 return <BubbleMarker key={i} cx={cx} cy={cy} type={p.type} />;
               })}
             </Svg>
@@ -346,39 +414,9 @@ if (isTest) {
       )}
 
       <View>
-        <View style={noticeBoxStyle}>
-          <Ionicons
-            name="information-circle-outline"
-            size={responsiveFontSize(22) + fontOffset / 2}
-            color="#0B5FFF"
-            style={{ marginRight: 8 }}
-            accessibilityHidden={true}
-          />
-          <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-            두 손가락으로 지도를 확대/축소 할 수 있습니다.
-          </Text>
-        </View>
-{dataSource === "LOCAL" && (
-    <View
-      style={[
-        noticeBoxStyle,
-        { backgroundColor: "#FFF3CD", borderColor: "#FFD966", borderWidth: 1.2, marginTop: 8 },
-      ]}
-      accessibilityRole="alert"
-    >
-      <Ionicons
-        name="alert-circle-outline"
-        size={responsiveFontSize(22) + fontOffset / 2}
-        style={{ marginRight: 8 }}
-        accessibilityHidden={true}
-      />
-      <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
-        실시간 정보가 아닙니다. 자세한 정보는 역으로 문의해주세요.
-      </Text>
-    </View>
-  )}
-        {isScreenReaderEnabled && (
-          <View style={[noticeBoxStyle, { marginTop: 8 }]} accessibilityRole="alert">
+        {/* ✅ 지도 안내 문구도 스크린리더일 땐 숨김 */}
+        {!isScreenReaderEnabled && (
+          <View style={noticeBoxStyle}>
             <Ionicons
               name="information-circle-outline"
               size={responsiveFontSize(22) + fontOffset / 2}
@@ -386,13 +424,72 @@ if (isTest) {
               style={{ marginRight: 8 }}
               accessibilityHidden={true}
             />
-            <Text style={[noticeTextStyle, { fontSize: responsiveFontSize(15) + fontOffset }]}>
+            <Text
+              style={[
+                noticeTextStyle,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
+              두 손가락으로 지도를 확대/축소 할 수 있습니다.
+            </Text>
+          </View>
+        )}
+
+        {dataSource === "LOCAL" && (
+          <View
+            style={[
+              noticeBoxStyle,
+              {
+                backgroundColor: "#FFF3CD",
+                borderColor: "#FFD966",
+                borderWidth: 1.2,
+                marginTop: 8,
+              },
+            ]}
+            accessibilityRole="alert"
+          >
+            <Ionicons
+              name="alert-circle-outline"
+              size={responsiveFontSize(22) + fontOffset / 2}
+              style={{ marginRight: 8 }}
+              accessibilityHidden={true}
+            />
+            <Text
+              style={[
+                noticeTextStyle,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
+              실시간 정보가 아닙니다. 자세한 정보는 역으로 문의해주세요.
+            </Text>
+          </View>
+        )}
+
+        {/* ✅ 스크린리더 전용 안내 문구 */}
+        {isScreenReaderEnabled && (
+          <View
+            style={[noticeBoxStyle, { marginTop: 8 }]}
+            accessibilityRole="alert"
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={responsiveFontSize(22) + fontOffset / 2}
+              color="#0B5FFF"
+              style={{ marginRight: 8 }}
+              accessibilityHidden={true}
+            />
+            <Text
+              style={[
+                noticeTextStyle,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
+              이 화면에서는 지도를 생략하고 텍스트로 시설 위치를 안내합니다.
               화면을 내리거나 올리려면 두 손가락으로 미세요.
             </Text>
           </View>
         )}
       </View>
-
 
       {type === "WL" && phone && (
         <View style={styles.buttonContainer}>
@@ -400,7 +497,7 @@ if (isTest) {
             type="call"
             onPress={handleCallPress}
             style={styles.buttonContentLayout}
-            accessibilityLabel={`휠체어 리프트 이용 전화 걸기, ${phone}`}
+            accessibilityLabel={`휠체어 리프트 이용 문의 전화 걸기, ${phone}`}
             accessibilityHint="탭하면 전화가 연결됩니다."
           >
             <View style={styles.buttonLeft}>
@@ -408,7 +505,7 @@ if (isTest) {
                 name="phone"
                 size={responsiveFontSize(26) + fontOffset}
                 color={colors.text}
-                accessibilityHidden={true} 
+                accessibilityHidden={true}
               />
               <Text
                 style={[
@@ -423,7 +520,7 @@ if (isTest) {
               name="chevron-forward"
               size={responsiveFontSize(20) + fontOffset}
               color={colors.text}
-              accessibilityHidden={true} 
+              accessibilityHidden={true}
             />
           </CustomButton>
         </View>
@@ -433,13 +530,23 @@ if (isTest) {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={colors.primary} size="large" />
-            <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            <Text
+              style={[
+                styles.empty,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+              ]}
+            >
               시설 정보를 불러오는 중...
             </Text>
           </View>
         ) : facilities.length === 0 ? (
           <View style={styles.center}>
-            <Text style={[styles.empty, { fontSize: responsiveFontSize(16) + fontOffset }]}>
+            <Text
+              style={[
+                styles.empty,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+              ]}
+            >
               해당 시설 정보가 없습니다.
             </Text>
           </View>
@@ -456,14 +563,31 @@ if (isTest) {
             const cardStyle = [
               styles.card,
               isUnavailable
-                ? { borderColor: "#D32F2F", borderWidth: 2.5 } 
+                ? { borderColor: "#D32F2F", borderWidth: 2.5 }
                 : isApi
                 ? { borderColor: colors.primary }
                 : styles.cardBorderLocal,
             ];
 
+            // ✅ 스크린리더 ON일 때 읽힐 문장
+            const accessibleSentence = isScreenReaderEnabled
+              ? buildAccessibleFacilitySentence(item, type, stationName)
+              : null;
+
+            const descriptionText = isScreenReaderEnabled
+              ? accessibleSentence
+              : extractDetail(item, type);
+
             return (
-              <View key={idx} style={cardStyle} accessible={true}>
+              <View
+                key={idx}
+                style={cardStyle}
+                accessible={true}
+                accessibilityLabel={
+                  accessibleSentence ||
+                  `${TYPE_LABEL[type] || "시설"} 정보 카드`
+                }
+              >
                 <View style={styles.cardHeader}>
                   <Image
                     source={ICONS[type] || ICONS["EV"]}
@@ -490,28 +614,28 @@ if (isTest) {
                     },
                   ]}
                 >
-                  {extractDetail(item, type)}
+                  {descriptionText}
                 </Text>
 
-                {item.status && (
-                  <Text
-                    style={{
-                      textAlign: "right",
-                      color: isUnavailable
-                        ? "#D32F2F"
-                        : colors.textSecondary, 
-                      fontSize: responsiveFontSize(13) + fontOffset,
-                      fontWeight: "700",
-                    }}
-                  >
-                    {item.status}
-                  </Text>
-                )}
+                {(type === "EV" || type === "ES") && item.status && (
+  <Text
+    style={{
+      textAlign: "right",
+      color: isUnavailable
+        ? "#D32F2F"
+        : colors.textSecondary,
+      fontSize: responsiveFontSize(13) + fontOffset,
+      fontWeight: "700",
+    }}
+  >
+    {item.status}
+  </Text>
+)}
               </View>
             );
           })
         )}
       </View>
     </ScrollView>
-     );
+  );
 }
