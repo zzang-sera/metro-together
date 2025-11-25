@@ -1,3 +1,4 @@
+//src/screens/auth/WelcomeScreen.js
 import React, { useState } from 'react';
 import { View, Text, Alert, SafeAreaView, Image, ScrollView } from 'react-native'; 
 import { styles } from '../../styles/authStyles';
@@ -6,6 +7,8 @@ import CustomButton from '../../components/CustomButton';
 import { useFontSize } from '../../contexts/FontSizeContext';
 import { responsiveFontSize } from '../../utils/responsive';
 import FontSettingModal from '../../components/FontSettingModal';
+import UserTypeSelectorButton from '../../components/UserTypeSelectorButton';
+
 
 import GoogleLogo from '../../components/GoogleLogo'; 
 
@@ -36,6 +39,7 @@ const WelcomeScreen = ({ navigation }) => {
           justifyContent: 'space-between' 
         }}
       >
+          
       <View>
           <View style={styles.header}>
             <Image 
@@ -52,56 +56,66 @@ const WelcomeScreen = ({ navigation }) => {
           </View>
         </View>
 
-        <View style={styles.buttonContainer}>
-          <CustomButton
-            type="feature"
-            title="가까운 역 안내"
-            onPress={() => navigation.navigate('GuestTabs', { screen: '주변' })}
-          />
-          <CustomButton
-            type="feature"
-            title="원하는 역 검색"
-            onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
-          />
-          <CustomButton
-            type="feature"
-            title="지하철 최단경로"
-            onPress={() => navigation.navigate('PathFinderStack')}
-          />
-          <CustomButton
-            type="outline" 
-            title="글자 크기 설정"
-            onPress={() => setModalVisible(true)}
-          />
-          <CustomButton
-            type="outline"
-            title="이메일로 시작하기"
-            onPress={() => navigation.navigate('Login')}
-          />
-          
-          <CustomButton
-            type="outline" 
-            onPress={handleGoogleLogin}
-            style={{ 
-              borderColor: '#747775',      
-              backgroundColor: '#FFFFFF',  
-            }} 
-          >
-            <View style={styles.googleButtonContent}>
-              <GoogleLogo size={responsiveFontSize(22) + (fontOffset / 2)} /> 
-              <Text style={[
-                styles.googleButtonText, 
-                { fontSize: responsiveFontSize(16) + fontOffset }
-              ]}>
-                Google로 시작하기
-              </Text>
-            </View>
-          </CustomButton>
+<View style={styles.buttonContainer}>
+  <CustomButton
+    type="feature"
+    title="가까운 역 안내"
+    onPress={() => navigation.navigate('GuestTabs', { screen: '주변' })}
+  />
+  <CustomButton
+    type="feature"
+    title="원하는 역 검색"
+    onPress={() => navigation.navigate('GuestTabs', { screen: '검색' })}
+  />
 
-          <Text style={[styles.footerText, { fontSize: responsiveFontSize(12) + fontOffset, marginTop: 15 }]}>
-            {footerTextContent}
-          </Text>
-        </View>
+  <CustomButton
+    type="feature"
+    title="지하철 최단경로"
+    onPress={() => navigation.navigate('PathFinderStack')}
+  />
+<UserTypeSelectorButton />  
+
+  <CustomButton
+    type="outline"
+    title="글자 크기 설정"
+    onPress={() => setModalVisible(true)}
+  />
+  <CustomButton
+    type="outline"
+    title="이메일로 시작하기"
+    onPress={() => navigation.navigate('Login')}
+  />
+
+  <CustomButton
+    type="outline"
+    onPress={handleGoogleLogin}
+    style={{
+      borderColor: '#747775',
+      backgroundColor: '#FFFFFF',
+    }}
+  >
+    <View style={styles.googleButtonContent}>
+      <GoogleLogo size={responsiveFontSize(22) + fontOffset / 2} />
+      <Text
+        style={[
+          styles.googleButtonText,
+          { fontSize: responsiveFontSize(16) + fontOffset },
+        ]}
+      >
+        Google로 시작하기
+      </Text>
+    </View>
+  </CustomButton>
+
+  <Text
+    style={[
+      styles.footerText,
+      { fontSize: responsiveFontSize(12) + fontOffset, marginTop: 15 },
+    ]}
+  >
+    {footerTextContent}
+  </Text>
+</View>
       </ScrollView>
     </SafeAreaView>
   );

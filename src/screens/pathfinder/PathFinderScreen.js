@@ -1,3 +1,4 @@
+// src/screens/pathfinder/PathFinderScreen.js
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -12,7 +13,8 @@ import {
   ScrollView,
   Platform,
   StatusBar,
-  Alert, 
+  Alert,
+  AccessibilityInfo,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CustomButton from '../../components/CustomButton';
@@ -22,6 +24,8 @@ import PathResultView from './PathResultView';
 import stationJson from '../../assets/metro-data/metro/station/data-metro-station-1.0.0.json';
 import lineJson from '../../assets/metro-data/metro/line/data-metro-line-1.0.0.json';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useUserType } from '../../contexts/UserTypeContext';
+import { USER_TYPES } from '../../constants/userType';
 
 export const SUPABASE_URL = 'https://utqfwkhxacqhgjjalpby.supabase.co/functions/v1/pathfinder';
 const allStations = stationJson.DATA;
@@ -60,7 +64,11 @@ export async function fetchSubwayPath(dep, arr, wheelchair = false) {
 const PathFinderScreen = () => {
   const { fontOffset } = useFontSize();
   const navigation = useNavigation();
-  const route = useRoute(); 
+  const route = useRoute();
+
+  const { userType } = useUserType();
+  const isWheelchairUser = userType === USER_TYPES.WHEELCHAIR;
+  const isVisualUser = userType === USER_TYPES.VISUAL;
 
   const [dep, setDep] = useState('');
   const [arr, setArr] = useState('');
@@ -70,10 +78,30 @@ const PathFinderScreen = () => {
   const [focusedField, setFocusedField] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [listTopPosition, setListTopPosition] = useState(0);
+  const [isScreenReaderEnabled, setIsScreenReaderEnabled] = useState(false);
 
   const depInputRef = useRef(null);
   const arrInputRef = useRef(null);
 
+  // 🔹 스크린리더 상태 감지 (향후 VISUAL 모드에 활용)
+  useEffect(() => {
+    const checkScreenReader = async () => {
+      const enabled = await AccessibilityInfo.isScreenReaderEnabled();
+      setIsScreenReaderEnabled(enabled);
+    };
+    checkScreenReader();
+
+    const subscription = AccessibilityInfo.addEventListener(
+      'screenReaderChanged',
+      (enabled) => setIsScreenReaderEnabled(enabled)
+    );
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
+  // 🔹 화면 진입 시, SearchScreen에서 넘어온 출발/도착 역 반영
   useEffect(() => {
     if (route.params?.selectedDep) {
       setDep(route.params.selectedDep);
@@ -82,6 +110,16 @@ const PathFinderScreen = () => {
       setArr(route.params.selectedArr);
     }
   }, [route.params]);
+
+  // 🔹 이용자 유형에 따라 휠체어 옵션 자동 반영
+  useEffect(() => {
+    if (isWheelchairUser) {
+      // 휠체어 모드에서는 강제로 True 고정 + 경로 다시 계산하도록 기존 데이터 초기화
+      setWheelchair(true);
+      setPathData(null);
+    }
+    // 일반/시각 모드일 때는 사용자가 직접 체크박스 조작
+  }, [isWheelchairUser]);
 
   const searchResults = useMemo(() => {
     const q = searchQuery.trim();
@@ -152,7 +190,7 @@ const PathFinderScreen = () => {
               size={responsiveFontSize(24)}
               color="#0B5FFF"
               style={{ marginRight: 8 }}
-              accessibilityLabel="정보" 
+              accessibilityLabel="정보"
             />
             <Text
               style={[
@@ -161,6 +199,27 @@ const PathFinderScreen = () => {
               ]}
             >
               출발역과 도착역을 선택해주세요.
+            </Text>
+          </View>
+        )}
+
+        {/* 🔹 시각 이용자 + 스크린리더 켜진 경우 안내 문구 (추후 텍스트 전용 모드와 같이 사용할 예정) */}
+        {isVisualUser && isScreenReaderEnabled && (
+          <View style={[styles.noticeBox, { marginTop: 8 }]} accessibilityRole="alert">
+            <Ionicons
+              name="information-circle-outline"
+              size={responsiveFontSize(22) + fontOffset / 2}
+              color="#0B5FFF"
+              style={{ marginRight: 8 }}
+              accessibilityHidden={true}
+            />
+            <Text
+              style={[
+                styles.noticeText,
+                { fontSize: responsiveFontSize(15) + fontOffset },
+              ]}
+            >
+              시각 약자 모드가 적용되어 텍스트 중심 안내를 우선 제공합니다.
             </Text>
           </View>
         )}
@@ -239,8 +298,8 @@ const PathFinderScreen = () => {
           <TouchableOpacity
             onPress={swapStations}
             style={styles.swapButton}
-            accessibilityRole="button" 
-            accessibilityLabel="출발역과 도착역 교환" 
+            accessibilityRole="button"
+            accessibilityLabel="출발역과 도착역 교환"
           >
             <MaterialCommunityIcons
               name="swap-vertical"
@@ -250,31 +309,56 @@ const PathFinderScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          style={styles.checkboxContainer}
-          onPress={() => {
-            setWheelchair(!wheelchair);
-            setPathData(null);
-          }}
-          accessibilityRole="checkbox" 
-          accessibilityState={{ checked: wheelchair }} 
-        >
-          <Ionicons
-            name={wheelchair ? 'checkbox-outline' : 'square-outline'}
-            size={26 + fontOffset / 2}
-            color={wheelchair ? '#14CAC9' : '#999'}
-            accessibilityHidden={true} 
-          />
-          <Text
-            style={[
-              styles.checkboxText,
-              { fontSize: responsiveFontSize(16) + fontOffset },
-            ]}
+        {/* 🔹 휠체어 이용자 모드일 때는 체크박스 숨기고 자동 적용 */}
+        {!isWheelchairUser && (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={styles.checkboxContainer}
+            onPress={() => {
+              setWheelchair(!wheelchair);
+              setPathData(null);
+            }}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: wheelchair }}
           >
-            휠체어 이용자입니다
-          </Text>
-        </TouchableOpacity>
+            <Ionicons
+              name={wheelchair ? 'checkbox-outline' : 'square-outline'}
+              size={26 + fontOffset / 2}
+              color={wheelchair ? '#14CAC9' : '#999'}
+              accessibilityHidden={true}
+            />
+            <Text
+              style={[
+                styles.checkboxText,
+                { fontSize: responsiveFontSize(16) + fontOffset },
+              ]}
+            >
+              휠체어 이용자입니다
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {isWheelchairUser && (
+          <View
+            style={{
+              marginTop: responsiveHeight(1.5),
+              marginBottom: responsiveHeight(1.5),
+            }}
+          >
+            <Text
+              style={[
+                styles.checkboxText,
+                {
+                  fontSize: responsiveFontSize(14) + fontOffset,
+                  color: '#555555',
+                },
+              ]}
+            >
+              휠체어 이용자 모드가 적용되어{"\n"}
+              경로 탐색 시 휠체어 경로가 자동으로 반영됩니다.
+            </Text>
+          </View>
+        )}
 
         {!isLoading && pathData === null && (
           <CustomButton type="feature" title="길찾기 시작" onPress={handleFindPath} />
@@ -293,7 +377,14 @@ const PathFinderScreen = () => {
             style={{ marginTop: 40 }}
           />
         ) : (
-          pathData && <PathResultView data={pathData} navigation={navigation} />
+          pathData && (
+            <PathResultView
+              data={pathData}
+              navigation={navigation}
+              userType={userType}
+              isScreenReaderEnabled={isScreenReaderEnabled}
+            />
+          )
         )}
       </ScrollView>
 
@@ -313,7 +404,7 @@ const PathFinderScreen = () => {
                 size={24 + fontOffset / 1.5}
                 color="#17171B"
                 style={{ marginRight: 10 }}
-                accessibilityHidden={true} 
+                accessibilityHidden={true}
               />
               <Text
                 style={[

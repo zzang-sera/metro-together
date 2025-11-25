@@ -1,3 +1,4 @@
+//src/screens/main/MainScreen.js
 import React, { useState } from 'react';
 import { View, SafeAreaView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -5,6 +6,7 @@ import { mainStyles } from '../../styles/mainStyles';
 import CustomButton from '../../components/CustomButton';
 import { auth } from '../../config/firebaseConfig';
 import { useFontSize } from '../../contexts/FontSizeContext';
+import UserTypeSelectorButton from '../../components/UserTypeSelectorButton';
 import { responsiveFontSize } from '../../utils/responsive';
 import FontSettingModal from '../../components/FontSettingModal';
 
@@ -70,6 +72,7 @@ const MainScreen = () => {
           title="지하철 최단 경로"
           onPress={() => navigation.navigate('PathFinderStack')}
         />
+        <UserTypeSelectorButton />
 
         <CustomButton
           type="outline"
