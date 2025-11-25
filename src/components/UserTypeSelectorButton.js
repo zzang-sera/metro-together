@@ -18,7 +18,11 @@ function UserTypeSelectorButton() {
   const { userType, setUserType } = useUserType();
   const [visible, setVisible] = useState(false);
 
-  const currentLabel = USER_TYPE_LABELS[userType] || "일반";
+  // ✅ 기본 사용자일 때는 무조건 "기본"으로 표시
+  const currentLabel =
+    userType === USER_TYPES.DEFAULT
+      ? "기본"
+      : USER_TYPE_LABELS[userType] || "기본";
 
   const descText =
     userType === USER_TYPES.WHEELCHAIR
@@ -34,7 +38,6 @@ function UserTypeSelectorButton() {
 
   return (
     <>
-      {/* 🔹 일반 CustomButton처럼 보이는 버튼 */}
       <CustomButton
         type="outline"
         title={`이용자 유형 설정 (${currentLabel})`}
@@ -66,14 +69,14 @@ function UserTypeSelectorButton() {
                 { fontSize: responsiveFontSize(14) + fontOffset },
               ]}
             >
-              이용자 유형을 선택하면{'\n'}
+              이용자 유형을 선택하면{"\n"}
               앱이 최적 환경으로 설정됩니다.
             </Text>
 
             <View style={{ gap: 8 }}>
               <CustomButton
                 type={userType === USER_TYPES.DEFAULT ? "feature" : "outline"}
-                title="일반 사용자"
+                title="기본 사용자"
                 onPress={() => handleSelect(USER_TYPES.DEFAULT)}
               />
               <CustomButton
