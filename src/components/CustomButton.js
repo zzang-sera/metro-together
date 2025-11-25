@@ -1,3 +1,4 @@
+//src/components/CustomButton.js
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { responsiveWidth, responsiveFontSize } from '../utils/responsive';

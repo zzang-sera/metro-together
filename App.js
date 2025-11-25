@@ -9,9 +9,12 @@ import { useFonts } from 'expo-font';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { StatusBar } from 'expo-status-bar';
 import Onboarding from 'react-native-onboarding-swiper';
+
 import { AuthProvider, useAuth } from "./src/contexts/AuthContext";
 import { FontSizeProvider, useFontSize } from "./src/contexts/FontSizeContext";
+import { UserTypeProvider } from "./src/contexts/UserTypeContext";
 import { responsiveFontSize } from "./src/utils/responsive";
+
 import WelcomeScreen from './src/screens/auth/WelcomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
@@ -166,6 +169,7 @@ const GuestTabs = () => {
     paddingBottom: Math.max(8, insets.bottom),
     height: 70 + Math.max(8, insets.bottom) + fontOffset,
   };
+
 
   return (
     <Tab.Navigator
@@ -416,7 +420,9 @@ export default function App() {
       <StatusBar style="dark" backgroundColor="#F9F9F9" />
       <AuthProvider>
         <FontSizeProvider>
-          <AppContent />
+          <UserTypeProvider>
+            <AppContent />
+          </UserTypeProvider>
         </FontSizeProvider>
       </AuthProvider>
     </SafeAreaProvider>

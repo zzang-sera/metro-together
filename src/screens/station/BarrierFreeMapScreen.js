@@ -1,3 +1,4 @@
+//src/screens/station/BarrierFreeMapScreen.js
 import React, { useEffect, useState, useRef, useLayoutEffect } from "react";
 import {
   View,
