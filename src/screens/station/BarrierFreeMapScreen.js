@@ -484,7 +484,6 @@ export default function BarrierFreeMapScreen() {
                 { fontSize: responsiveFontSize(15) + fontOffset },
               ]}
             >
-              이 화면에서는 지도를 생략하고 텍스트로 시설 위치를 안내합니다.
               화면을 내리거나 올리려면 두 손가락으로 미세요.
             </Text>
           </View>
